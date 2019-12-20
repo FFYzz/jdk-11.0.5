@@ -64,7 +64,7 @@ import jdk.internal.misc.SharedSecrets;
  * resizes the backing array; merely setting the value of an element is not
  * a structural modification.)  This is typically accomplished by
  * synchronizing on some object that naturally encapsulates the list.
- *
+ * <p>
  * If no such object exists, the list should be "wrapped" using the
  * {@link Collections#synchronizedList Collections.synchronizedList}
  * method.  This is best done at creation time, to prevent accidental
@@ -105,22 +105,44 @@ import jdk.internal.misc.SharedSecrets;
  * @see     Vector
  * @since   1.2
  */
+
+/**
+ * 几个问题
+ * 1. modCount 的作用是什么？
+ * ArrayList 支持 fail-fast 机制，在多线程访问情况下，会出现在操作过程中 modCount 被修改的情况。
+ * fail-fast 机制会抛出异常。
+ *
+ * 2. ArrayList 在循环的时候为什么要用 Iterator 中的 remove 而不是用 for (int i = 0; i < size; ++i) 这种形式 remove？
+ *
+ * 因为在 for 循环中移除的话 ArrayList 中的元素的位序会发生变化，删除可能不是我们预期得到的结果。
+ * Iterator 中有 lastRet 和 cursor，在 remove 的时候会记录 lastRet 和 cursor 的变化，
+ * 每次删除之后 lastRet hi置为 -1，表示当前没有指向的元素，cursor 会回退一位，因为当前当前的元素删除了。
+ */
 public class ArrayList<E> extends AbstractList<E>
         implements List<E>, RandomAccess, Cloneable, java.io.Serializable
 {
+    /**
+     * 序列化及反序列化时根据 serialVersionUID 验证类的版本是否一致
+     */
     private static final long serialVersionUID = 8683452581122892189L;
 
     /**
+     * 默认初始化容量
      * Default initial capacity.
      */
     private static final int DEFAULT_CAPACITY = 10;
 
     /**
+     * 共享的空数组对象。
+     * 在 {@link #ArrayList(int)} 或 {@link #ArrayList(Collection)} 构造方法中，
+     * 如果传入的初始化大小或者集合大小为 0 时，将 {@link #elementData} 指向它。
      * Shared empty array instance used for empty instances.
      */
     private static final Object[] EMPTY_ELEMENTDATA = {};
 
     /**
+     * 共享的空数组对象，用于 {@link #ArrayList()} 构造方法。
+     * 通过使用该静态变量，和 {@link #EMPTY_ELEMENTDATA} 区分开来，在第一次添加元素时。
      * Shared empty array instance used for default sized empty instances. We
      * distinguish this from EMPTY_ELEMENTDATA to know how much to inflate when
      * first element is added.
@@ -128,6 +150,10 @@ public class ArrayList<E> extends AbstractList<E>
     private static final Object[] DEFAULTCAPACITY_EMPTY_ELEMENTDATA = {};
 
     /**
+     * 存放值的数组。
+     * 当添加新的元素时，如果该数组不够，会创建新数组，并将原数组的元素拷贝到新数组。之后，将该变量指向新数组。
+     * 当 elementData == DEFAULTCAPACITY_EMPTY_ELEMENTDATA时，向 elementData 数组中放入一个元素之后，
+     * elementData 的容量都会被扩展为 DEFAULT_CAPACITY
      * The array buffer into which the elements of the ArrayList are stored.
      * The capacity of the ArrayList is the length of this array buffer. Any
      * empty ArrayList with elementData == DEFAULTCAPACITY_EMPTY_ELEMENTDATA
@@ -136,6 +162,7 @@ public class ArrayList<E> extends AbstractList<E>
     transient Object[] elementData; // non-private to simplify nested class access
 
     /**
+     * 已使用的数组大小
      * The size of the ArrayList (the number of elements it contains).
      *
      * @serial
@@ -143,77 +170,85 @@ public class ArrayList<E> extends AbstractList<E>
     private int size;
 
     /**
-     * Constructs an empty list with the specified initial capacity.
+     * 有参构造方法，指定初始的 elemenData 数组大小
      *
-     * @param  initialCapacity  the initial capacity of the list
-     * @throws IllegalArgumentException if the specified initial capacity
-     *         is negative
+     * @param 初始大小
+     * @throws IllegalArgumentException 如果指定的初始容量小于 0 ，则抛出异常
      */
     public ArrayList(int initialCapacity) {
         if (initialCapacity > 0) {
             this.elementData = new Object[initialCapacity];
+            // 初始化容量等于 0 时，指向 EMPTY_ELEMENTDATA 对象
         } else if (initialCapacity == 0) {
             this.elementData = EMPTY_ELEMENTDATA;
+            // 初始化容量小于 0 时，抛出 IllegalArgumentException 异常
         } else {
-            throw new IllegalArgumentException("Illegal Capacity: "+
-                                               initialCapacity);
+            throw new IllegalArgumentException("Illegal Capacity: " +
+                    initialCapacity);
         }
     }
 
     /**
-     * Constructs an empty list with an initial capacity of ten.
+     * 无参构造方法，elementData 指向 DEFAULTCAPACITY_EMPTY_ELEMENTDATA
      */
     public ArrayList() {
         this.elementData = DEFAULTCAPACITY_EMPTY_ELEMENTDATA;
     }
 
     /**
-     * Constructs a list containing the elements of the specified
-     * collection, in the order they are returned by the collection's
-     * iterator.
+     * 有参构造方法，参数为 Collection 类型及其子类
      *
-     * @param c the collection whose elements are to be placed into this list
-     * @throws NullPointerException if the specified collection is null
+     * @param c Collection 对象
+     * @throws NullPointerException 如果传入参数
      */
     public ArrayList(Collection<? extends E> c) {
+        // 将 c 转换成 Object 数组
         Object[] a = c.toArray();
+        // 如果数组大小大于 0
         if ((size = a.length) != 0) {
             if (c.getClass() == ArrayList.class) {
                 elementData = a;
             } else {
+                // 如果集合元素不是 Object[] 类型，则会创建新的 Object[] 数组，
+                // 并将 elementData 赋值到其中，最后赋值给 elementData 。
                 elementData = Arrays.copyOf(a, size, Object[].class);
             }
         } else {
             // replace with empty array.
+            // 如果数组大小等于 0 ，则使用 EMPTY_ELEMENTDATA 。
             elementData = EMPTY_ELEMENTDATA;
         }
     }
 
     /**
-     * Trims the capacity of this {@code ArrayList} instance to be the
-     * list's current size.  An application can use this operation to minimize
-     * the storage of an {@code ArrayList} instance.
+     * 将 elementData进行缩容，缩小到大小为 size 的大小
+     * 可以节省空间
      */
     public void trimToSize() {
         modCount++;
         if (size < elementData.length) {
             elementData = (size == 0)
+                    // 大小为 0 时，直接使用 EMPTY_ELEMENTDATA
               ? EMPTY_ELEMENTDATA
+                    // 大小大于 0 ，则创建大小为 size 的新数组，将原数组复制到其中。
               : Arrays.copyOf(elementData, size);
         }
     }
 
     /**
-     * Increases the capacity of this {@code ArrayList} instance, if
-     * necessary, to ensure that it can hold at least the number of elements
-     * specified by the minimum capacity argument.
+     * 增大 ArrayList 实例的容量
+     * 容量大小保证至少为传入的参数的大小
      *
-     * @param minCapacity the desired minimum capacity
+     * @param minCapacity 兜底的数组大小
      */
     public void ensureCapacity(int minCapacity) {
+                // 如果 minCapacity 大于当前数组的容量
         if (minCapacity > elementData.length
             && !(elementData == DEFAULTCAPACITY_EMPTY_ELEMENTDATA
                  && minCapacity <= DEFAULT_CAPACITY)) {
+            // 如果 elementData 是 DEFAULTCAPACITY_EMPTY_ELEMENTDATA 的时候，
+            // 需要最低 minCapacity 容量大于 DEFAULT_CAPACITY ，因为实际上容量是 DEFAULT_CAPACITY 。
+            // 数组修改次数加一
             modCount++;
             grow(minCapacity);
         }
@@ -228,11 +263,13 @@ public class ArrayList<E> extends AbstractList<E>
     private static final int MAX_ARRAY_SIZE = Integer.MAX_VALUE - 8;
 
     /**
+     * 根据传入的参数，保证当前的 elementData 数组的大小要大于 minCapacity
+     *
      * Increases the capacity to ensure that it can hold at least the
      * number of elements specified by the minimum capacity argument.
      *
-     * @param minCapacity the desired minimum capacity
-     * @throws OutOfMemoryError if minCapacity is less than zero
+     * @param minCapacity 要设置的最小容量
+     * @throws OutOfMemoryError 若最小容量小于 0，则抛出异常。扩容时会抛出该异常，主要是容量超出 Integer 最大表示范围之后
      */
     private Object[] grow(int minCapacity) {
         return elementData = Arrays.copyOf(elementData,
@@ -277,6 +314,7 @@ public class ArrayList<E> extends AbstractList<E>
     }
 
     /**
+     * 返回当前的 elementData 的数组容量的大小
      * Returns the number of elements in this list.
      *
      * @return the number of elements in this list
@@ -286,9 +324,7 @@ public class ArrayList<E> extends AbstractList<E>
     }
 
     /**
-     * Returns {@code true} if this list contains no elements.
-     *
-     * @return {@code true} if this list contains no elements
+     * 返回当前 ArrayList 对象数组中是否有元素
      */
     public boolean isEmpty() {
         return size == 0;
@@ -326,6 +362,7 @@ public class ArrayList<E> extends AbstractList<E>
                     return i;
                 }
             }
+            // o 非 null 的情况
         } else {
             for (int i = start; i < end; i++) {
                 if (o.equals(es[i])) {
@@ -347,21 +384,33 @@ public class ArrayList<E> extends AbstractList<E>
         return lastIndexOfRange(o, 0, size);
     }
 
+    /**
+     * 根据范围查找最后一次出现的元素的位置
+     *
+     * @param o
+     * @param start
+     * @param end
+     * @return
+     */
     int lastIndexOfRange(Object o, int start, int end) {
         Object[] es = elementData;
         if (o == null) {
+            // 从后往前找
             for (int i = end - 1; i >= start; i--) {
                 if (es[i] == null) {
                     return i;
                 }
             }
+            // o 非 null 的情况
         } else {
+            // 从后往前找
             for (int i = end - 1; i >= start; i--) {
                 if (o.equals(es[i])) {
                     return i;
                 }
             }
         }
+        // 找不到，返回 -1
         return -1;
     }
 
@@ -395,7 +444,7 @@ public class ArrayList<E> extends AbstractList<E>
      * APIs.
      *
      * @return an array containing all of the elements in this list in
-     *         proper sequence
+     * proper sequence
      */
     public Object[] toArray() {
         return Arrays.copyOf(elementData, size);
@@ -420,9 +469,9 @@ public class ArrayList<E> extends AbstractList<E>
      *          be stored, if it is big enough; otherwise, a new array of the
      *          same runtime type is allocated for this purpose.
      * @return an array containing the elements of the list
-     * @throws ArrayStoreException if the runtime type of the specified array
-     *         is not a supertype of the runtime type of every element in
-     *         this list
+     * @throws ArrayStoreException  if the runtime type of the specified array
+     *                              is not a supertype of the runtime type of every element in
+     *                              this list
      * @throws NullPointerException if the specified array is null
      */
     @SuppressWarnings("unchecked")
@@ -451,7 +500,7 @@ public class ArrayList<E> extends AbstractList<E>
     /**
      * Returns the element at the specified position in this list.
      *
-     * @param  index index of the element to return
+     * @param index index of the element to return
      * @return the element at the specified position in this list
      * @throws IndexOutOfBoundsException {@inheritDoc}
      */
@@ -464,7 +513,7 @@ public class ArrayList<E> extends AbstractList<E>
      * Replaces the element at the specified position in this list with
      * the specified element.
      *
-     * @param index index of the element to replace
+     * @param index   index of the element to replace
      * @param element element to be stored at the specified position
      * @return the element previously at the specified position
      * @throws IndexOutOfBoundsException {@inheritDoc}
@@ -477,9 +526,7 @@ public class ArrayList<E> extends AbstractList<E>
     }
 
     /**
-     * This helper method split out from add(E) to keep method
-     * bytecode size under 35 (the -XX:MaxInlineSize default value),
-     * which helps when add(E) is called in a C1-compiled loop.
+     * 将元素 e 添加到 ArrayList 的末尾
      */
     private void add(E e, Object[] elementData, int s) {
         if (s == elementData.length)
@@ -489,10 +536,10 @@ public class ArrayList<E> extends AbstractList<E>
     }
 
     /**
-     * Appends the specified element to the end of this list.
+     * 将元素 e 添加到 ArrayList 中
      *
-     * @param e element to be appended to this list
-     * @return {@code true} (as specified by {@link Collection#add})
+     * @param e
+     * @return {@code true}
      */
     public boolean add(E e) {
         modCount++;
@@ -501,12 +548,10 @@ public class ArrayList<E> extends AbstractList<E>
     }
 
     /**
-     * Inserts the specified element at the specified position in this
-     * list. Shifts the element currently at that position (if any) and
-     * any subsequent elements to the right (adds one to their indices).
+     * 向指定位置插入元素
      *
-     * @param index index at which the specified element is to be inserted
-     * @param element element to be inserted
+     * @param index   要添加进入数组的位置
+     * @param element 要添加的元素
      * @throws IndexOutOfBoundsException {@inheritDoc}
      */
     public void add(int index, E element) {
@@ -514,11 +559,13 @@ public class ArrayList<E> extends AbstractList<E>
         modCount++;
         final int s;
         Object[] elementData;
+        // 如果当前的 elementData 已满，则扩容
         if ((s = size) == (elementData = this.elementData).length)
             elementData = grow();
         System.arraycopy(elementData, index,
                          elementData, index + 1,
                          s - index);
+        // 设置到指定位置
         elementData[index] = element;
         size = s + 1;
     }
@@ -560,13 +607,17 @@ public class ArrayList<E> extends AbstractList<E>
         boolean equal = (o.getClass() == ArrayList.class)
             ? equalsArrayList((ArrayList<?>) o)
             : equalsRange((List<?>) o, 0, size);
-
+                : equalsRange((List<?>) o, 0, size);
+        // 主要是避免在多线程环境下，多个线程操作同一个 ArrayList，比较过程中发生改变
+        // modCount 的作用体现在这
+        // 如果修改次数发生改变，则抛出 ConcurrentModificationException 异常
         checkForComodification(expectedModCount);
         return equal;
     }
 
     boolean equalsRange(List<?> other, int from, int to) {
         final Object[] es = elementData;
+        // 如果 to 大于 es 大小，说明说明发生改变，抛出 ConcurrentModificationException 异常
         if (to > es.length) {
             throw new ConcurrentModificationException();
         }
@@ -600,6 +651,12 @@ public class ArrayList<E> extends AbstractList<E>
         return equal;
     }
 
+    /**
+     * 检查是否有多线程在操作当前对象
+     * 有的话则抛出异常
+     *
+     * @param expectedModCount
+     */
     private void checkForComodification(final int expectedModCount) {
         if (modCount != expectedModCount) {
             throw new ConcurrentModificationException();
@@ -611,11 +668,25 @@ public class ArrayList<E> extends AbstractList<E>
      */
     public int hashCode() {
         int expectedModCount = modCount;
+        // 计算哈希值
+        // 根据当前数组中的每一个元素来计算 hash 值
         int hash = hashCodeRange(0, size);
         checkForComodification(expectedModCount);
         return hash;
     }
 
+    /**
+     * hashcode 的计算方法为：
+     * 遍历每一个元素，若当前元素非空，则
+     * 31 * hashcode + 当前元素的 hashCode 值
+     * 这里有一个问题，为什么要用 31 来乘？
+     * 主要的考虑就是哈希分布比较散，而且 31 离 32 可以用 + 1来完成，
+     * 32 可以用移位来计算，效率会更高
+     *
+     * @param from
+     * @param to
+     * @return
+     */
     int hashCodeRange(int from, int to) {
         final Object[] es = elementData;
         if (to > es.length) {
@@ -630,8 +701,8 @@ public class ArrayList<E> extends AbstractList<E>
     }
 
     /**
-     * Removes the first occurrence of the specified element from this list,
-     * if it is present.  If the list does not contain the element, it is
+     * 移除 ArrayList 中第一次出现的元素 o
+     * <p>
      * unchanged.  More formally, removes the element with the lowest index
      * {@code i} such that
      * {@code Objects.equals(o, get(i))}
@@ -647,10 +718,12 @@ public class ArrayList<E> extends AbstractList<E>
         final int size = this.size;
         int i = 0;
         found: {
+            // o 为 null 的情况
             if (o == null) {
                 for (; i < size; i++)
                     if (es[i] == null)
                         break found;
+                    // o 非 null 的情况
             } else {
                 for (; i < size; i++)
                     if (o.equals(es[i]))
@@ -663,6 +736,7 @@ public class ArrayList<E> extends AbstractList<E>
     }
 
     /**
+     * 快速移除，跳过边界检查并且不返回移除位置的元素的值
      * Private remove method that skips bounds checking and does not
      * return the value removed.
      */
@@ -686,6 +760,7 @@ public class ArrayList<E> extends AbstractList<E>
     }
 
     /**
+     * 将 Collection 中的元素全部加入到 ArrayList 的末尾
      * Appends all of the elements in the specified collection to the end of
      * this list, in the order that they are returned by the
      * specified collection's Iterator.  The behavior of this operation is
@@ -706,6 +781,7 @@ public class ArrayList<E> extends AbstractList<E>
             return false;
         Object[] elementData;
         final int s;
+        // 需要扩容
         if (numNew > (elementData = this.elementData).length - (s = size))
             elementData = grow(s + numNew);
         System.arraycopy(a, 0, elementData, s, numNew);
@@ -714,6 +790,11 @@ public class ArrayList<E> extends AbstractList<E>
     }
 
     /**
+     * 将 Collection 中的元素全部加入到指定位置后面
+     * 比如原 ArrayList 为 10，20，30，40，50，60
+     * 传入参数为 2，
+     * 则数据加入到 20 后面
+     * <p>
      * Inserts all of the elements in the specified collection into this
      * list, starting at the specified position.  Shifts the element
      * currently at that position (if any) and any subsequent elements to
@@ -723,10 +804,10 @@ public class ArrayList<E> extends AbstractList<E>
      *
      * @param index index at which to insert the first element from the
      *              specified collection
-     * @param c collection containing elements to be added to this list
+     * @param c     collection containing elements to be added to this list
      * @return {@code true} if this list changed as a result of the call
      * @throws IndexOutOfBoundsException {@inheritDoc}
-     * @throws NullPointerException if the specified collection is null
+     * @throws NullPointerException      if the specified collection is null
      */
     public boolean addAll(int index, Collection<? extends E> c) {
         rangeCheckForAdd(index);
@@ -746,12 +827,14 @@ public class ArrayList<E> extends AbstractList<E>
             System.arraycopy(elementData, index,
                              elementData, index + numNew,
                              numMoved);
+        // 将 a 复制到 elementData 从 s 开始位置
         System.arraycopy(a, 0, elementData, index, numNew);
         size = s + numNew;
         return true;
     }
 
     /**
+     * 移除 fromIndex 到 toIndex 之间的元素
      * Removes from this list all of the elements whose index is between
      * {@code fromIndex}, inclusive, and {@code toIndex}, exclusive.
      * Shifts any succeeding elements to the left (reduces their index).
@@ -759,10 +842,10 @@ public class ArrayList<E> extends AbstractList<E>
      * (If {@code toIndex==fromIndex}, this operation has no effect.)
      *
      * @throws IndexOutOfBoundsException if {@code fromIndex} or
-     *         {@code toIndex} is out of range
-     *         ({@code fromIndex < 0 ||
-     *          toIndex > size() ||
-     *          toIndex < fromIndex})
+     *                                   {@code toIndex} is out of range
+     *                                   ({@code fromIndex < 0 ||
+     *                                   toIndex > size() ||
+     *                                   toIndex < fromIndex})
      */
     protected void removeRange(int fromIndex, int toIndex) {
         if (fromIndex > toIndex) {
@@ -773,7 +856,9 @@ public class ArrayList<E> extends AbstractList<E>
         shiftTailOverGap(elementData, fromIndex, toIndex);
     }
 
-    /** Erases the gap from lo to hi, by sliding down following elements. */
+    /**
+     * Erases the gap from lo to hi, by sliding down following elements.
+     */
     private void shiftTailOverGap(Object[] es, int lo, int hi) {
         System.arraycopy(es, hi, es, lo, size - hi);
         for (int to = size, i = (size -= hi - lo); i < to; i++)
@@ -794,7 +879,7 @@ public class ArrayList<E> extends AbstractList<E>
      * this "outlining" performs best with both server and client VMs.
      */
     private String outOfBoundsMsg(int index) {
-        return "Index: "+index+", Size: "+size;
+        return "Index: " + index + ", Size: " + size;
     }
 
     /**
@@ -805,18 +890,19 @@ public class ArrayList<E> extends AbstractList<E>
     }
 
     /**
+     * 在 ArrayList 中移除所有出现在 Collection 中的元素
      * Removes from this list all of its elements that are contained in the
      * specified collection.
      *
      * @param c collection containing elements to be removed from this list
      * @return {@code true} if this list changed as a result of the call
-     * @throws ClassCastException if the class of an element of this list
-     *         is incompatible with the specified collection
-     * (<a href="Collection.html#optional-restrictions">optional</a>)
+     * @throws ClassCastException   if the class of an element of this list
+     *                              is incompatible with the specified collection
+     *                              (<a href="Collection.html#optional-restrictions">optional</a>)
      * @throws NullPointerException if this list contains a null element and the
-     *         specified collection does not permit null elements
-     * (<a href="Collection.html#optional-restrictions">optional</a>),
-     *         or if the specified collection is null
+     *                              specified collection does not permit null elements
+     *                              (<a href="Collection.html#optional-restrictions">optional</a>),
+     *                              or if the specified collection is null
      * @see Collection#contains(Object)
      */
     public boolean removeAll(Collection<?> c) {
@@ -824,19 +910,20 @@ public class ArrayList<E> extends AbstractList<E>
     }
 
     /**
+     * 求交集，保留 ArrayList 与 Collection 中都有的元素
      * Retains only the elements in this list that are contained in the
      * specified collection.  In other words, removes from this list all
      * of its elements that are not contained in the specified collection.
      *
      * @param c collection containing elements to be retained in this list
      * @return {@code true} if this list changed as a result of the call
-     * @throws ClassCastException if the class of an element of this list
-     *         is incompatible with the specified collection
-     * (<a href="Collection.html#optional-restrictions">optional</a>)
+     * @throws ClassCastException   if the class of an element of this list
+     *                              is incompatible with the specified collection
+     *                              (<a href="Collection.html#optional-restrictions">optional</a>)
      * @throws NullPointerException if this list contains a null element and the
-     *         specified collection does not permit null elements
-     * (<a href="Collection.html#optional-restrictions">optional</a>),
-     *         or if the specified collection is null
+     *                              specified collection does not permit null elements
+     *                              (<a href="Collection.html#optional-restrictions">optional</a>),
+     *                              or if the specified collection is null
      * @see Collection#contains(Object)
      */
     public boolean retainAll(Collection<?> c) {
@@ -845,16 +932,22 @@ public class ArrayList<E> extends AbstractList<E>
 
     boolean batchRemove(Collection<?> c, boolean complement,
                         final int from, final int end) {
+        // 校验 c 非 null 。
         Objects.requireNonNull(c);
         final Object[] es = elementData;
         int r;
         // Optimize for initial run of survivors
+        // 优化，顺序遍历 elementData 数组，找到第一个不符合 complement ，然后结束遍历。
         for (r = from;; r++) {
+            // 遍历到尾，都没不符合条件的，直接返回 false 。
             if (r == end)
                 return false;
             if (c.contains(es[r]) != complement)
                 break;
         }
+        // 设置开始写入 w 为 r ，注意不是 r++ 。
+        // w 指向第一个要被处理的元素的位置
+        // r++ 后，用于读取下一个位置的元素。因为通过上的优化循环，我们已经 es[r] 是不符合条件的。
         int w = r++;
         try {
             for (Object e; r < end; r++)
@@ -874,17 +967,20 @@ public class ArrayList<E> extends AbstractList<E>
     }
 
     /**
+     * 序列化方法
+     * 因为 elementData 用 transient 修饰了，所以需要通过 writeObject 方法自定义来实现
+     * 自己根据size序列化真实的元素，而不是根据数组的长度序列化元素，减少了空间占用。
      * Saves the state of the {@code ArrayList} instance to a stream
      * (that is, serializes it).
      *
      * @param s the stream
      * @throws java.io.IOException if an I/O error occurs
      * @serialData The length of the array backing the {@code ArrayList}
-     *             instance is emitted (int), followed by all of its elements
-     *             (each an {@code Object}) in the proper order.
+     * instance is emitted (int), followed by all of its elements
+     * (each an {@code Object}) in the proper order.
      */
     private void writeObject(java.io.ObjectOutputStream s)
-        throws java.io.IOException {
+            throws java.io.IOException {
         // Write out element count, and any hidden stuff
         int expectedModCount = modCount;
         s.defaultWriteObject();
@@ -903,15 +999,17 @@ public class ArrayList<E> extends AbstractList<E>
     }
 
     /**
+     * 反序列化方法
      * Reconstitutes the {@code ArrayList} instance from a stream (that is,
      * deserializes it).
+     *
      * @param s the stream
      * @throws ClassNotFoundException if the class of a serialized object
-     *         could not be found
-     * @throws java.io.IOException if an I/O error occurs
+     *                                could not be found
+     * @throws java.io.IOException    if an I/O error occurs
      */
     private void readObject(java.io.ObjectInputStream s)
-        throws java.io.IOException, ClassNotFoundException {
+            throws java.io.IOException, ClassNotFoundException {
 
         // Read in size, and any hidden stuff
         s.defaultReadObject();
@@ -938,6 +1036,7 @@ public class ArrayList<E> extends AbstractList<E>
     }
 
     /**
+     * 创建一个从指定位置开始的 迭代器
      * Returns a list iterator over the elements in this list (in proper
      * sequence), starting at the specified position in the list.
      * The specified index indicates the first element that would be
@@ -982,7 +1081,17 @@ public class ArrayList<E> extends AbstractList<E>
      */
     private class Itr implements Iterator<E> {
         int cursor;       // index of next element to return
+        /**
+         * 上一次访问元素的位置。
+         * 1. 初始化为 -1 ，表示无上一个访问的元素
+         * 2. 遍历到下一个元素时，lastRet 会指向当前元素，而 cursor 会指向下一个元素。这样，如果我们要实现 remove 方法，移除当前元素，就可以实现了。
+         * 3. 移除元素时，设置为 -1 ，表示最后访问的元素不存在了，都被移除咧。
+         */
         int lastRet = -1; // index of last element returned; -1 if no such
+        /**
+         * 创建迭代器时，数组修改次数。
+         * 在迭代过程中，如果数组发生了变化，会抛出 ConcurrentModificationException 异常。
+         */
         int expectedModCount = modCount;
 
         // prevent creating a synthetic constructor
@@ -1106,6 +1215,7 @@ public class ArrayList<E> extends AbstractList<E>
     }
 
     /**
+     * 获取指定范围的子 ArrayList
      * Returns a view of the portion of this list between the specified
      * {@code fromIndex}, inclusive, and {@code toIndex}, exclusive.  (If
      * {@code fromIndex} and {@code toIndex} are equal, the returned list is
@@ -1132,7 +1242,7 @@ public class ArrayList<E> extends AbstractList<E>
      * a fashion that iterations in progress may yield incorrect results.)
      *
      * @throws IndexOutOfBoundsException {@inheritDoc}
-     * @throws IllegalArgumentException {@inheritDoc}
+     * @throws IllegalArgumentException  {@inheritDoc}
      */
     public List<E> subList(int fromIndex, int toIndex) {
         subListRangeCheck(fromIndex, toIndex, size);
@@ -1140,7 +1250,15 @@ public class ArrayList<E> extends AbstractList<E>
     }
 
     private static class SubList<E> extends AbstractList<E> implements RandomAccess {
+        /**
+         * 传入的 ArrayList
+         * 原来的 ArrayList
+         * 根 ArrayList
+         */
         private final ArrayList<E> root;
+        /**
+         * 父 SubList
+         */
         private final SubList<E> parent;
         private final int offset;
         private int size;
@@ -1214,7 +1332,7 @@ public class ArrayList<E> extends AbstractList<E>
         public boolean addAll(int index, Collection<? extends E> c) {
             rangeCheckForAdd(index);
             int cSize = c.size();
-            if (cSize==0)
+            if (cSize == 0)
                 return false;
             checkForComodification();
             root.addAll(offset + index, c);
@@ -1238,7 +1356,7 @@ public class ArrayList<E> extends AbstractList<E>
             checkForComodification();
             int oldSize = root.size;
             boolean modified =
-                root.batchRemove(c, complement, offset, offset + size);
+                    root.batchRemove(c, complement, offset, offset + size);
             if (modified)
                 updateSizeAndModCount(root.size - oldSize);
             return modified;
@@ -1279,7 +1397,7 @@ public class ArrayList<E> extends AbstractList<E>
                 return false;
             }
 
-            boolean equal = root.equalsRange((List<?>)o, offset, offset + size);
+            boolean equal = root.equalsRange((List<?>) o, offset, offset + size);
             checkForComodification();
             return equal;
         }
@@ -1437,7 +1555,7 @@ public class ArrayList<E> extends AbstractList<E>
         }
 
         private String outOfBoundsMsg(int index) {
-            return "Index: "+index+", Size: "+this.size;
+            return "Index: " + index + ", Size: " + this.size;
         }
 
         private void checkForComodification() {
@@ -1476,7 +1594,7 @@ public class ArrayList<E> extends AbstractList<E>
                     int hi = getFence(), lo = index, mid = (lo + hi) >>> 1;
                     // ArrayListSpliterator can be used here as the source is already bound
                     return (lo >= mid) ? null : // divide range in half unless too small
-                        root.new ArrayListSpliterator(lo, index = mid, expectedModCount);
+                            root.new ArrayListSpliterator(lo, index = mid, expectedModCount);
                 }
 
                 public boolean tryAdvance(Consumer<? super E> action) {
@@ -1484,7 +1602,7 @@ public class ArrayList<E> extends AbstractList<E>
                     int hi = getFence(), i = index;
                     if (i < hi) {
                         index = i + 1;
-                        @SuppressWarnings("unchecked") E e = (E)root.elementData[i];
+                        @SuppressWarnings("unchecked") E e = (E) root.elementData[i];
                         action.accept(e);
                         if (root.modCount != expectedModCount)
                             throw new ConcurrentModificationException();
@@ -1502,8 +1620,7 @@ public class ArrayList<E> extends AbstractList<E>
                         if ((hi = fence) < 0) {
                             mc = modCount;
                             hi = offset + size;
-                        }
-                        else
+                        } else
                             mc = expectedModCount;
                         if ((i = index) >= 0 && (index = hi) <= a.length) {
                             for (; i < hi; ++i) {
@@ -1561,7 +1678,9 @@ public class ArrayList<E> extends AbstractList<E>
         return new ArrayListSpliterator(0, -1, 0);
     }
 
-    /** Index-based split-by-two, lazily initialized Spliterator */
+    /**
+     * Index-based split-by-two, lazily initialized Spliterator
+     */
     final class ArrayListSpliterator implements Spliterator<E> {
 
         /*
@@ -1600,7 +1719,9 @@ public class ArrayList<E> extends AbstractList<E>
         private int fence; // -1 until used; then one past last index
         private int expectedModCount; // initialized when fence set
 
-        /** Creates new spliterator covering the given range. */
+        /**
+         * Creates new spliterator covering the given range.
+         */
         ArrayListSpliterator(int origin, int fence, int expectedModCount) {
             this.index = origin;
             this.fence = fence;
@@ -1619,7 +1740,7 @@ public class ArrayList<E> extends AbstractList<E>
         public ArrayListSpliterator trySplit() {
             int hi = getFence(), lo = index, mid = (lo + hi) >>> 1;
             return (lo >= mid) ? null : // divide range in half unless too small
-                new ArrayListSpliterator(lo, index = mid, expectedModCount);
+                    new ArrayListSpliterator(lo, index = mid, expectedModCount);
         }
 
         public boolean tryAdvance(Consumer<? super E> action) {
@@ -1628,7 +1749,7 @@ public class ArrayList<E> extends AbstractList<E>
             int hi = getFence(), i = index;
             if (i < hi) {
                 index = i + 1;
-                @SuppressWarnings("unchecked") E e = (E)elementData[i];
+                @SuppressWarnings("unchecked") E e = (E) elementData[i];
                 action.accept(e);
                 if (modCount != expectedModCount)
                     throw new ConcurrentModificationException();
@@ -1646,8 +1767,7 @@ public class ArrayList<E> extends AbstractList<E>
                 if ((hi = fence) < 0) {
                     mc = modCount;
                     hi = size;
-                }
-                else
+                } else
                     mc = expectedModCount;
                 if ((i = index) >= 0 && (index = hi) <= a.length) {
                     for (; i < hi; ++i) {
@@ -1675,9 +1795,11 @@ public class ArrayList<E> extends AbstractList<E>
     private static long[] nBits(int n) {
         return new long[((n - 1) >> 6) + 1];
     }
+
     private static void setBit(long[] bits, int i) {
         bits[i >> 6] |= 1L << i;
     }
+
     private static boolean isClear(long[] bits, int i) {
         return (bits[i >> 6] & (1L << i)) == 0;
     }
