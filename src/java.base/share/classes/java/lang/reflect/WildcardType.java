@@ -26,6 +26,8 @@
 package java.lang.reflect;
 
 /**
+ * 如果没有指定上边界，则默认为Object，如果没有指定下边界，则默认为String
+ * <p>
  * WildcardType represents a wildcard type expression, such as
  * {@code ?}, {@code ? extends Number}, or {@code ? super Integer}.
  *
@@ -33,6 +35,8 @@ package java.lang.reflect;
  */
 public interface WildcardType extends Type {
     /**
+     * 得到上边界的type数组
+     * <p>
      * Returns an array of {@code Type} objects representing the  upper
      * bound(s) of this type variable.  If no upper bound is
      * explicitly declared, the upper bound is {@code Object}.
@@ -46,16 +50,18 @@ public interface WildcardType extends Type {
      * </ul>
      *
      * @return an array of Types representing the upper bound(s) of this
-     *     type variable
-     * @throws TypeNotPresentException if any of the
-     *     bounds refers to a non-existent type declaration
+     * type variable
+     * @throws TypeNotPresentException             if any of the
+     *                                             bounds refers to a non-existent type declaration
      * @throws MalformedParameterizedTypeException if any of the
-     *     bounds refer to a parameterized type that cannot be instantiated
-     *     for any reason
+     *                                             bounds refer to a parameterized type that cannot be instantiated
+     *                                             for any reason
      */
     Type[] getUpperBounds();
 
     /**
+     * 得到下边界的数组
+     * <p>
      * Returns an array of {@code Type} objects representing the
      * lower bound(s) of this type variable.  If no lower bound is
      * explicitly declared, the lower bound is the type of {@code null}.
@@ -70,12 +76,12 @@ public interface WildcardType extends Type {
      * </ul>
      *
      * @return an array of Types representing the lower bound(s) of this
-     *     type variable
-     * @throws TypeNotPresentException if any of the
-     *     bounds refers to a non-existent type declaration
+     * type variable
+     * @throws TypeNotPresentException             if any of the
+     *                                             bounds refers to a non-existent type declaration
      * @throws MalformedParameterizedTypeException if any of the
-     *     bounds refer to a parameterized type that cannot be instantiated
-     *     for any reason
+     *                                             bounds refer to a parameterized type that cannot be instantiated
+     *                                             for any reason
      */
     Type[] getLowerBounds();
     // one or many? Up to language spec; currently only one, but this API

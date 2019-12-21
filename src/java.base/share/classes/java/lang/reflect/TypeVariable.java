@@ -26,6 +26,9 @@
 package java.lang.reflect;
 
 /**
+ * TypeVariable就是用来反映在JVM编译该泛型前的信息。
+ * (通俗的来说，TypeVariable就是我们常用的T，K这种泛型变量)
+ * <p>
  * TypeVariable is the common superinterface for type variables of kinds.
  * A type variable is created the first time it is needed by a reflective
  * method, as specified in this package.  If a type variable t is referenced
@@ -44,12 +47,16 @@ package java.lang.reflect;
  * of instances of classes implementing this interface.
  *
  * @param <D> the type of generic declaration that declared the
- * underlying type variable.
- *
+ *            underlying type variable.
  * @since 1.5
  */
 public interface TypeVariable<D extends GenericDeclaration> extends Type, AnnotatedElement {
     /**
+     * 返回当前类型的上边界，如果没有指定上边界，则默认为Object。
+     * <K extends Number, T>
+     * K 有上边界 为 NUmber 类
+     * T 没有上边界，默认为 Object
+     * <p>
      * Returns an array of {@code Type} objects representing the
      * upper bound(s) of this type variable.  If no upper bound is
      * explicitly declared, the upper bound is {@code Object}.
@@ -60,27 +67,30 @@ public interface TypeVariable<D extends GenericDeclaration> extends Type, Annota
      * details of the creation process for parameterized types).
      * <li>Otherwise, B is resolved.  </ul>
      *
-     * @throws TypeNotPresentException  if any of the
-     *     bounds refers to a non-existent type declaration
-     * @throws MalformedParameterizedTypeException if any of the
-     *     bounds refer to a parameterized type that cannot be instantiated
-     *     for any reason
      * @return an array of {@code Type}s representing the upper
-     *     bound(s) of this type variable
+     * bound(s) of this type variable
+     * @throws TypeNotPresentException             if any of the
+     *                                             bounds refers to a non-existent type declaration
+     * @throws MalformedParameterizedTypeException if any of the
+     *                                             bounds refer to a parameterized type that cannot be instantiated
+     *                                             for any reason
      */
     Type[] getBounds();
 
     /**
+     * 返回当前类型所在的类的Type。
+     * <p>
      * Returns the {@code GenericDeclaration} object representing the
      * generic declaration declared this type variable.
      *
      * @return the generic declaration declared for this type variable.
-     *
      * @since 1.5
      */
     D getGenericDeclaration();
 
     /**
+     * 返回当前类型的类名
+     * <p>
      * Returns the name of this type variable, as it occurs in the source code.
      *
      * @return the name of this type variable, as it appears in the source code
@@ -98,5 +108,5 @@ public interface TypeVariable<D extends GenericDeclaration> extends Type, Annota
      * @return an array of objects representing the upper bound(s) of the type variable
      * @since 1.8
      */
-     AnnotatedType[] getAnnotatedBounds();
+    AnnotatedType[] getAnnotatedBounds();
 }

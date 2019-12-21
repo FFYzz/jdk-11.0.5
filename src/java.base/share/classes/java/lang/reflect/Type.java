@@ -26,6 +26,10 @@
 package java.lang.reflect;
 
 /**
+ *
+ * 是Java语言中所有类型的公共父接口
+ * 包括 raw types、parameterized types、array types、type variables、primitive types 五种类型
+ *
  * Type is the common superinterface for all types in the Java
  * programming language. These include raw types, parameterized types,
  * array types, type variables and primitive types.
