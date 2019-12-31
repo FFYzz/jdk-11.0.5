@@ -25,10 +25,10 @@
 
 package java.util;
 
-import java.util.function.Consumer;
+import java.io.IOException;
 import java.util.function.BiConsumer;
 import java.util.function.BiFunction;
-import java.io.IOException;
+import java.util.function.Consumer;
 
 /**
  * <p>Hash table and linked list implementation of the {@code Map} interface,
@@ -58,7 +58,7 @@ import java.io.IOException;
  * the copy.  (Clients generally appreciate having things returned in the same
  * order they were presented.)
  *
- * <p>A special {@link #LinkedHashMap(int,float,boolean) constructor} is
+ * <p>A special {@link #LinkedHashMap(int, float, boolean) constructor} is
  * provided to create a linked hash map whose order of iteration is the order
  * in which its entries were last accessed, from least-recently accessed to
  * most-recently (<i>access-order</i>).  This kind of map is well-suited to
@@ -102,13 +102,13 @@ import java.io.IOException;
  * one of the threads modifies the map structurally, it <em>must</em> be
  * synchronized externally.  This is typically accomplished by
  * synchronizing on some object that naturally encapsulates the map.
- *
+ * <p>
  * If no such object exists, the map should be "wrapped" using the
  * {@link Collections#synchronizedMap Collections.synchronizedMap}
  * method.  This is best done at creation time, to prevent accidental
  * unsynchronized access to the map:<pre>
  *   Map m = Collections.synchronizedMap(new LinkedHashMap(...));</pre>
- *
+ * <p>
  * A structural modification is any operation that adds or deletes one or more
  * mappings or, in the case of access-ordered linked hash maps, affects
  * iteration order.  In insertion-ordered linked hash maps, merely changing
@@ -143,27 +143,23 @@ import java.io.IOException;
  * <a href="{@docRoot}/java.base/java/util/package-summary.html#CollectionsFramework">
  * Java Collections Framework</a>.
  *
- * @implNote
- * The spliterators returned by the spliterator method of the collections
- * returned by all of this class's collection view methods are created from
- * the iterators of the corresponding collections.
- *
  * @param <K> the type of keys maintained by this map
  * @param <V> the type of mapped values
- *
- * @author  Josh Bloch
- * @see     Object#hashCode()
- * @see     Collection
- * @see     Map
- * @see     HashMap
- * @see     TreeMap
- * @see     Hashtable
- * @since   1.4
+ * @author Josh Bloch
+ * @implNote The spliterators returned by the spliterator method of the collections
+ * returned by all of this class's collection view methods are created from
+ * the iterators of the corresponding collections.
+ * @see Object#hashCode()
+ * @see Collection
+ * @see Map
+ * @see HashMap
+ * @see TreeMap
+ * @see Hashtable
+ * @since 1.4
  */
-public class LinkedHashMap<K,V>
-    extends HashMap<K,V>
-    implements Map<K,V>
-{
+public class LinkedHashMap<K, V>
+        extends HashMap<K, V>
+        implements Map<K, V> {
 
     /*
      * Implementation note.  A previous version of this class was
@@ -199,16 +195,24 @@ public class LinkedHashMap<K,V>
     private static final long serialVersionUID = 3801124242820219131L;
 
     /**
+     * 头节点。
+     * 越老的节点，放在越前面。所以头节点，指向链表的开头
      * The head (eldest) of the doubly linked list.
      */
-    transient LinkedHashMap.Entry<K,V> head;
+    transient LinkedHashMap.Entry<K, V> head;
 
     /**
+     * 尾节点
+     * <p>
+     * 越新的节点，放在越后面。所以尾节点，指向链表的结尾
      * The tail (youngest) of the doubly linked list.
      */
-    transient LinkedHashMap.Entry<K,V> tail;
+    transient LinkedHashMap.Entry<K, V> tail;
 
     /**
+     * 是否按照访问的顺序。
+     * true ：按照 key-value 的访问顺序进行访问。
+     * false ：按照 key-value 的插入顺序进行访问。
      * The iteration ordering method for this linked hash map: {@code true}
      * for access-order, {@code false} for insertion-order.
      *
@@ -218,12 +222,20 @@ public class LinkedHashMap<K,V>
 
     // internal utilities
 
+    /**
+     * 连接 尾结点
+     *
+     * @param p
+     */
     // link at the end of list
     private void linkNodeLast(LinkedHashMap.Entry<K,V> p) {
+        // 记录原尾节点到 last 中
         LinkedHashMap.Entry<K,V> last = tail;
+        //设置 tail 指向 p ，变更新的尾节点
         tail = p;
         if (last == null)
             head = p;
+        // last <=> p ，相互指向
         else {
             p.before = last;
             last.after = p;
@@ -231,10 +243,10 @@ public class LinkedHashMap<K,V>
     }
 
     // apply src's links to dst
-    private void transferLinks(LinkedHashMap.Entry<K,V> src,
-                               LinkedHashMap.Entry<K,V> dst) {
-        LinkedHashMap.Entry<K,V> b = dst.before = src.before;
-        LinkedHashMap.Entry<K,V> a = dst.after = src.after;
+    private void transferLinks(LinkedHashMap.Entry<K, V> src,
+                               LinkedHashMap.Entry<K, V> dst) {
+        LinkedHashMap.Entry<K, V> b = dst.before = src.before;
+        LinkedHashMap.Entry<K, V> a = dst.after = src.after;
         if (b == null)
             head = dst;
         else
@@ -259,30 +271,36 @@ public class LinkedHashMap<K,V>
         return p;
     }
 
-    Node<K,V> replacementNode(Node<K,V> p, Node<K,V> next) {
-        LinkedHashMap.Entry<K,V> q = (LinkedHashMap.Entry<K,V>)p;
-        LinkedHashMap.Entry<K,V> t =
-            new LinkedHashMap.Entry<>(q.hash, q.key, q.value, next);
+    Node<K, V> replacementNode(Node<K, V> p, Node<K, V> next) {
+        LinkedHashMap.Entry<K, V> q = (LinkedHashMap.Entry<K, V>) p;
+        LinkedHashMap.Entry<K, V> t =
+                new LinkedHashMap.Entry<>(q.hash, q.key, q.value, next);
         transferLinks(q, t);
         return t;
     }
 
-    TreeNode<K,V> newTreeNode(int hash, K key, V value, Node<K,V> next) {
-        TreeNode<K,V> p = new TreeNode<>(hash, key, value, next);
+    TreeNode<K, V> newTreeNode(int hash, K key, V value, Node<K, V> next) {
+        TreeNode<K, V> p = new TreeNode<>(hash, key, value, next);
         linkNodeLast(p);
         return p;
     }
 
-    TreeNode<K,V> replacementTreeNode(Node<K,V> p, Node<K,V> next) {
-        LinkedHashMap.Entry<K,V> q = (LinkedHashMap.Entry<K,V>)p;
-        TreeNode<K,V> t = new TreeNode<>(q.hash, q.key, q.value, next);
+    TreeNode<K, V> replacementTreeNode(Node<K, V> p, Node<K, V> next) {
+        LinkedHashMap.Entry<K, V> q = (LinkedHashMap.Entry<K, V>) p;
+        TreeNode<K, V> t = new TreeNode<>(q.hash, q.key, q.value, next);
         transferLinks(q, t);
         return t;
     }
 
+    /**
+     * 从 bucket 从移除之后再操作链表
+     */
     void afterNodeRemoval(Node<K,V> e) { // unlink
+        // 将 e 赋值给 p 【因为要 Node 类型转换成 Entry 类型】
+        // 同时 b、a 分别是 e 的前后节点
         LinkedHashMap.Entry<K,V> p =
             (LinkedHashMap.Entry<K,V>)e, b = p.before, a = p.after;
+        // 将 p 从链表中移除
         p.before = p.after = null;
         if (b == null)
             head = a;
@@ -294,19 +312,35 @@ public class LinkedHashMap<K,V>
             a.before = b;
     }
 
+    /**
+     * evict 翻译为驱逐，表示是否允许移除元素
+     * 节点插入到 bucket 之后是否需要移除元素
+     */
     void afterNodeInsertion(boolean evict) { // possibly remove eldest
         LinkedHashMap.Entry<K,V> first;
+        // first = head 记录当前头节点。因为移除从头开始，最老
+        // removeEldestEntry(first) 判断是否满足移除最老节点
         if (evict && (first = head) != null && removeEldestEntry(first)) {
             K key = first.key;
             removeNode(hash(key), key, null, false, true);
         }
     }
 
+    /**
+     * 访问元素之后需要根据链表的连接规则去判断是否需要修改链表中元素的位置
+     */
     void afterNodeAccess(Node<K,V> e) { // move node to last
         LinkedHashMap.Entry<K,V> last;
+        // accessOrder 判断必须是满足按访问顺序。
+        // (last = tail) != e 将 tail 赋值给 last ，并且判断是否 e 已经是队尾。如果是队尾，就不用处理了。
+        // 把访问的元素放到链表的最后位置
+        // 删除原来在链表中的位置，然后把该链表放到链表尾
         if (accessOrder && (last = tail) != e) {
+            // 将 e 赋值给 p 【因为要 Node 类型转换成 Entry 类型】
+            // 同时 b、a 分别是 e 的前后节点
             LinkedHashMap.Entry<K,V> p =
                 (LinkedHashMap.Entry<K,V>)e, b = p.before, a = p.after;
+            // 第一步，将 p 从链表中移除
             p.after = null;
             if (b == null)
                 head = a;
@@ -327,8 +361,13 @@ public class LinkedHashMap<K,V>
         }
     }
 
+    /**
+     * 序列化方法
+     */
     void internalWriteEntries(java.io.ObjectOutputStream s) throws IOException {
+        // 通过 head 顺序遍历，从头到尾
         for (LinkedHashMap.Entry<K,V> e = head; e != null; e = e.after) {
+            // 写入 key
             s.writeObject(e.key);
             s.writeObject(e.value);
         }
@@ -338,10 +377,10 @@ public class LinkedHashMap<K,V>
      * Constructs an empty insertion-ordered {@code LinkedHashMap} instance
      * with the specified initial capacity and load factor.
      *
-     * @param  initialCapacity the initial capacity
-     * @param  loadFactor      the load factor
+     * @param initialCapacity the initial capacity
+     * @param loadFactor      the load factor
      * @throws IllegalArgumentException if the initial capacity is negative
-     *         or the load factor is nonpositive
+     *                                  or the load factor is nonpositive
      */
     public LinkedHashMap(int initialCapacity, float loadFactor) {
         super(initialCapacity, loadFactor);
@@ -352,7 +391,7 @@ public class LinkedHashMap<K,V>
      * Constructs an empty insertion-ordered {@code LinkedHashMap} instance
      * with the specified initial capacity and a default load factor (0.75).
      *
-     * @param  initialCapacity the initial capacity
+     * @param initialCapacity the initial capacity
      * @throws IllegalArgumentException if the initial capacity is negative
      */
     public LinkedHashMap(int initialCapacity) {
@@ -375,7 +414,7 @@ public class LinkedHashMap<K,V>
      * instance is created with a default load factor (0.75) and an initial
      * capacity sufficient to hold the mappings in the specified map.
      *
-     * @param  m the map whose mappings are to be placed in this map
+     * @param m the map whose mappings are to be placed in this map
      * @throws NullPointerException if the specified map is null
      */
     public LinkedHashMap(Map<? extends K, ? extends V> m) {
@@ -388,12 +427,12 @@ public class LinkedHashMap<K,V>
      * Constructs an empty {@code LinkedHashMap} instance with the
      * specified initial capacity, load factor and ordering mode.
      *
-     * @param  initialCapacity the initial capacity
-     * @param  loadFactor      the load factor
-     * @param  accessOrder     the ordering mode - {@code true} for
-     *         access-order, {@code false} for insertion-order
+     * @param initialCapacity the initial capacity
+     * @param loadFactor      the load factor
+     * @param accessOrder     the ordering mode - {@code true} for
+     *                        access-order, {@code false} for insertion-order
      * @throws IllegalArgumentException if the initial capacity is negative
-     *         or the load factor is nonpositive
+     *                                  or the load factor is nonpositive
      */
     public LinkedHashMap(int initialCapacity,
                          float loadFactor,
@@ -409,9 +448,10 @@ public class LinkedHashMap<K,V>
      *
      * @param value value whose presence in this map is to be tested
      * @return {@code true} if this map maps one or more keys to the
-     *         specified value
+     * specified value
      */
     public boolean containsValue(Object value) {
+        // 通过 head 顺序遍历，从头到尾
         for (LinkedHashMap.Entry<K,V> e = head; e != null; e = e.after) {
             V v = e.value;
             if (v == value || (value != null && value.equals(v)))
@@ -436,6 +476,7 @@ public class LinkedHashMap<K,V>
      * distinguish these two cases.
      */
     public V get(Object key) {
+        // 获得 key 对应的 Node
         Node<K,V> e;
         if ((e = getNode(hash(key), key)) == null)
             return null;
@@ -448,9 +489,11 @@ public class LinkedHashMap<K,V>
      * {@inheritDoc}
      */
     public V getOrDefault(Object key, V defaultValue) {
+        // 获得 key 对应的 Node
        Node<K,V> e;
        if ((e = getNode(hash(key), key)) == null)
            return defaultValue;
+        // 如果访问到，回调节点被访问
        if (accessOrder)
            afterNodeAccess(e);
        return e.value;
@@ -465,6 +508,7 @@ public class LinkedHashMap<K,V>
     }
 
     /**
+     * 一般要重写该方法
      * Returns {@code true} if this map should remove its eldest entry.
      * This method is invoked by {@code put} and {@code putAll} after
      * inserting a new entry into the map.  It provides the implementor
@@ -494,18 +538,18 @@ public class LinkedHashMap<K,V>
      * <p>This implementation merely returns {@code false} (so that this
      * map acts like a normal map - the eldest element is never removed).
      *
-     * @param    eldest The least recently inserted entry in the map, or if
-     *           this is an access-ordered map, the least recently accessed
-     *           entry.  This is the entry that will be removed it this
-     *           method returns {@code true}.  If the map was empty prior
-     *           to the {@code put} or {@code putAll} invocation resulting
-     *           in this invocation, this will be the entry that was just
-     *           inserted; in other words, if the map contains a single
-     *           entry, the eldest entry is also the newest.
-     * @return   {@code true} if the eldest entry should be removed
-     *           from the map; {@code false} if it should be retained.
+     * @param eldest The least recently inserted entry in the map, or if
+     *               this is an access-ordered map, the least recently accessed
+     *               entry.  This is the entry that will be removed it this
+     *               method returns {@code true}.  If the map was empty prior
+     *               to the {@code put} or {@code putAll} invocation resulting
+     *               in this invocation, this will be the entry that was just
+     *               inserted; in other words, if the map contains a single
+     *               entry, the eldest entry is also the newest.
+     * @return {@code true} if the eldest entry should be removed
+     * from the map; {@code false} if it should be retained.
      */
-    protected boolean removeEldestEntry(Map.Entry<K,V> eldest) {
+    protected boolean removeEldestEntry(Map.Entry<K, V> eldest) {
         return false;
     }
 
@@ -542,20 +586,25 @@ public class LinkedHashMap<K,V>
         public final Iterator<K> iterator() {
             return new LinkedKeyIterator();
         }
-        public final boolean contains(Object o) { return containsKey(o); }
+
+        public final boolean contains(Object o) {
+            return containsKey(o);
+        }
+
         public final boolean remove(Object key) {
             return removeNode(hash(key), key, null, false, true) != null;
         }
-        public final Spliterator<K> spliterator()  {
+
+        public final Spliterator<K> spliterator() {
             return Spliterators.spliterator(this, Spliterator.SIZED |
-                                            Spliterator.ORDERED |
-                                            Spliterator.DISTINCT);
+                    Spliterator.ORDERED |
+                    Spliterator.DISTINCT);
         }
         public final void forEach(Consumer<? super K> action) {
             if (action == null)
                 throw new NullPointerException();
             int mc = modCount;
-            for (LinkedHashMap.Entry<K,V> e = head; e != null; e = e.after)
+            for (LinkedHashMap.Entry<K, V> e = head; e != null; e = e.after)
                 action.accept(e.key);
             if (modCount != mc)
                 throw new ConcurrentModificationException();
@@ -590,21 +639,31 @@ public class LinkedHashMap<K,V>
     }
 
     final class LinkedValues extends AbstractCollection<V> {
-        public final int size()                 { return size; }
-        public final void clear()               { LinkedHashMap.this.clear(); }
+        public final int size() {
+            return size;
+        }
+
+        public final void clear() {
+            LinkedHashMap.this.clear();
+        }
+
         public final Iterator<V> iterator() {
             return new LinkedValueIterator();
         }
-        public final boolean contains(Object o) { return containsValue(o); }
+
+        public final boolean contains(Object o) {
+            return containsValue(o);
+        }
+
         public final Spliterator<V> spliterator() {
             return Spliterators.spliterator(this, Spliterator.SIZED |
-                                            Spliterator.ORDERED);
+                    Spliterator.ORDERED);
         }
         public final void forEach(Consumer<? super V> action) {
             if (action == null)
                 throw new NullPointerException();
             int mc = modCount;
-            for (LinkedHashMap.Entry<K,V> e = head; e != null; e = e.after)
+            for (LinkedHashMap.Entry<K, V> e = head; e != null; e = e.after)
                 action.accept(e.value);
             if (modCount != mc)
                 throw new ConcurrentModificationException();
@@ -631,43 +690,54 @@ public class LinkedHashMap<K,V>
      * @return a set view of the mappings contained in this map
      */
     public Set<Map.Entry<K,V>> entrySet() {
+        // LinkedEntrySet 是 LinkedHashMap 自定义的
         Set<Map.Entry<K,V>> es;
         return (es = entrySet) == null ? (entrySet = new LinkedEntrySet()) : es;
     }
 
-    final class LinkedEntrySet extends AbstractSet<Map.Entry<K,V>> {
-        public final int size()                 { return size; }
-        public final void clear()               { LinkedHashMap.this.clear(); }
-        public final Iterator<Map.Entry<K,V>> iterator() {
+    final class LinkedEntrySet extends AbstractSet<Map.Entry<K, V>> {
+        public final int size() {
+            return size;
+        }
+
+        public final void clear() {
+            LinkedHashMap.this.clear();
+        }
+
+        public final Iterator<Map.Entry<K, V>> iterator() {
             return new LinkedEntryIterator();
         }
+
         public final boolean contains(Object o) {
             if (!(o instanceof Map.Entry))
                 return false;
-            Map.Entry<?,?> e = (Map.Entry<?,?>) o;
+            Map.Entry<?, ?> e = (Map.Entry<?, ?>) o;
             Object key = e.getKey();
-            Node<K,V> candidate = getNode(hash(key), key);
+            Node<K, V> candidate = getNode(hash(key), key);
             return candidate != null && candidate.equals(e);
         }
+
         public final boolean remove(Object o) {
             if (o instanceof Map.Entry) {
-                Map.Entry<?,?> e = (Map.Entry<?,?>) o;
+                Map.Entry<?, ?> e = (Map.Entry<?, ?>) o;
                 Object key = e.getKey();
                 Object value = e.getValue();
                 return removeNode(hash(key), key, value, true, true) != null;
             }
             return false;
         }
-        public final Spliterator<Map.Entry<K,V>> spliterator() {
+
+        public final Spliterator<Map.Entry<K, V>> spliterator() {
             return Spliterators.spliterator(this, Spliterator.SIZED |
-                                            Spliterator.ORDERED |
-                                            Spliterator.DISTINCT);
+                    Spliterator.ORDERED |
+                    Spliterator.DISTINCT);
         }
-        public final void forEach(Consumer<? super Map.Entry<K,V>> action) {
+
+        public final void forEach(Consumer<? super Map.Entry<K, V>> action) {
             if (action == null)
                 throw new NullPointerException();
             int mc = modCount;
-            for (LinkedHashMap.Entry<K,V> e = head; e != null; e = e.after)
+            for (LinkedHashMap.Entry<K, V> e = head; e != null; e = e.after)
                 action.accept(e);
             if (modCount != mc)
                 throw new ConcurrentModificationException();
@@ -680,6 +750,7 @@ public class LinkedHashMap<K,V>
         if (action == null)
             throw new NullPointerException();
         int mc = modCount;
+        // 通过 head 顺序遍历，从头到尾，逐个交给 BiConsumer 处理
         for (LinkedHashMap.Entry<K,V> e = head; e != null; e = e.after)
             action.accept(e.key, e.value);
         if (modCount != mc)
@@ -690,6 +761,7 @@ public class LinkedHashMap<K,V>
         if (function == null)
             throw new NullPointerException();
         int mc = modCount;
+        // 通过 head 顺序遍历，从头到尾，逐个交给 BiFunction 处理
         for (LinkedHashMap.Entry<K,V> e = head; e != null; e = e.after)
             e.value = function.apply(e.key, e.value);
         if (modCount != mc)
