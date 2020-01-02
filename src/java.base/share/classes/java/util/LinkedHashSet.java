@@ -76,7 +76,7 @@ package java.util;
  * one of the threads modifies the set, it <em>must</em> be synchronized
  * externally.  This is typically accomplished by synchronizing on some
  * object that naturally encapsulates the set.
- *
+ * <p>
  * If no such object exists, the set should be "wrapped" using the
  * {@link Collections#synchronizedSet Collections.synchronizedSet}
  * method.  This is best done at creation time, to prevent accidental
@@ -104,31 +104,40 @@ package java.util;
  * Java Collections Framework</a>.
  *
  * @param <E> the type of elements maintained by this set
- *
- * @author  Josh Bloch
- * @see     Object#hashCode()
- * @see     Collection
- * @see     Set
- * @see     HashSet
- * @see     TreeSet
- * @see     Hashtable
- * @since   1.4
+ * @author Josh Bloch
+ * @see Object#hashCode()
+ * @see Collection
+ * @see Set
+ * @see HashSet
+ * @see TreeSet
+ * @see Hashtable
+ * @since 1.4
  */
 
+/**
+ * 继承了 HashSet
+ * 底层使用的是 LinkedHashMap 对象实现的
+ * 有序的，支持以插入顺序的方式访问元素
+ * 不支持按访问顺序访问元素
+ *
+ * @param <E>
+ */
 public class LinkedHashSet<E>
-    extends HashSet<E>
-    implements Set<E>, Cloneable, java.io.Serializable {
+        extends HashSet<E>
+        implements Set<E>, Cloneable, java.io.Serializable {
 
     private static final long serialVersionUID = -2851667679971038690L;
 
     /**
+     * 调用了 HashSet 的构造方法
+     * HashSet 中对应的构造方法实例化的是 LinkedHashMap 对象
      * Constructs a new, empty linked hash set with the specified initial
      * capacity and load factor.
      *
-     * @param      initialCapacity the initial capacity of the linked hash set
-     * @param      loadFactor      the load factor of the linked hash set
-     * @throws     IllegalArgumentException  if the initial capacity is less
-     *               than zero, or if the load factor is nonpositive
+     * @param initialCapacity the initial capacity of the linked hash set
+     * @param loadFactor      the load factor of the linked hash set
+     * @throws IllegalArgumentException if the initial capacity is less
+     *                                  than zero, or if the load factor is nonpositive
      */
     public LinkedHashSet(int initialCapacity, float loadFactor) {
         super(initialCapacity, loadFactor, true);
@@ -138,9 +147,9 @@ public class LinkedHashSet<E>
      * Constructs a new, empty linked hash set with the specified initial
      * capacity and the default load factor (0.75).
      *
-     * @param   initialCapacity   the initial capacity of the LinkedHashSet
-     * @throws  IllegalArgumentException if the initial capacity is less
-     *              than zero
+     * @param initialCapacity the initial capacity of the LinkedHashSet
+     * @throws IllegalArgumentException if the initial capacity is less
+     *                                  than zero
      */
     public LinkedHashSet(int initialCapacity) {
         super(initialCapacity, .75f, true);
@@ -160,16 +169,17 @@ public class LinkedHashSet<E>
      * capacity sufficient to hold the elements in the specified collection
      * and the default load factor (0.75).
      *
-     * @param c  the collection whose elements are to be placed into
-     *           this set
+     * @param c the collection whose elements are to be placed into
+     *          this set
      * @throws NullPointerException if the specified collection is null
      */
     public LinkedHashSet(Collection<? extends E> c) {
-        super(Math.max(2*c.size(), 11), .75f, true);
+        super(Math.max(2 * c.size(), 11), .75f, true);
         addAll(c);
     }
 
     /**
+     * 可分割的迭代器, 主要用于多线程并行迭代处理时使用
      * Creates a <em><a href="Spliterator.html#binding">late-binding</a></em>
      * and <em>fail-fast</em> {@code Spliterator} over the elements in this set.
      *
@@ -177,15 +187,13 @@ public class LinkedHashSet<E>
      * {@link Spliterator#DISTINCT}, and {@code ORDERED}.  Implementations
      * should document the reporting of additional characteristic values.
      *
-     * @implNote
-     * The implementation creates a
+     * @return a {@code Spliterator} over the elements in this set
+     * @implNote The implementation creates a
      * <em><a href="Spliterator.html#binding">late-binding</a></em> spliterator
      * from the set's {@code Iterator}.  The spliterator inherits the
      * <em>fail-fast</em> properties of the set's iterator.
      * The created {@code Spliterator} additionally reports
      * {@link Spliterator#SUBSIZED}.
-     *
-     * @return a {@code Spliterator} over the elements in this set
      * @since 1.8
      */
     @Override
