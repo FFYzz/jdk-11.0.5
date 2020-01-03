@@ -25,7 +25,6 @@
 
 package jdk.internal.ref;
 
-import java.lang.ref.*;
 import java.security.AccessController;
 import java.security.PrivilegedAction;
 
@@ -52,13 +51,16 @@ import java.security.PrivilegedAction;
  * Nontrivial cleaners are inadvisable since they risk blocking the
  * reference-handler thread and delaying further cleanup and finalization.
  *
- *
  * @author Mark Reinhold
  */
 
+/**
+ * 虚引用的使用实例
+ * 是 PhantomReference 的子类
+ * 用于回收堆外内存
+ */
 public class Cleaner
-    extends PhantomReference<Object>
-{
+        extends PhantomReference<Object> {
 
     // Dummy reference queue, needed because the PhantomReference constructor
     // insists that we pass a queue.  Nothing will ever be placed on this queue
@@ -68,14 +70,28 @@ public class Cleaner
 
     // Doubly-linked list of live cleaners, which prevents the cleaners
     // themselves from being GC'd before their referents
-    //
+    /**
+     * Cleaner链表的头结点
+     */
     private static Cleaner first = null;
+    /**
+     * 当前节点的后续节点
+     */
+    private Cleaner next = null,
+    /**
+     * 当前节点的前驱节点
+     */
+    prev = null;
 
-    private Cleaner
-        next = null,
-        prev = null;
-
+    /**
+     * 添加 Cleaner 实例
+     * 头插法，双向链表
+     *
+     * @param cl
+     * @return
+     */
     private static synchronized Cleaner add(Cleaner cl) {
+        // 头插法
         if (first != null) {
             cl.next = first;
             first.prev = cl;
@@ -84,6 +100,13 @@ public class Cleaner
         return cl;
     }
 
+    /**
+     * 移除 Cleaner 实例
+     * 操作双向链表
+     *
+     * @param cl
+     * @return
+     */
     private static synchronized boolean remove(Cleaner cl) {
 
         // If already removed, do nothing
@@ -109,23 +132,31 @@ public class Cleaner
 
     }
 
+    /**
+     * 真正执行清理工作的 Runnable 对象，实际clean内部调用thunk.run()方法
+     */
     private final Runnable thunk;
 
+    /**
+     * 私有构造方法
+     *
+     * @param referent
+     * @param thunk
+     */
     private Cleaner(Object referent, Runnable thunk) {
         super(referent, dummyQueue);
         this.thunk = thunk;
     }
 
     /**
+     * 调用 add 方法
      * Creates a new cleaner.
      *
-     * @param  ob the referent object to be cleaned
-     * @param  thunk
-     *         The cleanup code to be run when the cleaner is invoked.  The
-     *         cleanup code is run directly from the reference-handler thread,
-     *         so it should be as simple and straightforward as possible.
-     *
-     * @return  The new cleaner
+     * @param ob    the referent object to be cleaned
+     * @param thunk The cleanup code to be run when the cleaner is invoked.  The
+     *              cleanup code is run directly from the reference-handler thread,
+     *              so it should be as simple and straightforward as possible.
+     * @return The new cleaner
      */
     public static Cleaner create(Object ob, Runnable thunk) {
         if (thunk == null)
@@ -134,22 +165,26 @@ public class Cleaner
     }
 
     /**
+     * 删除当前 Cleaner 实例
      * Runs this cleaner, if it has not been run before.
      */
     public void clean() {
+        // 先从链表中移除当前 Cleaner
         if (!remove(this))
             return;
         try {
+            // 执行清理逻辑
             thunk.run();
         } catch (final Throwable x) {
             AccessController.doPrivileged(new PrivilegedAction<>() {
-                    public Void run() {
-                        if (System.err != null)
-                            new Error("Cleaner terminated abnormally", x)
+                public Void run() {
+                    if (System.err != null)
+                        new Error("Cleaner terminated abnormally", x)
                                 .printStackTrace();
-                        System.exit(1);
-                        return null;
-                    }});
+                    System.exit(1);
+                    return null;
+                }
+            });
         }
     }
 }

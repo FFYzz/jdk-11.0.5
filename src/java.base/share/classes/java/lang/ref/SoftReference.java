@@ -57,18 +57,20 @@ package java.lang.ref;
  * strong referents to those entries, leaving the remaining entries to be
  * discarded at the discretion of the garbage collector.
  *
- * @author   Mark Reinhold
- * @since    1.2
+ * @author Mark Reinhold
+ * @since 1.2
  */
 
 public class SoftReference<T> extends Reference<T> {
 
     /**
+     * 每次在 GC 的时候会将 clcok 设置为当前时间
      * Timestamp clock, updated by the garbage collector
      */
     private static long clock;
 
     /**
+     * 每次调用 get 方法时会更新 Timestamp 的值。
      * Timestamp updated by each invocation of the get method.  The VM may use
      * this field when selecting soft references to be cleared, but it is not
      * required to do so.
@@ -91,9 +93,8 @@ public class SoftReference<T> extends Reference<T> {
      * registered with the given queue.
      *
      * @param referent object the new soft reference will refer to
-     * @param q the queue with which the reference is to be registered,
-     *          or {@code null} if registration is not required
-     *
+     * @param q        the queue with which the reference is to be registered,
+     *                 or {@code null} if registration is not required
      */
     public SoftReference(T referent, ReferenceQueue<? super T> q) {
         super(referent, q);
@@ -105,8 +106,8 @@ public class SoftReference<T> extends Reference<T> {
      * been cleared, either by the program or by the garbage collector, then
      * this method returns {@code null}.
      *
-     * @return   The object to which this reference refers, or
-     *           {@code null} if this reference object has been cleared
+     * @return The object to which this reference refers, or
+     * {@code null} if this reference object has been cleared
      */
     public T get() {
         T o = super.get();

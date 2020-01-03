@@ -69,8 +69,7 @@ import java.util.function.Function;
  * method in this class will cause a
  * {@link java.lang.NullPointerException NullPointerException} to be thrown.
  *
- * @apiNote
- * The cleaning action is invoked only after the associated object becomes
+ * @apiNote The cleaning action is invoked only after the associated object becomes
  * phantom reachable, so it is important that the object implementing the
  * cleaning action does not hold references to the object.
  * In this example, a static class encapsulates the cleaning state and action.
@@ -128,6 +127,11 @@ import java.util.function.Function;
  * All cleaning actions registered to a cleaner should be mutually compatible.
  * @since 9
  */
+
+/**
+ * 虚引用的实例 phantomReference 的使用实例
+ * 开发者用于在引用对象回收的时候触发一个动作
+ */
 public final class Cleaner {
 
     /**
@@ -166,9 +170,8 @@ public final class Cleaner {
      * registered cleaning actions are complete.
      *
      * @return a new {@code Cleaner}
-     *
-     * @throws  SecurityException  if the current thread is not allowed to
-     *               create or start the thread.
+     * @throws SecurityException if the current thread is not allowed to
+     *                           create or start the thread.
      */
     public static Cleaner create() {
         Cleaner cleaner = new Cleaner();
@@ -191,11 +194,10 @@ public final class Cleaner {
      * @param threadFactory a {@code ThreadFactory} to return a new {@code Thread}
      *                      to process cleaning actions
      * @return a new {@code Cleaner}
-     *
-     * @throws  IllegalThreadStateException  if the thread from the thread
-     *               factory was {@link Thread.State#NEW not a new thread}.
-     * @throws  SecurityException  if the current thread is not allowed to
-     *               create or start the thread.
+     * @throws IllegalThreadStateException if the thread from the thread
+     *                                     factory was {@link Thread.State#NEW not a new thread}.
+     * @throws SecurityException           if the current thread is not allowed to
+     *                                     create or start the thread.
      */
     public static Cleaner create(ThreadFactory threadFactory) {
         Objects.requireNonNull(threadFactory, "threadFactory");
@@ -210,7 +212,7 @@ public final class Cleaner {
      * Refer to the <a href="#compatible-cleaners">API Note</a> above for
      * cautions about the behavior of cleaning actions.
      *
-     * @param obj   the object to monitor
+     * @param obj    the object to monitor
      * @param action a {@code Runnable} to invoke when the object becomes phantom reachable
      * @return a {@code Cleanable} instance
      */
@@ -223,6 +225,7 @@ public final class Cleaner {
     /**
      * {@code Cleanable} represents an object and a
      * cleaning action registered in a {@code Cleaner}.
+     *
      * @since 9
      */
     public interface Cleanable {

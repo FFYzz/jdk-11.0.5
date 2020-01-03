@@ -31,20 +31,38 @@ import jdk.internal.misc.JavaLangAccess;
 import jdk.internal.misc.SharedSecrets;
 import jdk.internal.misc.VM;
 
+/**
+ * 有必要执行 finalize() 方法的对象会被放入到 F-Queue 中
+ * 由该类中的 FinalizerThread 从队列中取出元素，然后执行 finalize() 方法
+ */
 final class Finalizer extends FinalReference<Object> { /* Package-private; must be in
                                                           same package as the Reference
                                                           class */
 
+    /**
+     * Finalizer 关联的 ReferenceQueue，其实 Finalizer 是一个特殊的 Reference 实现
+     */
     private static ReferenceQueue<Object> queue = new ReferenceQueue<>();
 
-    /** Head of doubly linked list of Finalizers awaiting finalization. */
+    /**
+     * 等待 finalization 的所有 Finalizer 实例链表的头节点，这里称此链表为 unfinalized 链表
+     * Head of doubly linked list of Finalizers awaiting finalization.
+     */
     private static Finalizer unfinalized = null;
 
-    /** Lock guarding access to unfinalized list. */
+    /**
+     * 锁对象
+     * Lock guarding access to unfinalized list.
+     */
     private static final Object lock = new Object();
 
     private Finalizer next, prev;
 
+    /**
+     * 私有的构造方法
+     *
+     * @param finalizee
+     */
     private Finalizer(Object finalizee) {
         super(finalizee, queue);
         // push onto unfinalized
@@ -61,7 +79,10 @@ final class Finalizer extends FinalReference<Object> { /* Package-private; must 
         return queue;
     }
 
-    /* Invoked by VM */
+    /**
+     * Invoked by VM
+     * 由 JVM 调用
+     */
     static void register(Object finalizee) {
         new Finalizer(finalizee);
     }
@@ -84,21 +105,26 @@ final class Finalizer extends FinalReference<Object> { /* Package-private; must 
         try {
             Object finalizee = this.get();
             if (finalizee != null && !(finalizee instanceof java.lang.Enum)) {
+                // 调用 finalize() 方法
                 jla.invokeFinalize(finalizee);
 
                 // Clear stack slot containing this variable, to decrease
                 // the chances of false retention with a conservative GC
                 finalizee = null;
             }
-        } catch (Throwable x) { }
+        } catch (Throwable x) {
+        }
         super.clear();
     }
 
-    /* Create a privileged secondary finalizer thread in the system thread
+    /**
+     * Create a privileged secondary finalizer thread in the system thread
      * group for the given Runnable, and wait for it to complete.
-     *
+     * <p>
+     * <p>
+     * 创建一个第二优先级的 finalizer 线程，执行 runFinalizer() 方法
      * This method is used by runFinalization.
-     *
+     * <p>
      * It could have been implemented by offloading the work to the
      * regular finalizer thread and waiting for that thread to finish.
      * The advantage of creating a fresh thread, however, is that it insulates
@@ -106,55 +132,69 @@ final class Finalizer extends FinalReference<Object> { /* Package-private; must 
      */
     private static void forkSecondaryFinalizer(final Runnable proc) {
         AccessController.doPrivileged(
-            new PrivilegedAction<>() {
-                public Void run() {
-                    ThreadGroup tg = Thread.currentThread().getThreadGroup();
-                    for (ThreadGroup tgn = tg;
-                         tgn != null;
-                         tg = tgn, tgn = tg.getParent());
-                    Thread sft = new Thread(tg, proc, "Secondary finalizer", 0, false);
-                    sft.start();
-                    try {
-                        sft.join();
-                    } catch (InterruptedException x) {
-                        Thread.currentThread().interrupt();
+                new PrivilegedAction<>() {
+                    public Void run() {
+                        ThreadGroup tg = Thread.currentThread().getThreadGroup();
+                        for (ThreadGroup tgn = tg;
+                             tgn != null;
+                             tg = tgn, tgn = tg.getParent())
+                            ;
+                        Thread sft = new Thread(tg, proc, "Secondary finalizer", 0, false);
+                        sft.start();
+                        try {
+                            sft.join();
+                        } catch (InterruptedException x) {
+                            Thread.currentThread().interrupt();
+                        }
+                        return null;
                     }
-                    return null;
-                }});
+                });
     }
 
-    /* Called by Runtime.runFinalization() */
+    /**
+     * Called by Runtime.runFinalization()
+     * 该方法是给 Runtime.runFinalization() 委托调用的
+     * 就是我们在主动从 queue 中取出元素，调用其 finalize() 方法
+     */
     static void runFinalization() {
         if (VM.initLevel() == 0) {
             return;
         }
-
+        // 新建一个线程，执行 runFinalizer() 方法
         forkSecondaryFinalizer(new Runnable() {
             private volatile boolean running;
+
             public void run() {
                 // in case of recursive call to run()
                 if (running)
                     return;
                 final JavaLangAccess jla = SharedSecrets.getJavaLangAccess();
                 running = true;
-                for (Finalizer f; (f = (Finalizer)queue.poll()) != null; )
+                for (Finalizer f; (f = (Finalizer) queue.poll()) != null; )
                     f.runFinalizer(jla);
             }
         });
     }
 
+    /**
+     * FinalizerThread 线程
+     */
     private static class FinalizerThread extends Thread {
         private volatile boolean running;
+
         FinalizerThread(ThreadGroup g) {
             super(g, null, "Finalizer", 0, false);
         }
+
         public void run() {
             // in case of recursive call to run()
+            // 防止递归调用 run 方法
             if (running)
                 return;
 
             // Finalizer thread starts before System.initializeSystemClass
             // is called.  Wait until JavaLangAccess is available
+            // 等待 VM 初始化完成
             while (VM.initLevel() == 0) {
                 // delay until VM completes initialization
                 try {
@@ -165,9 +205,12 @@ final class Finalizer extends FinalReference<Object> { /* Package-private; must 
             }
             final JavaLangAccess jla = SharedSecrets.getJavaLangAccess();
             running = true;
-            for (;;) {
+            // 死循环
+            for (; ; ) {
                 try {
-                    Finalizer f = (Finalizer)queue.remove();
+                    // 调用 ReferenceQueue 的 remove 方法
+                    Finalizer f = (Finalizer) queue.remove();
+                    // 实际上就是去执行 finalize() 方法
                     f.runFinalizer(jla);
                 } catch (InterruptedException x) {
                     // ignore and continue
@@ -176,14 +219,23 @@ final class Finalizer extends FinalReference<Object> { /* Package-private; must 
         }
     }
 
+    /**
+     * 静态代码块
+     * 在 JVM 启动的时候会运行该段代码
+     */
     static {
         ThreadGroup tg = Thread.currentThread().getThreadGroup();
         for (ThreadGroup tgn = tg;
              tgn != null;
-             tg = tgn, tgn = tg.getParent());
+             tg = tgn, tgn = tg.getParent())
+            ;
+
         Thread finalizer = new FinalizerThread(tg);
+        // 设置较高优先级
         finalizer.setPriority(Thread.MAX_PRIORITY - 2);
+        // 设置为 daemon 线程
         finalizer.setDaemon(true);
+        // 启动线程
         finalizer.start();
     }
 

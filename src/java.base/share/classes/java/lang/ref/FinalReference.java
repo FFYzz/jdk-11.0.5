@@ -27,6 +27,7 @@ package java.lang.ref;
 
 /**
  * Final references, used to implement finalization
+ * 只有一个 Finalizer 子类
  */
 class FinalReference<T> extends Reference<T> {
 
