@@ -78,19 +78,42 @@ import jdk.internal.misc.SharedSecrets;
  * <a href="{@docRoot}/java.base/java/util/package-summary.html#CollectionsFramework">
  * Java Collections Framework</a>.
  *
- * @since 1.5
  * @author Josh Bloch, Doug Lea
  * @param <E> the type of elements held in this queue
+ * @since 1.5
+ */
+
+/**
+ * 几个问题：
+ * 1. 什么是优先级队列
+ * 就是一个小顶堆
+ * 2. 如何实现优先队列
+ * 小顶堆
+ * 3. PriorityQueue 是否线程安全
+ * 线程不安全
+ * 4. PriorityQueue 是否有序
+ * 无序，只是第一个元素为队列中最小的元素
+ * 5. PriorityQueue 是无限队列吗？
+ * 不是，扩容扩到Integer.MAX_VALUE 就会报 NPE
+ * <p>
+ * PriorityQueue 是一个小顶堆
  */
 @SuppressWarnings("unchecked")
 public class PriorityQueue<E> extends AbstractQueue<E>
-    implements java.io.Serializable {
+        implements java.io.Serializable {
 
     private static final long serialVersionUID = -7720805057305804111L;
 
+    /**
+     * 初始容量 11
+     */
     private static final int DEFAULT_INITIAL_CAPACITY = 11;
 
     /**
+     * 优先队列用一个平衡的二叉堆来表示。
+     * queue[n]的两个子节点为queue[2*n + 1] 以及 queue[2*n + 2]。
+     * 优先队列根据 comparator 排序，或者根据元素的自然顺序（当 comparator 为空的时候）。
+     * <p>
      * Priority queue represented as a balanced binary heap: the two
      * children of queue[n] are queue[2*n+1] and queue[2*(n+1)].  The
      * priority queue is ordered by comparator, or by the elements'
@@ -101,23 +124,31 @@ public class PriorityQueue<E> extends AbstractQueue<E>
     transient Object[] queue; // non-private to simplify nested class access
 
     /**
+     * 优先队列中元素的个数
+     * <p>
      * The number of elements in the priority queue.
      */
     int size;
 
     /**
+     * 比较器
+     * <p>
      * The comparator, or null if priority queue uses elements'
      * natural ordering.
      */
     private final Comparator<? super E> comparator;
 
     /**
+     * 修改次数
+     * <p>
      * The number of times this priority queue has been
      * <i>structurally modified</i>.  See AbstractList for gory details.
      */
     transient int modCount;     // non-private to simplify nested class access
 
     /**
+     * 构造方法
+     * <p>
      * Creates a {@code PriorityQueue} with the default initial
      * capacity (11) that orders its elements according to their
      * {@linkplain Comparable natural ordering}.
@@ -127,25 +158,29 @@ public class PriorityQueue<E> extends AbstractQueue<E>
     }
 
     /**
+     * 构造方法
+     * <p>
      * Creates a {@code PriorityQueue} with the specified initial
      * capacity that orders its elements according to their
      * {@linkplain Comparable natural ordering}.
      *
      * @param initialCapacity the initial capacity for this priority queue
      * @throws IllegalArgumentException if {@code initialCapacity} is less
-     *         than 1
+     *                                  than 1
      */
     public PriorityQueue(int initialCapacity) {
         this(initialCapacity, null);
     }
 
     /**
+     * 构造方法
+     * <p>
      * Creates a {@code PriorityQueue} with the default initial capacity and
      * whose elements are ordered according to the specified comparator.
      *
-     * @param  comparator the comparator that will be used to order this
-     *         priority queue.  If {@code null}, the {@linkplain Comparable
-     *         natural ordering} of the elements will be used.
+     * @param comparator the comparator that will be used to order this
+     *                   priority queue.  If {@code null}, the {@linkplain Comparable
+     *                   natural ordering} of the elements will be used.
      * @since 1.8
      */
     public PriorityQueue(Comparator<? super E> comparator) {
@@ -153,15 +188,17 @@ public class PriorityQueue<E> extends AbstractQueue<E>
     }
 
     /**
+     * 构造方法
+     * <p>
      * Creates a {@code PriorityQueue} with the specified initial capacity
      * that orders its elements according to the specified comparator.
      *
-     * @param  initialCapacity the initial capacity for this priority queue
-     * @param  comparator the comparator that will be used to order this
-     *         priority queue.  If {@code null}, the {@linkplain Comparable
-     *         natural ordering} of the elements will be used.
+     * @param initialCapacity the initial capacity for this priority queue
+     * @param comparator      the comparator that will be used to order this
+     *                        priority queue.  If {@code null}, the {@linkplain Comparable
+     *                        natural ordering} of the elements will be used.
      * @throws IllegalArgumentException if {@code initialCapacity} is
-     *         less than 1
+     *                                  less than 1
      */
     public PriorityQueue(int initialCapacity,
                          Comparator<? super E> comparator) {
@@ -174,6 +211,8 @@ public class PriorityQueue<E> extends AbstractQueue<E>
     }
 
     /**
+     * 构造方法
+     * <p>
      * Creates a {@code PriorityQueue} containing the elements in the
      * specified collection.  If the specified collection is an instance of
      * a {@link SortedSet} or is another {@code PriorityQueue}, this
@@ -181,26 +220,27 @@ public class PriorityQueue<E> extends AbstractQueue<E>
      * Otherwise, this priority queue will be ordered according to the
      * {@linkplain Comparable natural ordering} of its elements.
      *
-     * @param  c the collection whose elements are to be placed
-     *         into this priority queue
-     * @throws ClassCastException if elements of the specified collection
-     *         cannot be compared to one another according to the priority
-     *         queue's ordering
+     * @param c the collection whose elements are to be placed
+     *          into this priority queue
+     * @throws ClassCastException   if elements of the specified collection
+     *                              cannot be compared to one another according to the priority
+     *                              queue's ordering
      * @throws NullPointerException if the specified collection or any
-     *         of its elements are null
+     *                              of its elements are null
      */
     public PriorityQueue(Collection<? extends E> c) {
+        // 如果传入的集合是有序 set
         if (c instanceof SortedSet<?>) {
             SortedSet<? extends E> ss = (SortedSet<? extends E>) c;
             this.comparator = (Comparator<? super E>) ss.comparator();
             initElementsFromCollection(ss);
-        }
-        else if (c instanceof PriorityQueue<?>) {
+            // 如果传入的集合是 优先队列
+        } else if (c instanceof PriorityQueue<?>) {
             PriorityQueue<? extends E> pq = (PriorityQueue<? extends E>) c;
             this.comparator = (Comparator<? super E>) pq.comparator();
             initFromPriorityQueue(pq);
-        }
-        else {
+            // 否则正常初始化
+        } else {
             this.comparator = null;
             initFromCollection(c);
         }
@@ -212,13 +252,13 @@ public class PriorityQueue<E> extends AbstractQueue<E>
      * ordered according to the same ordering as the given priority
      * queue.
      *
-     * @param  c the priority queue whose elements are to be placed
-     *         into this priority queue
-     * @throws ClassCastException if elements of {@code c} cannot be
-     *         compared to one another according to {@code c}'s
-     *         ordering
+     * @param c the priority queue whose elements are to be placed
+     *          into this priority queue
+     * @throws ClassCastException   if elements of {@code c} cannot be
+     *                              compared to one another according to {@code c}'s
+     *                              ordering
      * @throws NullPointerException if the specified priority queue or any
-     *         of its elements are null
+     *                              of its elements are null
      */
     public PriorityQueue(PriorityQueue<? extends E> c) {
         this.comparator = (Comparator<? super E>) c.comparator();
@@ -230,43 +270,67 @@ public class PriorityQueue<E> extends AbstractQueue<E>
      * specified sorted set.   This priority queue will be ordered
      * according to the same ordering as the given sorted set.
      *
-     * @param  c the sorted set whose elements are to be placed
-     *         into this priority queue
-     * @throws ClassCastException if elements of the specified sorted
-     *         set cannot be compared to one another according to the
-     *         sorted set's ordering
+     * @param c the sorted set whose elements are to be placed
+     *          into this priority queue
+     * @throws ClassCastException   if elements of the specified sorted
+     *                              set cannot be compared to one another according to the
+     *                              sorted set's ordering
      * @throws NullPointerException if the specified sorted set or any
-     *         of its elements are null
+     *                              of its elements are null
      */
     public PriorityQueue(SortedSet<? extends E> c) {
         this.comparator = (Comparator<? super E>) c.comparator();
         initElementsFromCollection(c);
     }
 
-    /** Ensures that queue[0] exists, helping peek() and poll(). */
+    /**
+     * 确保 Object 数组中至少有一个元素，没有的话就 new 一个
+     * <p>
+     * Ensures that queue[0] exists, helping peek() and poll().
+     */
     private static Object[] ensureNonEmpty(Object[] es) {
         return (es.length > 0) ? es : new Object[1];
     }
 
+    /**
+     * 从 PriorityQueue 中进行初始化
+     *
+     * @param c
+     */
     private void initFromPriorityQueue(PriorityQueue<? extends E> c) {
+        // 如果是 PriorityQueue 类
         if (c.getClass() == PriorityQueue.class) {
+            // 确保至少有一个元素
             this.queue = ensureNonEmpty(c.toArray());
+            // 记录长度
             this.size = c.size();
         } else {
+            // 走 Collection 初始化方法
             initFromCollection(c);
         }
     }
 
+    /**
+     * 传入的集合是 SortedSet
+     *
+     * @param c SortedSet
+     */
     private void initElementsFromCollection(Collection<? extends E> c) {
+        // Collection 转为数组
         Object[] es = c.toArray();
+        // 保存数组长度
         int len = es.length;
         if (c.getClass() != ArrayList.class)
             es = Arrays.copyOf(es, len, Object[].class);
+        //
         if (len == 1 || this.comparator != null)
+            // 遍历传入的所有元素
             for (Object e : es)
+                // 元素要求非空，因为 comparator 进行比较时不能为 null
                 if (e == null)
                     throw new NullPointerException();
         this.queue = ensureNonEmpty(es);
+        // 记录优先队列中元素的个数
         this.size = len;
     }
 
@@ -277,6 +341,7 @@ public class PriorityQueue<E> extends AbstractQueue<E>
      */
     private void initFromCollection(Collection<? extends E> c) {
         initElementsFromCollection(c);
+        // 建堆
         heapify();
     }
 
@@ -294,8 +359,12 @@ public class PriorityQueue<E> extends AbstractQueue<E>
      * @param minCapacity the desired minimum capacity
      */
     private void grow(int minCapacity) {
+        // 旧容量
         int oldCapacity = queue.length;
         // Double size if small; else grow by 50%
+        // 新容量
+        // 如果当前容量超过了64，则扩容加上原来的一半，即扩容 1.5 倍
+        // 如果当前容量未超过了64，则扩容为原来的一倍加 2 。
         int newCapacity = oldCapacity + ((oldCapacity < 64) ?
                                          (oldCapacity + 2) :
                                          (oldCapacity >> 1));
@@ -314,12 +383,14 @@ public class PriorityQueue<E> extends AbstractQueue<E>
     }
 
     /**
+     * 插入元素到优先队列中
+     * <p>
      * Inserts the specified element into this priority queue.
      *
      * @return {@code true} (as specified by {@link Collection#add})
-     * @throws ClassCastException if the specified element cannot be
-     *         compared with elements currently in this priority queue
-     *         according to the priority queue's ordering
+     * @throws ClassCastException   if the specified element cannot be
+     *                              compared with elements currently in this priority queue
+     *                              according to the priority queue's ordering
      * @throws NullPointerException if the specified element is null
      */
     public boolean add(E e) {
@@ -327,30 +398,49 @@ public class PriorityQueue<E> extends AbstractQueue<E>
     }
 
     /**
+     * 插入元素到优先队列中
+     * <p>
      * Inserts the specified element into this priority queue.
      *
      * @return {@code true} (as specified by {@link Queue#offer})
-     * @throws ClassCastException if the specified element cannot be
-     *         compared with elements currently in this priority queue
-     *         according to the priority queue's ordering
+     * @throws ClassCastException   if the specified element cannot be
+     *                              compared with elements currently in this priority queue
+     *                              according to the priority queue's ordering
      * @throws NullPointerException if the specified element is null
      */
     public boolean offer(E e) {
+        // 插入的值不能为 null，否则报 NPE
         if (e == null)
             throw new NullPointerException();
+        // 修改次数
         modCount++;
+        // 保存当前的优先队列的长度
         int i = size;
+        // 如果当前的 size 要超过数组的长度了，扩容
         if (i >= queue.length)
             grow(i + 1);
+        // 将元素 e 插入到第 i 位，再自下而上调整堆
         siftUp(i, e);
+        // 元素个数加 1
         size = i + 1;
         return true;
     }
 
+    /**
+     * 返回优先队列队首的元素
+     *
+     * @return
+     */
     public E peek() {
         return (E) queue[0];
     }
 
+    /**
+     * 遍历 queue 数组，找到对象 o 对应的下标
+     *
+     * @param o
+     * @return
+     */
     private int indexOf(Object o) {
         if (o != null) {
             final Object[] es = queue;
@@ -362,6 +452,8 @@ public class PriorityQueue<E> extends AbstractQueue<E>
     }
 
     /**
+     * 移出元素
+     * <p>
      * Removes a single instance of the specified element from this queue,
      * if it is present.  More formally, removes an element {@code e} such
      * that {@code o.equals(e)}, if this queue contains one or more such
@@ -373,9 +465,12 @@ public class PriorityQueue<E> extends AbstractQueue<E>
      * @return {@code true} if this queue changed as a result of the call
      */
     public boolean remove(Object o) {
+        // 得到对象 o 对应的下标
         int i = indexOf(o);
+        // 不存在
         if (i == -1)
             return false;
+            // 存在
         else {
             removeAt(i);
             return true;
@@ -449,7 +544,7 @@ public class PriorityQueue<E> extends AbstractQueue<E>
      * allocated array of {@code String}:
      *
      * <pre> {@code String[] y = x.toArray(new String[0]);}</pre>
-     *
+     * <p>
      * Note that {@code toArray(new Object[0])} is identical in function to
      * {@code toArray()}.
      *
@@ -457,9 +552,9 @@ public class PriorityQueue<E> extends AbstractQueue<E>
      *          be stored, if it is big enough; otherwise, a new array of the
      *          same runtime type is allocated for this purpose.
      * @return an array containing all of the elements in this queue
-     * @throws ArrayStoreException if the runtime type of the specified array
-     *         is not a supertype of the runtime type of every element in
-     *         this queue
+     * @throws ArrayStoreException  if the runtime type of the specified array
+     *                              is not a supertype of the runtime type of every element in
+     *                              this queue
      * @throws NullPointerException if the specified array is null
      */
     public <T> T[] toArray(T[] a) {
@@ -504,7 +599,7 @@ public class PriorityQueue<E> extends AbstractQueue<E>
          * that require a siftup instead of a siftdown.)  We must visit all of
          * the elements in this list to complete the iteration.  We do this
          * after we've completed the "normal" iteration.
-         *
+         * <p>
          * We expect that most iterations, even those involving removals,
          * will not need to store elements in this field.
          */
@@ -523,11 +618,12 @@ public class PriorityQueue<E> extends AbstractQueue<E>
          */
         private int expectedModCount = modCount;
 
-        Itr() {}                        // prevent access constructor creation
+        Itr() {
+        }                        // prevent access constructor creation
 
         public boolean hasNext() {
             return cursor < size ||
-                (forgetMeNot != null && !forgetMeNot.isEmpty());
+                    (forgetMeNot != null && !forgetMeNot.isEmpty());
         }
 
         public E next() {
@@ -572,26 +668,43 @@ public class PriorityQueue<E> extends AbstractQueue<E>
     }
 
     /**
+     * 清楚所有的元素
+     * <p>
      * Removes all of the elements from this priority queue.
      * The queue will be empty after this call returns.
      */
     public void clear() {
         modCount++;
         final Object[] es = queue;
+        // 遍历数组，将指向数组中的元素的指针都指向 null
         for (int i = 0, n = size; i < n; i++)
             es[i] = null;
+        // 更新数组的 size
         size = 0;
     }
 
+    /**
+     * 将队头元素弹出
+     * 也就是将最小元素出队
+     *
+     * @return
+     */
     public E poll() {
+        // 指向数组的指针
         final Object[] es;
+        // 保存结果
         final E result;
-
+        // 当队列非空
         if ((result = (E) ((es = queue)[0])) != null) {
             modCount++;
             final int n;
+            // x 保存最后一个元素
+            // n 保存出队之后优先队列中元素的个数
             final E x = (E) es[(n = --size)];
+            // 将最后一个位置的引用置空
             es[n] = null;
+            // 如果移除之后还存在元素
+            // 需要调整堆
             if (n > 0) {
                 final Comparator<? super E> cmp;
                 if ((cmp = comparator) == null)
@@ -604,8 +717,10 @@ public class PriorityQueue<E> extends AbstractQueue<E>
     }
 
     /**
+     * 移除指定位置的元素
+     * <p>
      * Removes the ith element from queue.
-     *
+     * <p>
      * Normally this method leaves the elements at up to i-1,
      * inclusive, untouched.  Under these circumstances, it returns
      * null.  Occasionally, in order to maintain the heap invariant,
@@ -617,14 +732,22 @@ public class PriorityQueue<E> extends AbstractQueue<E>
      */
     E removeAt(int i) {
         // assert i >= 0 && i < size;
+        // 数组
         final Object[] es = queue;
+        // 修改计数
         modCount++;
+        // 当前的数组的长度
         int s = --size;
+        // 如果要删除的元素恰好是最后一个元素，则直接将数组最后一个元素置空
         if (s == i) // removed last element
             es[i] = null;
+            // 否则
         else {
+            // 从最后一个元素开始调整
+            // 保存最后一个元素，相当于把最后一个元素删除
             E moved = (E) es[s];
             es[s] = null;
+            // 相当于把 moved 插入到第 i 个位置
             siftDown(i, moved);
             if (es[i] == moved) {
                 siftUp(i, moved);
@@ -636,10 +759,12 @@ public class PriorityQueue<E> extends AbstractQueue<E>
     }
 
     /**
+     * 将元素 x 插入到数组的第 k 位
+     * <p>
      * Inserts item x at position k, maintaining heap invariant by
      * promoting x up the tree until it is greater than or equal to
      * its parent, or is the root.
-     *
+     * <p>
      * To simplify and speed up coercions and comparisons, the
      * Comparable and Comparator versions are separated into different
      * methods that are otherwise identical. (Similarly for siftDown.)
@@ -654,39 +779,81 @@ public class PriorityQueue<E> extends AbstractQueue<E>
             siftUpComparable(k, x, queue);
     }
 
+    /**
+     * 向上调整堆
+     * 根据自然排序规则调整堆
+     *
+     * @param k   插入元素在数组中的位序
+     * @param x   插入的目标元素
+     * @param es  数组
+     * @param <T>
+     */
     private static <T> void siftUpComparable(int k, T x, Object[] es) {
         Comparable<? super T> key = (Comparable<? super T>) x;
+        // 寻找存放元素的位置
         while (k > 0) {
+            // 父节点的下标
             int parent = (k - 1) >>> 1;
+            // 父节点对象
             Object e = es[parent];
+            // 比较大小
+            // 如果插入节点的值大于等于父节点的值，则结束循环
             if (key.compareTo((T) e) >= 0)
                 break;
+            // 插入节点的值小于父节点的值
+            // 父节点的值下移
             es[k] = e;
+            // k 下标指向父节点的下标
             k = parent;
+            // 继续循环
         }
+        // 将要出入的值赋到目标位置
         es[k] = key;
     }
 
+    /**
+     * 向上调整堆
+     * 根据自定义 comparator 排序规则调整堆
+     *
+     * @param k   插入元素在数组中的位序
+     * @param x   插入的目标元素
+     * @param es  数组
+     * @param cmp 比较规则
+     * @param <T>
+     */
     private static <T> void siftUpUsingComparator(
-        int k, T x, Object[] es, Comparator<? super T> cmp) {
+            int k, T x, Object[] es, Comparator<? super T> cmp) {
+        // 寻找存放元素的位置
         while (k > 0) {
+            // 父节点的下标
             int parent = (k - 1) >>> 1;
+            // 父节点对象
             Object e = es[parent];
+            // 比较大小
+            // 如果插入节点的值大于等于父节点的值
+            // 结束循环
             if (cmp.compare(x, (T) e) >= 0)
                 break;
+            // 插入节点的值小于父节点的值
+            // 父节点的值下移
             es[k] = e;
+            // k 下标指向父节点的下标
             k = parent;
+            // 继续循环
         }
+        // 将要出入的值赋到目标位置
         es[k] = x;
     }
 
     /**
+     * 在指定位置插入元素
+     * <p>
      * Inserts item x at position k, maintaining heap invariant by
      * demoting x down the tree repeatedly until it is less than or
      * equal to its children or is a leaf.
      *
-     * @param k the position to fill
-     * @param x the item to insert
+     * @param k the position to fill 插入元素的位置
+     * @param x the item to insert 插入的值
      */
     private void siftDown(int k, E x) {
         if (comparator != null)
@@ -695,29 +862,64 @@ public class PriorityQueue<E> extends AbstractQueue<E>
             siftDownComparable(k, x, queue, size);
     }
 
+    /**
+     * 向下调整堆
+     *
+     * @param k   开始调整的下标
+     * @param x   下标对应的元素
+     * @param es  数组
+     * @param n   数组的长度
+     * @param <T>
+     */
     private static <T> void siftDownComparable(int k, T x, Object[] es, int n) {
         // assert n > 0;
-        Comparable<? super T> key = (Comparable<? super T>)x;
+        // 暂存当前的元素
+        Comparable<? super T> key = (Comparable<? super T>) x;
+        // 只需要比较一半，因为叶子节点占了一半
         int half = n >>> 1;           // loop while a non-leaf
+        // 当 k 还在内部节点中
         while (k < half) {
+            // 左孩子节点的下标，+1 的原因是 PriorityQueue 中开始的位置从 0 开始
             int child = (k << 1) + 1; // assume left child is least
+            // 保存左孩子节点的值
             Object c = es[child];
+            // 右孩子节点的下标
             int right = child + 1;
+            // 如果存在右孩子 且 左孩子节点的值大于右孩子节点的值
             if (right < n &&
-                ((Comparable<? super T>) c).compareTo((T) es[right]) > 0)
+                    ((Comparable<? super T>) c).compareTo((T) es[right]) > 0)
+                // 保存孩子节点中较小节点的值
                 c = es[child = right];
+            // 与要插入的元素大小进行比较
+            // 如果要插入的元素比两孩子节点中较小节点的值都小
+            // 则结束循环，就放在该位置
             if (key.compareTo((T) c) <= 0)
                 break;
+            // 否则将较小的值放到父节点的位置，继续寻找适合的位置
             es[k] = c;
             k = child;
         }
         es[k] = key;
     }
 
+    /**
+     * 向下调整堆
+     * 注释见 {@link PriorityQueue#siftDownComparable}
+     * 两者的区别就在于一个使用自然排序，一个使用自定义排序
+     *
+     * @param k   插入的位置
+     * @param x   插入的值
+     * @param es  数组
+     * @param n   当前优先队列中的元素个数
+     * @param cmp
+     * @param <T>
+     */
     private static <T> void siftDownUsingComparator(
-        int k, T x, Object[] es, int n, Comparator<? super T> cmp) {
+            int k, T x, Object[] es, int n, Comparator<? super T> cmp) {
         // assert n > 0;
+        // 中间下标
         int half = n >>> 1;
+        // 当插入元素位置在
         while (k < half) {
             int child = (k << 1) + 1;
             Object c = es[child];
@@ -733,17 +935,22 @@ public class PriorityQueue<E> extends AbstractQueue<E>
     }
 
     /**
+     * 建堆
+     * <p>
      * Establishes the heap invariant (described above) in the entire tree,
      * assuming nothing about the order of the elements prior to the call.
      * This classic algorithm due to Floyd (1964) is known to be O(size).
      */
     private void heapify() {
         final Object[] es = queue;
+        // i = i / 2 - 1
         int n = size, i = (n >>> 1) - 1;
         final Comparator<? super E> cmp;
+        // 使用自然排序
         if ((cmp = comparator) == null)
             for (; i >= 0; i--)
                 siftDownComparable(i, (E) es[i], es, n);
+            // 使用 comparator 排序
         else
             for (; i >= 0; i--)
                 siftDownUsingComparator(i, (E) es[i], es, n, cmp);
@@ -755,24 +962,26 @@ public class PriorityQueue<E> extends AbstractQueue<E>
      * the {@linkplain Comparable natural ordering} of its elements.
      *
      * @return the comparator used to order this queue, or
-     *         {@code null} if this queue is sorted according to the
-     *         natural ordering of its elements
+     * {@code null} if this queue is sorted according to the
+     * natural ordering of its elements
      */
     public Comparator<? super E> comparator() {
         return comparator;
     }
 
     /**
+     * 序列化方法
+     * <p>
      * Saves this queue to a stream (that is, serializes it).
      *
      * @param s the stream
      * @throws java.io.IOException if an I/O error occurs
      * @serialData The length of the array backing the instance is
-     *             emitted (int), followed by all of its elements
-     *             (each an {@code Object}) in the proper order.
+     * emitted (int), followed by all of its elements
+     * (each an {@code Object}) in the proper order.
      */
     private void writeObject(java.io.ObjectOutputStream s)
-        throws java.io.IOException {
+            throws java.io.IOException {
         // Write out element count, and any hidden stuff
         s.defaultWriteObject();
 
@@ -786,16 +995,18 @@ public class PriorityQueue<E> extends AbstractQueue<E>
     }
 
     /**
+     * 反序列化方法
+     * <p>
      * Reconstitutes the {@code PriorityQueue} instance from a stream
      * (that is, deserializes it).
      *
      * @param s the stream
      * @throws ClassNotFoundException if the class of a serialized object
-     *         could not be found
-     * @throws java.io.IOException if an I/O error occurs
+     *                                could not be found
+     * @throws java.io.IOException    if an I/O error occurs
      */
     private void readObject(java.io.ObjectInputStream s)
-        throws java.io.IOException, ClassNotFoundException {
+            throws java.io.IOException, ClassNotFoundException {
         // Read in size, and any hidden stuff
         s.defaultReadObject();
 
@@ -837,7 +1048,9 @@ public class PriorityQueue<E> extends AbstractQueue<E>
         private int fence;            // -1 until first use
         private int expectedModCount; // initialized when fence set
 
-        /** Creates new spliterator covering the given range. */
+        /**
+         * Creates new spliterator covering the given range.
+         */
         PriorityQueueSpliterator(int origin, int fence, int expectedModCount) {
             this.index = origin;
             this.fence = fence;
@@ -856,15 +1069,19 @@ public class PriorityQueue<E> extends AbstractQueue<E>
         public PriorityQueueSpliterator trySplit() {
             int hi = getFence(), lo = index, mid = (lo + hi) >>> 1;
             return (lo >= mid) ? null :
-                new PriorityQueueSpliterator(lo, index = mid, expectedModCount);
+                    new PriorityQueueSpliterator(lo, index = mid, expectedModCount);
         }
 
         public void forEachRemaining(Consumer<? super E> action) {
             if (action == null)
                 throw new NullPointerException();
-            if (fence < 0) { fence = size; expectedModCount = modCount; }
+            if (fence < 0) {
+                fence = size;
+                expectedModCount = modCount;
+            }
             final Object[] es = queue;
-            int i, hi; E e;
+            int i, hi;
+            E e;
             for (i = index, index = hi = fence; i < hi; i++) {
                 if ((e = (E) es[i]) == null)
                     break;      // must be CME
@@ -877,13 +1094,16 @@ public class PriorityQueue<E> extends AbstractQueue<E>
         public boolean tryAdvance(Consumer<? super E> action) {
             if (action == null)
                 throw new NullPointerException();
-            if (fence < 0) { fence = size; expectedModCount = modCount; }
+            if (fence < 0) {
+                fence = size;
+                expectedModCount = modCount;
+            }
             int i;
             if ((i = index) < fence) {
                 index = i + 1;
                 E e;
                 if ((e = (E) queue[i]) == null
-                    || modCount != expectedModCount)
+                        || modCount != expectedModCount)
                     throw new ConcurrentModificationException();
                 action.accept(e);
                 return true;
@@ -929,14 +1149,18 @@ public class PriorityQueue<E> extends AbstractQueue<E>
     private static long[] nBits(int n) {
         return new long[((n - 1) >> 6) + 1];
     }
+
     private static void setBit(long[] bits, int i) {
         bits[i >> 6] |= 1L << i;
     }
+
     private static boolean isClear(long[] bits, int i) {
         return (bits[i >> 6] & (1L << i)) == 0;
     }
 
-    /** Implementation of bulk remove methods. */
+    /**
+     * Implementation of bulk remove methods.
+     */
     private boolean bulkRemove(Predicate<? super E> filter) {
         final int expectedModCount = ++modCount;
         final Object[] es = queue;
