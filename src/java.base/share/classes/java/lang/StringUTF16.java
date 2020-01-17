@@ -41,24 +41,42 @@ import static java.lang.String.LATIN1;
 
 final class StringUTF16 {
 
+    /**
+     * 创建一个新的 byte 数组，长度为传入 len 的两倍
+     *
+     * @param len
+     * @return
+     */
     public static byte[] newBytesFor(int len) {
+        // 长度检查
         if (len < 0) {
             throw new NegativeArraySizeException();
         }
+        // 长度检查
+        // MAX_LENGTH 为 Integer.MAX_VALUE  的一半
         if (len > MAX_LENGTH) {
             throw new OutOfMemoryError("UTF16 String size is " + len +
-                                       ", should be less than " + MAX_LENGTH);
+                    ", should be less than " + MAX_LENGTH);
         }
+        // 返回一个长度为两倍的 byte 数组
         return new byte[len << 1];
     }
 
+    /**
+     * @param val
+     * @param index
+     * @param c
+     */
     @HotSpotIntrinsicCandidate
     // intrinsic performs no bounds checks
     static void putChar(byte[] val, int index, int c) {
+        // 参数检查
         assert index >= 0 && index < length(val) : "Trusted caller missed bounds check";
+        // 下标索引位置 * 2
         index <<= 1;
-        val[index++] = (byte)(c >> HI_BYTE_SHIFT);
-        val[index]   = (byte)(c >> LO_BYTE_SHIFT);
+        //
+        val[index++] = (byte) (c >> HI_BYTE_SHIFT);
+        val[index] = (byte) (c >> LO_BYTE_SHIFT);
     }
 
     @HotSpotIntrinsicCandidate
@@ -66,8 +84,8 @@ final class StringUTF16 {
     static char getChar(byte[] val, int index) {
         assert index >= 0 && index < length(val) : "Trusted caller missed bounds check";
         index <<= 1;
-        return (char)(((val[index++] & 0xff) << HI_BYTE_SHIFT) |
-                      ((val[index]   & 0xff) << LO_BYTE_SHIFT));
+        return (char) (((val[index++] & 0xff) << HI_BYTE_SHIFT) |
+                ((val[index] & 0xff) << LO_BYTE_SHIFT));
     }
 
     public static int length(byte[] value) {
@@ -86,14 +104,14 @@ final class StringUTF16 {
             }
             char c2 = getChar(value, index);
             if (Character.isLowSurrogate(c2)) {
-               return Character.toCodePoint(c1, c2);
+                return Character.toCodePoint(c1, c2);
             }
         }
         return c1;
     }
 
     public static int codePointAt(byte[] value, int index, int end) {
-       return codePointAt(value, index, end, false /* unchecked */);
+        return codePointAt(value, index, end, false /* unchecked */);
     }
 
     private static int codePointBefore(byte[] value, int index, boolean checked) {
@@ -109,7 +127,7 @@ final class StringUTF16 {
             }
             char c1 = getChar(value, index);
             if (Character.isHighSurrogate(c1)) {
-               return Character.toCodePoint(c1, c2);
+                return Character.toCodePoint(c1, c2);
             }
         }
         return c2;
@@ -128,7 +146,7 @@ final class StringUTF16 {
         }
         for (; i < endIndex - 1; ) {
             if (Character.isHighSurrogate(getChar(value, i++)) &&
-                Character.isLowSurrogate(getChar(value, i))) {
+                    Character.isLowSurrogate(getChar(value, i))) {
                 count--;
                 i++;
             }
@@ -146,21 +164,40 @@ final class StringUTF16 {
         return dst;
     }
 
+    /**
+     * @param value char 数组
+     * @param off   偏移量
+     * @param len   char 长度
+     * @return
+     */
     @HotSpotIntrinsicCandidate
     public static byte[] toBytes(char[] value, int off, int len) {
+        // 返回一个新的数组
         byte[] val = newBytesFor(len);
         for (int i = 0; i < len; i++) {
+            //
             putChar(val, i, value[off]);
             off++;
         }
         return val;
     }
 
+    /**
+     * 压缩 char 数组
+     *
+     * @param val char 数组
+     * @param off 偏移量
+     * @param len 长度
+     * @return
+     */
     public static byte[] compress(char[] val, int off, int len) {
+        // 使用 byte 数组来存储
         byte[] ret = new byte[len];
+        // 可以成功压缩
         if (compress(val, off, ret, 0, len) == len) {
             return ret;
         }
+        // 不能压缩返回 null
         return null;
     }
 
@@ -173,18 +210,34 @@ final class StringUTF16 {
     }
 
     // compressedCopy char[] -> byte[]
+
+    /**
+     * 将 char[] 数组 压缩成 byte 数组
+     *
+     * @param src    char 数组
+     * @param srcOff char 数组的偏移量
+     * @param dst    目标 byte 数组
+     * @param dstOff 目标 byte 数组的偏移量
+     * @param len    char 数组的长度
+     * @return 返回压缩之后的字节数组长度
+     */
     @HotSpotIntrinsicCandidate
     public static int compress(char[] src, int srcOff, byte[] dst, int dstOff, int len) {
         for (int i = 0; i < len; i++) {
+            // 取出当前的 char
             char c = src[srcOff];
+            // 如果当前的 char 超过了 byte 能表示的范围 [0-255]
+            // 则不能压缩，返回长度为 0
             if (c > 0xFF) {
                 len = 0;
                 break;
             }
-            dst[dstOff] = (byte)c;
+            dst[dstOff] = (byte) c;
             srcOff++;
             dstOff++;
         }
+        // 可以压缩，返回压缩后的长度
+        // 其实和传入的长度是一致的
         return len;
     }
 
@@ -199,7 +252,7 @@ final class StringUTF16 {
                 len = 0;
                 break;
             }
-            dst[dstOff] = (byte)c;
+            dst[dstOff] = (byte) c;
             srcOff++;
             dstOff++;
         }
@@ -398,13 +451,13 @@ final class StringUTF16 {
         for (int i = fromIndex; i <= max; i++) {
             // Look for first character.
             if (getChar(value, i) != first) {
-                while (++i <= max && getChar(value, i) != first);
+                while (++i <= max && getChar(value, i) != first) ;
             }
             // Found first character, now look at the rest of value
             if (i <= max) {
                 int j = i + 1;
                 int end = j + strCount - 1;
-                for (int k = 1; j < end && getChar(value, j) == getChar(str, k); j++, k++);
+                for (int k = 1; j < end && getChar(value, j) == getChar(str, k); j++, k++) ;
                 if (j == end) {
                     // Found whole string.
                     return i;
@@ -441,12 +494,12 @@ final class StringUTF16 {
         assert tgtCount > 0;
         assert tgtCount <= tgt.length;
         assert srcCount >= tgtCount;
-        char first = (char)(tgt[0] & 0xff);
+        char first = (char) (tgt[0] & 0xff);
         int max = (srcCount - tgtCount);
         for (int i = fromIndex; i <= max; i++) {
             // Look for first character.
             if (getChar(src, i) != first) {
-                while (++i <= max && getChar(src, i) != first);
+                while (++i <= max && getChar(src, i) != first) ;
             }
             // Found first character, now look at the rest of v2
             if (i <= max) {
@@ -454,7 +507,8 @@ final class StringUTF16 {
                 int end = j + tgtCount - 1;
                 for (int k = 1;
                      j < end && getChar(src, j) == (tgt[k] & 0xff);
-                     j++, k++);
+                     j++, k++)
+                    ;
                 if (j == end) {
                     // Found whole string.
                     return i;
@@ -511,7 +565,7 @@ final class StringUTF16 {
 
         checkIndex(i, src);
 
-    startSearchForLastChar:
+        startSearchForLastChar:
         while (true) {
             while (i >= min && getChar(src, i) != strLastChar) {
                 i--;
@@ -644,9 +698,9 @@ final class StringUTF16 {
         final int len = value.length >> 1;
 
         // Now check if there are any characters that need to be changed, or are surrogate
-        for (first = 0 ; first < len; first++) {
-            int cp = (int)getChar(value, first);
-            if (Character.isSurrogate((char)cp)) {
+        for (first = 0; first < len; first++) {
+            int cp = (int) getChar(value, first);
+            if (Character.isSurrogate((char) cp)) {
                 hasSurr = true;
                 break;
             }
@@ -658,7 +712,7 @@ final class StringUTF16 {
             return str;
         byte[] result = new byte[value.length];
         System.arraycopy(value, 0, result, 0, first << 1);  // Just copy the first few
-                                                            // lowerCase characters.
+        // lowerCase characters.
         String lang = locale.getLanguage();
         if (lang == "tr" || lang == "az" || lang == "lt") {
             return toLowerCaseEx(str, value, result, first, locale, true);
@@ -668,9 +722,9 @@ final class StringUTF16 {
         }
         int bits = 0;
         for (int i = first; i < len; i++) {
-            int cp = (int)getChar(value, i);
+            int cp = (int) getChar(value, i);
             if (cp == '\u03A3' ||                       // GREEK CAPITAL LETTER SIGMA
-                Character.isSurrogate((char)cp)) {
+                    Character.isSurrogate((char) cp)) {
                 return toLowerCaseEx(str, value, result, i, locale, false);
             }
             if (cp == '\u0130') {                       // LATIN CAPITAL LETTER I WITH DOT ABOVE
@@ -693,8 +747,8 @@ final class StringUTF16 {
     private static String toLowerCaseEx(String str, byte[] value,
                                         byte[] result, int first, Locale locale,
                                         boolean localeDependent) {
-        assert(result.length == value.length);
-        assert(first >= 0);
+        assert (result.length == value.length);
+        assert (first >= 0);
         int resultOffset = first;
         int length = value.length >> 1;
         int srcCount;
@@ -703,13 +757,13 @@ final class StringUTF16 {
             int lowerChar;
             char[] lowerCharArray;
             srcCount = 1;
-            if (Character.isSurrogate((char)srcChar)) {
+            if (Character.isSurrogate((char) srcChar)) {
                 srcChar = codePointAt(value, i, length);
                 srcCount = Character.charCount(srcChar);
             }
             if (localeDependent ||
-                srcChar == '\u03A3' ||  // GREEK CAPITAL LETTER SIGMA
-                srcChar == '\u0130') {  // LATIN CAPITAL LETTER I WITH DOT ABOVE
+                    srcChar == '\u03A3' ||  // GREEK CAPITAL LETTER SIGMA
+                    srcChar == '\u0130') {  // LATIN CAPITAL LETTER I WITH DOT ABOVE
                 lowerChar = ConditionalSpecialCasing.toLowerCaseEx(str, i, locale);
             } else {
                 lowerChar = Character.toLowerCase(srcChar);
@@ -748,9 +802,9 @@ final class StringUTF16 {
         final int len = value.length >> 1;
 
         // Now check if there are any characters that need to be changed, or are surrogate
-        for (first = 0 ; first < len; first++) {
-            int cp = (int)getChar(value, first);
-            if (Character.isSurrogate((char)cp)) {
+        for (first = 0; first < len; first++) {
+            int cp = (int) getChar(value, first);
+            if (Character.isSurrogate((char) cp)) {
                 hasSurr = true;
                 break;
             }
@@ -763,7 +817,7 @@ final class StringUTF16 {
         }
         byte[] result = new byte[value.length];
         System.arraycopy(value, 0, result, 0, first << 1); // Just copy the first few
-                                                           // upperCase characters.
+        // upperCase characters.
         String lang = locale.getLanguage();
         if (lang == "tr" || lang == "az" || lang == "lt") {
             return toUpperCaseEx(str, value, result, first, locale, true);
@@ -773,8 +827,8 @@ final class StringUTF16 {
         }
         int bits = 0;
         for (int i = first; i < len; i++) {
-            int cp = (int)getChar(value, i);
-            if (Character.isSurrogate((char)cp)) {
+            int cp = (int) getChar(value, i);
+            if (Character.isSurrogate((char) cp)) {
                 return toUpperCaseEx(str, value, result, i, locale, false);
             }
             cp = Character.toUpperCaseEx(cp);
@@ -793,10 +847,9 @@ final class StringUTF16 {
 
     private static String toUpperCaseEx(String str, byte[] value,
                                         byte[] result, int first,
-                                        Locale locale, boolean localeDependent)
-    {
-        assert(result.length == value.length);
-        assert(first >= 0);
+                                        Locale locale, boolean localeDependent) {
+        assert (result.length == value.length);
+        assert (first >= 0);
         int resultOffset = first;
         int length = value.length >> 1;
         int srcCount;
@@ -805,7 +858,7 @@ final class StringUTF16 {
             int upperChar;
             char[] upperCharArray;
             srcCount = 1;
-            if (Character.isSurrogate((char)srcChar)) {
+            if (Character.isSurrogate((char) srcChar)) {
                 srcChar = codePointAt(value, i, length);
                 srcCount = Character.charCount(srcChar);
             }
@@ -820,7 +873,7 @@ final class StringUTF16 {
                 if (upperChar == Character.ERROR) {
                     if (localeDependent) {
                         upperCharArray =
-                            ConditionalSpecialCasing.toUpperCaseCharArray(str, i, locale);
+                                ConditionalSpecialCasing.toUpperCaseCharArray(str, i, locale);
                     } else {
                         upperCharArray = Character.toUpperCaseCharArray(srcChar);
                     }
@@ -854,9 +907,9 @@ final class StringUTF16 {
         while (st < len && getChar(value, len - 1) <= ' ') {
             len--;
         }
-        return ((st > 0) || (len < length )) ?
-            new String(Arrays.copyOfRange(value, st << 1, len << 1), UTF16) :
-            null;
+        return ((st > 0) || (len < length)) ?
+                new String(Arrays.copyOfRange(value, st << 1, len << 1), UTF16) :
+                null;
     }
 
 
@@ -1026,7 +1079,7 @@ final class StringUTF16 {
     }
 
     public static void fillNull(byte[] val, int index, int end) {
-        Arrays.fill(val, index << 1, end << 1, (byte)0);
+        Arrays.fill(val, index << 1, end << 1, (byte) 0);
     }
 
     static class CharsSpliterator implements Spliterator.OfInt {
@@ -1044,24 +1097,25 @@ final class StringUTF16 {
             this.index = origin;
             this.fence = fence;
             this.cs = acs | Spliterator.ORDERED | Spliterator.SIZED
-                      | Spliterator.SUBSIZED;
+                    | Spliterator.SUBSIZED;
         }
 
         @Override
         public OfInt trySplit() {
             int lo = index, mid = (lo + fence) >>> 1;
             return (lo >= mid)
-                   ? null
-                   : new CharsSpliterator(array, lo, index = mid, cs);
+                    ? null
+                    : new CharsSpliterator(array, lo, index = mid, cs);
         }
 
         @Override
         public void forEachRemaining(IntConsumer action) {
-            byte[] a; int i, hi; // hoist accesses and checks from loop
+            byte[] a;
+            int i, hi; // hoist accesses and checks from loop
             if (action == null)
                 throw new NullPointerException();
             if (((a = array).length >> 1) >= (hi = fence) &&
-                (i = index) >= 0 && i < (index = hi)) {
+                    (i = index) >= 0 && i < (index = hi)) {
                 do {
                     action.accept(charAt(a, i));
                 } while (++i < hi);
@@ -1082,7 +1136,9 @@ final class StringUTF16 {
         }
 
         @Override
-        public long estimateSize() { return (long)(fence - index); }
+        public long estimateSize() {
+            return (long) (fence - index);
+        }
 
         @Override
         public int characteristics() {
@@ -1116,7 +1172,7 @@ final class StringUTF16 {
             int midOneLess;
             // If the mid-point intersects a surrogate pair
             if (Character.isLowSurrogate(charAt(array, mid)) &&
-                Character.isHighSurrogate(charAt(array, midOneLess = (mid -1)))) {
+                    Character.isHighSurrogate(charAt(array, midOneLess = (mid - 1)))) {
                 // If there is only one pair it cannot be split
                 if (lo >= midOneLess)
                     return null;
@@ -1128,11 +1184,12 @@ final class StringUTF16 {
 
         @Override
         public void forEachRemaining(IntConsumer action) {
-            byte[] a; int i, hi; // hoist accesses and checks from loop
+            byte[] a;
+            int i, hi; // hoist accesses and checks from loop
             if (action == null)
                 throw new NullPointerException();
             if (((a = array).length >> 1) >= (hi = fence) &&
-                (i = index) >= 0 && i < (index = hi)) {
+                    (i = index) >= 0 && i < (index = hi)) {
                 do {
                     i = advance(a, i, hi, action);
                 } while (i < hi);
@@ -1167,7 +1224,9 @@ final class StringUTF16 {
         }
 
         @Override
-        public long estimateSize() { return (long)(fence - index); }
+        public long estimateSize() {
+            return (long) (fence - index);
+        }
 
         @Override
         public int characteristics() {
@@ -1223,7 +1282,7 @@ final class StringUTF16 {
     public static boolean contentEquals(byte[] v1, byte[] v2, int len) {
         checkBoundsOffCount(0, len, v2);
         for (int i = 0; i < len; i++) {
-            if ((char)(v1[i] & 0xff) != getChar(v2, i)) {
+            if ((char) (v1[i] & 0xff) != getChar(v2, i)) {
                 return false;
             }
         }
@@ -1247,7 +1306,7 @@ final class StringUTF16 {
         putChar(value, i++, c2);
         putChar(value, i++, c3);
         putChar(value, i++, c4);
-        assert(i == end);
+        assert (i == end);
         return end;
     }
 
@@ -1259,7 +1318,7 @@ final class StringUTF16 {
         putChar(value, i++, c3);
         putChar(value, i++, c4);
         putChar(value, i++, c5);
-        assert(i == end);
+        assert (i == end);
         return end;
     }
 
@@ -1272,14 +1331,14 @@ final class StringUTF16 {
         checkOffset(count, val);
         int n = count - 1;
         boolean hasSurrogates = false;
-        for (int j = (n-1) >> 1; j >= 0; j--) {
+        for (int j = (n - 1) >> 1; j >= 0; j--) {
             int k = n - j;
             char cj = getChar(val, j);
             char ck = getChar(val, k);
             putChar(val, j, ck);
             putChar(val, k, cj);
             if (Character.isSurrogate(cj) ||
-                Character.isSurrogate(ck)) {
+                    Character.isSurrogate(ck)) {
                 hasSurrogates = true;
             }
         }
@@ -1288,7 +1347,9 @@ final class StringUTF16 {
         }
     }
 
-    /** Outlined helper method for reverse() */
+    /**
+     * Outlined helper method for reverse()
+     */
     private static void reverseAllValidSurrogatePairs(byte[] val, int count) {
         for (int i = 0; i < count - 1; i++) {
             char c2 = getChar(val, i);
@@ -1321,11 +1382,11 @@ final class StringUTF16 {
         int i = min + fromIndex;
         int strLastIndex = tgtCount - 1;
 
-        char strLastChar = (char)(tgt[strLastIndex] & 0xff);
+        char strLastChar = (char) (tgt[strLastIndex] & 0xff);
 
         checkIndex(i, src);
 
-    startSearchForLastChar:
+        startSearchForLastChar:
         while (true) {
             while (i >= min && getChar(src, i) != strLastChar) {
                 i--;
@@ -1352,10 +1413,13 @@ final class StringUTF16 {
 
     static final int HI_BYTE_SHIFT;
     static final int LO_BYTE_SHIFT;
+
     static {
+        // 大端模式，高位在前
         if (isBigEndian()) {
             HI_BYTE_SHIFT = 8;
             LO_BYTE_SHIFT = 0;
+            // 小端模式
         } else {
             HI_BYTE_SHIFT = 0;
             LO_BYTE_SHIFT = 8;
@@ -1432,7 +1496,7 @@ final class StringUTF16 {
         // Get 2 digits/iteration using longs until quotient fits into an int
         while (i <= Integer.MIN_VALUE) {
             q = i / 100;
-            r = (int)((q * 100) - i);
+            r = (int) ((q * 100) - i);
             i = q;
             putChar(buf, --charPos, Integer.DigitOnes[r]);
             putChar(buf, --charPos, Integer.DigitTens[r]);
@@ -1440,10 +1504,10 @@ final class StringUTF16 {
 
         // Get 2 digits/iteration using ints
         int q2;
-        int i2 = (int)i;
+        int i2 = (int) i;
         while (i2 <= -100) {
             q2 = i2 / 100;
-            r  = (q2 * 100) - i2;
+            r = (q2 * 100) - i2;
             i2 = q2;
             putChar(buf, --charPos, Integer.DigitOnes[r]);
             putChar(buf, --charPos, Integer.DigitTens[r]);
@@ -1451,7 +1515,7 @@ final class StringUTF16 {
 
         // We know there are at most two digits left at this point.
         q2 = i2 / 10;
-        r  = (q2 * 10) - i2;
+        r = (q2 * 10) - i2;
         putChar(buf, --charPos, '0' + r);
 
         // Whatever left is the remaining digit.
