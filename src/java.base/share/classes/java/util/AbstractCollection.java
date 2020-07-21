@@ -58,8 +58,14 @@ package java.util;
  * @since 1.2
  */
 
+/**
+ * 实现了 Collection 接口，提供了一些模板方法的实现
+ *
+ */
 public abstract class AbstractCollection<E> implements Collection<E> {
     /**
+     * 唯一的构造方法， protected 级别的，只允许子类调用
+     * <p>
      * Sole constructor.  (For invocation by subclass constructors, typically
      * implicit.)
      */
@@ -69,15 +75,21 @@ public abstract class AbstractCollection<E> implements Collection<E> {
     // Query Operations
 
     /**
+     * 返回一个迭代器
+     * <p>
      * Returns an iterator over the elements contained in this collection.
      *
      * @return an iterator over the elements contained in this collection
      */
     public abstract Iterator<E> iterator();
 
+    /**
+     * 用于记录集合中元素的个数
+     */
     public abstract int size();
 
     /**
+     * 返回集合元素个数是否为空
      * {@inheritDoc}
      *
      * @implSpec
@@ -88,6 +100,7 @@ public abstract class AbstractCollection<E> implements Collection<E> {
     }
 
     /**
+     * 返回集合中是否某个元素
      * {@inheritDoc}
      *
      * @implSpec
@@ -99,15 +112,18 @@ public abstract class AbstractCollection<E> implements Collection<E> {
      */
     public boolean contains(Object o) {
         Iterator<E> it = iterator();
-        if (o==null) {
+        if (o == null) {
+            // 遍历
             while (it.hasNext())
-                if (it.next()==null)
+                if (it.next() == null)
                     return true;
         } else {
+            // 遍历
             while (it.hasNext())
                 if (o.equals(it.next()))
                     return true;
         }
+        // 不包含，返回 false
         return false;
     }
 
@@ -139,10 +155,14 @@ public abstract class AbstractCollection<E> implements Collection<E> {
         Object[] r = new Object[size()];
         Iterator<E> it = iterator();
         for (int i = 0; i < r.length; i++) {
-            if (! it.hasNext()) // fewer elements than expected
+            // 在遍历的时候 Collection 并发修改了
+            // 该情况为 Collection 中的元素减少了
+            if (!it.hasNext()) // fewer elements than expected
+                // 返回一个新的数组
                 return Arrays.copyOf(r, i);
             r[i] = it.next();
         }
+        // 该情况为 Collection 中元素的个数增加了
         return it.hasNext() ? finishToArray(r, it) : r;
     }
 
@@ -177,14 +197,19 @@ public abstract class AbstractCollection<E> implements Collection<E> {
     @SuppressWarnings("unchecked")
     public <T> T[] toArray(T[] a) {
         // Estimate size of array; be prepared to see more or fewer elements
+        // 当前时间点的元素的个数
         int size = size();
+        // 如果传入的数组大于 size ，则直接将引用指向传入的数组
+        // 否则通过反射新创建一个数组
         T[] r = a.length >= size ? a :
-                  (T[])java.lang.reflect.Array
-                  .newInstance(a.getClass().getComponentType(), size);
+                // 通过反射获取到 T 运行时的类型
+                (T[]) java.lang.reflect.Array
+                        .newInstance(a.getClass().getComponentType(), size);
+        // 迭代器
         Iterator<E> it = iterator();
-
+        // 遍历过程中同样需要检测 Collection 集合中的元素是否发生变化
         for (int i = 0; i < r.length; i++) {
-            if (! it.hasNext()) { // fewer elements than expected
+            if (!it.hasNext()) { // fewer elements than expected
                 if (a == r) {
                     r[i] = null; // null-terminate
                 } else if (a.length < i) {
@@ -197,13 +222,14 @@ public abstract class AbstractCollection<E> implements Collection<E> {
                 }
                 return a;
             }
-            r[i] = (T)it.next();
+            r[i] = (T) it.next();
         }
         // more elements than expected
         return it.hasNext() ? finishToArray(r, it) : r;
     }
 
     /**
+     * 当调用到这个方法的时候说明在 ToArray 遍历过程中，Collection 中又加进了新的元素
      * The maximum size of array to allocate.
      * Some VMs reserve some header words in an array.
      * Attempts to allocate larger arrays may result in
@@ -223,19 +249,25 @@ public abstract class AbstractCollection<E> implements Collection<E> {
      */
     @SuppressWarnings("unchecked")
     private static <T> T[] finishToArray(T[] r, Iterator<?> it) {
+        // 之前的数组的长度
         int i = r.length;
+        // 继续遍历
         while (it.hasNext()) {
             int cap = r.length;
+            // 数组扩容
             if (i == cap) {
                 int newCap = cap + (cap >> 1) + 1;
                 // overflow-conscious code
                 if (newCap - MAX_ARRAY_SIZE > 0)
                     newCap = hugeCapacity(cap + 1);
+                // 元素拷贝到新数组
                 r = Arrays.copyOf(r, newCap);
             }
-            r[i++] = (T)it.next();
+            // 放进去
+            r[i++] = (T) it.next();
         }
         // trim if overallocated
+                // 数组是否有变动，无变动则返回之前传入的数组，有变动则返回一个新的数组
         return (i == r.length) ? r : Arrays.copyOf(r, i);
     }
 
@@ -251,6 +283,8 @@ public abstract class AbstractCollection<E> implements Collection<E> {
     // Modification Operations
 
     /**
+     * 抛出异常，说明子类必须得重写该方法，不能直接用。
+     * <p>
      * {@inheritDoc}
      *
      * @implSpec
@@ -268,6 +302,9 @@ public abstract class AbstractCollection<E> implements Collection<E> {
     }
 
     /**
+     * 使用 Iterator 遍历
+     * 提供默认的 remove 实现，从前往后遍历，找到则移除。
+     * <p>
      * {@inheritDoc}
      *
      * @implSpec
@@ -286,9 +323,9 @@ public abstract class AbstractCollection<E> implements Collection<E> {
      */
     public boolean remove(Object o) {
         Iterator<E> it = iterator();
-        if (o==null) {
+        if (o == null) {
             while (it.hasNext()) {
-                if (it.next()==null) {
+                if (it.next() == null) {
                     it.remove();
                     return true;
                 }
@@ -308,6 +345,9 @@ public abstract class AbstractCollection<E> implements Collection<E> {
     // Bulk Operations
 
     /**
+     * 提供默认的 containsAll 实现
+     * 对传入的没个元素遍历调用 contains 方法判断是否包含
+     * <p>
      * {@inheritDoc}
      *
      * @implSpec
@@ -328,6 +368,10 @@ public abstract class AbstractCollection<E> implements Collection<E> {
     }
 
     /**
+     * 提供默认的 addAll 实现
+     * 调用 add 方法进行添加
+     * 返回 Collection 是否被修改过，如果被修改过，就返回 true
+     * <p>
      * {@inheritDoc}
      *
      * @implSpec
@@ -355,6 +399,9 @@ public abstract class AbstractCollection<E> implements Collection<E> {
     }
 
     /**
+     * 将当前 Collection 中存在于传入 Collection 集合中的元素全部删除
+     * 如果又发生过删除，则返回 true
+     * <p>
      * {@inheritDoc}
      *
      * @implSpec
@@ -381,6 +428,7 @@ public abstract class AbstractCollection<E> implements Collection<E> {
         boolean modified = false;
         Iterator<?> it = iterator();
         while (it.hasNext()) {
+            // 调用传入 Collection 的 contains 方法
             if (c.contains(it.next())) {
                 it.remove();
                 modified = true;
@@ -390,6 +438,8 @@ public abstract class AbstractCollection<E> implements Collection<E> {
     }
 
     /**
+     * 保留存在于给定 Collection 中的元素
+     * <p>
      * {@inheritDoc}
      *
      * @implSpec
@@ -416,8 +466,10 @@ public abstract class AbstractCollection<E> implements Collection<E> {
         boolean modified = false;
         Iterator<E> it = iterator();
         while (it.hasNext()) {
+            // 不在给定的 Collection 中，则移除
             if (!c.contains(it.next())) {
                 it.remove();
+                // 只要移除了，就标记为 true
                 modified = true;
             }
         }
@@ -425,6 +477,8 @@ public abstract class AbstractCollection<E> implements Collection<E> {
     }
 
     /**
+     * 删除所有的元素
+     * <p>
      * {@inheritDoc}
      *
      * @implSpec
@@ -452,6 +506,8 @@ public abstract class AbstractCollection<E> implements Collection<E> {
     //  String conversion
 
     /**
+     * 格式化输出 Collection 的元素
+     * <p>
      * Returns a string representation of this collection.  The string
      * representation consists of a list of the collection's elements in the
      * order they are returned by its iterator, enclosed in square brackets
@@ -463,7 +519,7 @@ public abstract class AbstractCollection<E> implements Collection<E> {
      */
     public String toString() {
         Iterator<E> it = iterator();
-        if (! it.hasNext())
+        if (!it.hasNext())
             return "[]";
 
         StringBuilder sb = new StringBuilder();
@@ -471,7 +527,7 @@ public abstract class AbstractCollection<E> implements Collection<E> {
         for (;;) {
             E e = it.next();
             sb.append(e == this ? "(this Collection)" : e);
-            if (! it.hasNext())
+            if (!it.hasNext())
                 return sb.append(']').toString();
             sb.append(',').append(' ');
         }
