@@ -36,17 +36,20 @@ import java.util.Objects;
  * <code>OutputStream</code> must always provide at least a method
  * that writes one byte of output.
  *
- * @author  Arthur van Hoff
- * @see     java.io.BufferedOutputStream
- * @see     java.io.ByteArrayOutputStream
- * @see     java.io.DataOutputStream
- * @see     java.io.FilterOutputStream
- * @see     java.io.InputStream
- * @see     java.io.OutputStream#write(int)
- * @since   1.0
+ * @author Arthur van Hoff
+ * @see java.io.BufferedOutputStream
+ * @see java.io.ByteArrayOutputStream
+ * @see java.io.DataOutputStream
+ * @see java.io.FilterOutputStream
+ * @see java.io.InputStream
+ * @see java.io.OutputStream#write(int)
+ * @since 1.0
  */
 public abstract class OutputStream implements Closeable, Flushable {
     /**
+     * NULL Object pattern 的实现
+     * 返回一个非 null 的 OutputStream 对象
+     * <p>
      * Returns a new {@code OutputStream} which discards all bytes.  The
      * returned stream is initially open.  The stream is closed by calling
      * the {@code close()} method.  Subsequent calls to {@code close()} have
@@ -60,7 +63,6 @@ public abstract class OutputStream implements Closeable, Flushable {
      * <p> The {@code flush()} method does nothing.
      *
      * @return an {@code OutputStream} which discards all bytes
-     *
      * @since 11
      */
     public static OutputStream nullOutputStream() {
@@ -92,6 +94,10 @@ public abstract class OutputStream implements Closeable, Flushable {
     }
 
     /**
+     * 将 1 byte 的数据写入到当前 OutputStream 对象中。
+     * 该方法的定义规定虽然传入的类型为 int 型，但是高 24 位数据将被忽略，只取低 8 位。
+     * 大端模式
+     * <p>
      * Writes the specified byte to this output stream. The general
      * contract for <code>write</code> is that one byte is written
      * to the output stream. The byte to be written is the eight
@@ -101,28 +107,32 @@ public abstract class OutputStream implements Closeable, Flushable {
      * Subclasses of <code>OutputStream</code> must provide an
      * implementation for this method.
      *
-     * @param      b   the <code>byte</code>.
-     * @exception  IOException  if an I/O error occurs. In particular,
-     *             an <code>IOException</code> may be thrown if the
-     *             output stream has been closed.
+     * @param b the <code>byte</code>.
+     * @throws IOException if an I/O error occurs. In particular,
+     *                     an <code>IOException</code> may be thrown if the
+     *                     output stream has been closed.
      */
     public abstract void write(int b) throws IOException;
 
     /**
+     * 将 b 数组长度的数据写入到当前 OutputStream 对象中
+     * <p>
      * Writes <code>b.length</code> bytes from the specified byte array
      * to this output stream. The general contract for <code>write(b)</code>
      * is that it should have exactly the same effect as the call
      * <code>write(b, 0, b.length)</code>.
      *
-     * @param      b   the data.
-     * @exception  IOException  if an I/O error occurs.
-     * @see        java.io.OutputStream#write(byte[], int, int)
+     * @param b the data.
+     * @throws IOException if an I/O error occurs.
+     * @see java.io.OutputStream#write(byte[], int, int)
      */
     public void write(byte b[]) throws IOException {
         write(b, 0, b.length);
     }
 
     /**
+     * 将 len 长度的数据从 b 中输出到 OutputStream 中。off 为 b 数组的起始位置。
+     * <p>
      * Writes <code>len</code> bytes from the specified byte array
      * starting at offset <code>off</code> to this output stream.
      * The general contract for <code>write(b, off, len)</code> is that
@@ -143,22 +153,25 @@ public abstract class OutputStream implements Closeable, Flushable {
      * <code>off+len</code> is greater than the length of the array
      * {@code b}, then an {@code IndexOutOfBoundsException} is thrown.
      *
-     * @param      b     the data.
-     * @param      off   the start offset in the data.
-     * @param      len   the number of bytes to write.
-     * @exception  IOException  if an I/O error occurs. In particular,
-     *             an <code>IOException</code> is thrown if the output
-     *             stream is closed.
+     * @param b   the data.
+     * @param off the start offset in the data.
+     * @param len the number of bytes to write.
+     * @throws IOException if an I/O error occurs. In particular,
+     *                     an <code>IOException</code> is thrown if the output
+     *                     stream is closed.
      */
     public void write(byte b[], int off, int len) throws IOException {
         Objects.checkFromIndexSize(off, len, b.length);
         // len == 0 condition implicitly handled by loop bounds
-        for (int i = 0 ; i < len ; i++) {
+        for (int i = 0; i < len; i++) {
             write(b[off + i]);
         }
     }
 
     /**
+     * 调用 flush 方法会将 Java 层中缓存的数据(即使没有充满缓冲区的全部)立刻向
+     * 目的输出。比如将缓存数据向网络 IO 设备输出。
+     * <p>
      * Flushes this output stream and forces any buffered output bytes
      * to be written out. The general contract of <code>flush</code> is
      * that calling it is an indication that, if any bytes previously
@@ -174,7 +187,7 @@ public abstract class OutputStream implements Closeable, Flushable {
      * <p>
      * The <code>flush</code> method of <code>OutputStream</code> does nothing.
      *
-     * @exception  IOException  if an I/O error occurs.
+     * @throws IOException if an I/O error occurs.
      */
     public void flush() throws IOException {
     }
@@ -187,7 +200,7 @@ public abstract class OutputStream implements Closeable, Flushable {
      * <p>
      * The <code>close</code> method of <code>OutputStream</code> does nothing.
      *
-     * @exception  IOException  if an I/O error occurs.
+     * @throws IOException if an I/O error occurs.
      */
     public void close() throws IOException {
     }
