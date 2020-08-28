@@ -38,8 +38,8 @@ package java.io;
  * <code>FilterOutputStream</code> may further override some of these
  * methods as well as provide additional methods and fields.
  *
- * @author  Jonathan Payne
- * @since   1.0
+ * @author Jonathan Payne
+ * @since 1.0
  */
 public class FilterOutputStream extends OutputStream {
     /**
@@ -48,11 +48,15 @@ public class FilterOutputStream extends OutputStream {
     protected OutputStream out;
 
     /**
+     * 初始化为 false
+     * <p>
      * Whether the stream is closed; implicitly initialized to false.
      */
     private volatile boolean closed;
 
     /**
+     * 操作 closed 成员变量锁
+     * <p>
      * Object used to prevent a race on the 'closed' instance variable.
      */
     private final Object closeLock = new Object();
@@ -61,16 +65,18 @@ public class FilterOutputStream extends OutputStream {
      * Creates an output stream filter built on top of the specified
      * underlying output stream.
      *
-     * @param   out   the underlying output stream to be assigned to
-     *                the field {@code this.out} for later use, or
-     *                <code>null</code> if this instance is to be
-     *                created without an underlying stream.
+     * @param out the underlying output stream to be assigned to
+     *            the field {@code this.out} for later use, or
+     *            <code>null</code> if this instance is to be
+     *            created without an underlying stream.
      */
     public FilterOutputStream(OutputStream out) {
         this.out = out;
     }
 
     /**
+     * 委托给 out
+     * <p>
      * Writes the specified <code>byte</code> to this output stream.
      * <p>
      * The <code>write</code> method of <code>FilterOutputStream</code>
@@ -79,8 +85,8 @@ public class FilterOutputStream extends OutputStream {
      * <p>
      * Implements the abstract {@code write} method of {@code OutputStream}.
      *
-     * @param      b   the <code>byte</code>.
-     * @exception  IOException  if an I/O error occurs.
+     * @param b the <code>byte</code>.
+     * @throws IOException if an I/O error occurs.
      */
     @Override
     public void write(int b) throws IOException {
@@ -99,9 +105,9 @@ public class FilterOutputStream extends OutputStream {
      * <code>write</code> method of its underlying output stream with
      * the single argument <code>b</code>.
      *
-     * @param      b   the data to be written.
-     * @exception  IOException  if an I/O error occurs.
-     * @see        java.io.FilterOutputStream#write(byte[], int, int)
+     * @param b the data to be written.
+     * @throws IOException if an I/O error occurs.
+     * @see java.io.FilterOutputStream#write(byte[], int, int)
      */
     @Override
     public void write(byte b[]) throws IOException {
@@ -109,6 +115,8 @@ public class FilterOutputStream extends OutputStream {
     }
 
     /**
+     * 委托给 write
+     * <p>
      * Writes <code>len</code> bytes from the specified
      * <code>byte</code> array starting at offset <code>off</code> to
      * this output stream.
@@ -122,31 +130,34 @@ public class FilterOutputStream extends OutputStream {
      * of <code>FilterOutputStream</code> should provide a more efficient
      * implementation of this method.
      *
-     * @param      b     the data.
-     * @param      off   the start offset in the data.
-     * @param      len   the number of bytes to write.
-     * @exception  IOException  if an I/O error occurs.
-     * @see        java.io.FilterOutputStream#write(int)
+     * @param b   the data.
+     * @param off the start offset in the data.
+     * @param len the number of bytes to write.
+     * @throws IOException if an I/O error occurs.
+     * @see java.io.FilterOutputStream#write(int)
      */
     @Override
     public void write(byte b[], int off, int len) throws IOException {
+        // 边界检查
         if ((off | len | (b.length - (len + off)) | (off + len)) < 0)
             throw new IndexOutOfBoundsException();
 
-        for (int i = 0 ; i < len ; i++) {
+        for (int i = 0; i < len; i++) {
             write(b[off + i]);
         }
     }
 
     /**
+     * 委托给 out
+     *
      * Flushes this output stream and forces any buffered output bytes
      * to be written out to the stream.
      * <p>
      * The <code>flush</code> method of <code>FilterOutputStream</code>
      * calls the <code>flush</code> method of its underlying output stream.
      *
-     * @exception  IOException  if an I/O error occurs.
-     * @see        java.io.FilterOutputStream#out
+     * @throws IOException if an I/O error occurs.
+     * @see java.io.FilterOutputStream#out
      */
     @Override
     public void flush() throws IOException {
@@ -154,6 +165,9 @@ public class FilterOutputStream extends OutputStream {
     }
 
     /**
+     * 实现了 close 方法。
+     * 关闭输出流并释放与该输出流占用的系统资源。
+     *
      * Closes this output stream and releases any system resources
      * associated with the stream.
      * <p>
@@ -161,46 +175,53 @@ public class FilterOutputStream extends OutputStream {
      * FilterOutputStream} calls its {@code flush} method, and then
      * calls the {@code close} method of its underlying output stream.
      *
-     * @exception  IOException  if an I/O error occurs.
-     * @see        java.io.FilterOutputStream#flush()
-     * @see        java.io.FilterOutputStream#out
+     * @throws IOException if an I/O error occurs.
+     * @see java.io.FilterOutputStream#flush()
+     * @see java.io.FilterOutputStream#out
      */
     @Override
     public void close() throws IOException {
+        // 如果已经关闭，则直接返回
         if (closed) {
             return;
         }
         synchronized (closeLock) {
+            // double check
             if (closed) {
                 return;
             }
+            // 更新为 true
             closed = true;
         }
-
+        // 更新为 true 之后的后续处理
         Throwable flushException = null;
         try {
+            // close 之前会强制刷出 flush
             flush();
         } catch (Throwable e) {
             flushException = e;
             throw e;
         } finally {
+            // flush 是否抛出异常
             if (flushException == null) {
+                // 没有异常直接调用 close 进行关闭
                 out.close();
+                // flush 抛出了异常情况
             } else {
                 try {
+                    // 尝试关闭
                     out.close();
+                    // 异常处理
                 } catch (Throwable closeException) {
-                   // evaluate possible precedence of flushException over closeException
-                   if ((flushException instanceof ThreadDeath) &&
-                       !(closeException instanceof ThreadDeath)) {
-                       flushException.addSuppressed(closeException);
-                       throw (ThreadDeath) flushException;
-                   }
-
+                    // evaluate possible precedence of flushException over closeException
+                    if ((flushException instanceof ThreadDeath) &&
+                            !(closeException instanceof ThreadDeath)) {
+                        flushException.addSuppressed(closeException);
+                        throw (ThreadDeath) flushException;
+                    }
                     if (flushException != closeException) {
                         closeException.addSuppressed(flushException);
                     }
-
                     throw closeException;
                 }
             }
