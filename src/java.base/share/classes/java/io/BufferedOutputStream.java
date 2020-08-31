@@ -31,16 +31,25 @@ package java.io;
  * output stream without necessarily causing a call to the underlying
  * system for each byte written.
  *
- * @author  Arthur van Hoff
- * @since   1.0
+ * @author Arthur van Hoff
+ * @since 1.0
+ */
+
+/**
+ * 继承自 FilterOutputStream
+ * BufferedOutputStream 中的 write 方法都是将数据写到 缓冲区中
  */
 public class BufferedOutputStream extends FilterOutputStream {
     /**
+     * 内部缓冲区
+     * <p>
      * The internal buffer where data is stored.
      */
     protected byte buf[];
 
     /**
+     * 缓冲区中有效的数据长度
+     * <p>
      * The number of valid bytes in the buffer. This value is always
      * in the range {@code 0} through {@code buf.length}; elements
      * {@code buf[0]} through {@code buf[count-1]} contain valid
@@ -49,23 +58,28 @@ public class BufferedOutputStream extends FilterOutputStream {
     protected int count;
 
     /**
+     * 构造方法
+     * <p>
      * Creates a new buffered output stream to write data to the
      * specified underlying output stream.
      *
-     * @param   out   the underlying output stream.
+     * @param out the underlying output stream.
      */
     public BufferedOutputStream(OutputStream out) {
+        // 默认的 buf 大小为 8192
         this(out, 8192);
     }
 
     /**
+     * 指定缓冲区大小
+     * <p>
      * Creates a new buffered output stream to write data to the
      * specified underlying output stream with the specified buffer
      * size.
      *
-     * @param   out    the underlying output stream.
-     * @param   size   the buffer size.
-     * @exception IllegalArgumentException if size &lt;= 0.
+     * @param out  the underlying output stream.
+     * @param size the buffer size.
+     * @throws IllegalArgumentException if size &lt;= 0.
      */
     public BufferedOutputStream(OutputStream out, int size) {
         super(out);
@@ -75,26 +89,37 @@ public class BufferedOutputStream extends FilterOutputStream {
         buf = new byte[size];
     }
 
-    /** Flush the internal buffer */
+    /**
+     * 将缓冲区中的数据 flush 到 OutputStream 中
+     * 还未 flush 到底层 IO 设备
+     * <p>
+     * Flush the internal buffer
+     */
     private void flushBuffer() throws IOException {
         if (count > 0) {
+            // flush 真实的动作
             out.write(buf, 0, count);
+            // 更新 count
             count = 0;
         }
     }
 
     /**
+     * 将数据 b 写入到缓冲区中
+     * <p>
      * Writes the specified byte to this buffered output stream.
      *
-     * @param      b   the byte to be written.
-     * @exception  IOException  if an I/O error occurs.
+     * @param b the byte to be written.
+     * @throws IOException if an I/O error occurs.
      */
     @Override
     public synchronized void write(int b) throws IOException {
+        // 如果缓冲区满，则需要进行一次 flush
         if (count >= buf.length) {
             flushBuffer();
         }
-        buf[count++] = (byte)b;
+        // 保存到缓冲区中
+        buf[count++] = (byte) b;
     }
 
     /**
@@ -108,38 +133,51 @@ public class BufferedOutputStream extends FilterOutputStream {
      * bytes directly to the underlying output stream.  Thus redundant
      * <code>BufferedOutputStream</code>s will not copy data unnecessarily.
      *
-     * @param      b     the data.
-     * @param      off   the start offset in the data.
-     * @param      len   the number of bytes to write.
-     * @exception  IOException  if an I/O error occurs.
+     * @param b   the data.
+     * @param off the start offset in the data.
+     * @param len the number of bytes to write.
+     * @throws IOException if an I/O error occurs.
      */
     @Override
     public synchronized void write(byte b[], int off, int len) throws IOException {
+        // 如果写入的数据大于 buf 的长度
         if (len >= buf.length) {
             /* If the request length exceeds the size of the output buffer,
                flush the output buffer and then write the data directly.
                In this way buffered streams will cascade harmlessly. */
+            // 将缓冲区的数据写入到 OutputStream 中
             flushBuffer();
+            // 直接调用传入的 OutputStream 的 write 方法
             out.write(b, off, len);
+            // 返回
             return;
         }
+        // len < buf.length
+        // 说明数据能放入 buf 中
+        // check 一下是否需要将目前在 buf 中的数据 flush
         if (len > buf.length - count) {
             flushBuffer();
         }
+        // 将数据写入 buf 中
         System.arraycopy(b, off, buf, count, len);
+        // 更新 count
         count += len;
     }
 
     /**
+     * 真正的 flush，flush 到底层 IO 设备
+     * <p>
      * Flushes this buffered output stream. This forces any buffered
      * output bytes to be written out to the underlying output stream.
      *
-     * @exception  IOException  if an I/O error occurs.
-     * @see        java.io.FilterOutputStream#out
+     * @throws IOException if an I/O error occurs.
+     * @see java.io.FilterOutputStream#out
      */
     @Override
     public synchronized void flush() throws IOException {
+        // 先 flush 缓冲区
         flushBuffer();
+        // 再 flush OutputStream
         out.flush();
     }
 }
