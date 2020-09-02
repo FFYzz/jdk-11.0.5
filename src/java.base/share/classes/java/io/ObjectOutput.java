@@ -30,61 +30,82 @@ package java.io;
  * DataOutput includes methods for output of primitive types, ObjectOutput
  * extends that interface to include objects, arrays, and Strings.
  *
- * @author  unascribed
+ * @author unascribed
  * @see java.io.InputStream
  * @see java.io.ObjectOutputStream
  * @see java.io.ObjectInputStream
- * @since   1.1
+ * @since 1.1
+ */
+
+/**
+ * Q: 写入的目的地可以是哪些？
  */
 public interface ObjectOutput extends DataOutput, AutoCloseable {
     /**
+     * 该方法定义如何将一个 Object 对象写入 stream
+     * <p>
      * Write an object to the underlying storage or stream.  The
      * class that implements this interface defines how the object is
      * written.
      *
      * @param obj the object to be written
-     * @exception IOException Any of the usual Input/Output related exceptions.
+     * @throws IOException Any of the usual Input/Output related exceptions.
      */
     public void writeObject(Object obj)
-      throws IOException;
+            throws IOException;
 
     /**
+     * 将一个 byte 的数据进行写入 stream，成功写入之前会阻塞
+     * <p>
      * Writes a byte. This method will block until the byte is actually
      * written.
+     *
      * @param b the byte
-     * @exception IOException If an I/O error has occurred.
+     * @throws IOException If an I/O error has occurred.
      */
     public void write(int b) throws IOException;
 
     /**
+     * 将一个字节数组进行写入 stream，成功写入之前会阻塞
+     * <p>
      * Writes an array of bytes. This method will block until the bytes
      * are actually written.
+     *
      * @param b the data to be written
-     * @exception IOException If an I/O error has occurred.
+     * @throws IOException If an I/O error has occurred.
      */
     public void write(byte b[]) throws IOException;
 
     /**
+     * 将字节数组的一部分进行写入 stream，成功写入之前会阻塞
+     * <p>
      * Writes a sub array of bytes.
-     * @param b the data to be written
-     * @param off       the start offset in the data
-     * @param len       the number of bytes that are written
-     * @exception IOException If an I/O error has occurred.
+     *
+     * @param b   the data to be written
+     * @param off the start offset in the data
+     * @param len the number of bytes that are written
+     * @throws IOException If an I/O error has occurred.
      */
     public void write(byte b[], int off, int len) throws IOException;
 
     /**
+     * 对 ObjectOutput 进行 flush 操作
+     * <p>
      * Flushes the stream. This will write any buffered
      * output bytes.
-     * @exception IOException If an I/O error has occurred.
+     *
+     * @throws IOException If an I/O error has occurred.
      */
     public void flush() throws IOException;
 
     /**
+     * 关闭 ObjectOutput
+     * <p>
      * Closes the stream. This method must be called
      * to release any resources associated with the
      * stream.
-     * @exception IOException If an I/O error has occurred.
+     *
+     * @throws IOException If an I/O error has occurred.
      */
     public void close() throws IOException;
 }

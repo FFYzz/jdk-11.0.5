@@ -26,6 +26,10 @@
 package java.io;
 
 /**
+ * 该类支持从二进制流中读取字节数据，并将字节数据转成
+ * Java 中的 primitive 类型数据。与支持转成
+ * UTF-8 类型的 String 字符串
+ * <p>
  * The {@code DataInput} interface provides
  * for reading bytes from a binary stream and
  * reconstructing from them data in any of
@@ -149,14 +153,23 @@ package java.io;
  * <li><a href="../lang/Character.html#unicode">Supplementary characters</a>
  *     are represented in the form of surrogate pairs.
  * </ul>
- * @author  Frank Yellin
- * @see     java.io.DataInputStream
- * @see     java.io.DataOutput
- * @since   1.0
+ *
+ * @author Frank Yellin
+ * @see java.io.DataInputStream
+ * @see java.io.DataOutput
+ * @since 1.0
  */
 public
 interface DataInput {
     /**
+     * 从 input stream 中读取数据存储到传入的 byte 数组中
+     * 读取的字节数为传入的字节数组的长度
+     * 若没有读满，则会阻塞，直到以下情况发生
+     * 1. 读满正常返回
+     * 2. 读完了，但是没满，抛出 EOFException 异常。
+     * 3. IO 异常抛出 IOException
+     * 4.
+     * <p>
      * Reads some bytes from an input
      * stream and stores them into the buffer
      * array {@code b}. The number of bytes
@@ -191,16 +204,18 @@ interface DataInput {
      * not all bytes of {@code b} have been
      * updated with data from the input stream.
      *
-     * @param   b   the buffer into which the data is read.
-     * @throws  NullPointerException if {@code b} is {@code null}.
-     * @throws  EOFException  if this stream reaches the end before reading
-     *          all the bytes.
-     * @throws  IOException   if an I/O error occurs.
+     * @param b the buffer into which the data is read.
+     * @throws NullPointerException if {@code b} is {@code null}.
+     * @throws EOFException         if this stream reaches the end before reading
+     *                              all the bytes.
+     * @throws IOException          if an I/O error occurs.
      */
     void readFully(byte b[]) throws IOException;
 
     /**
-     *
+     * 读取 len 的长度，存储到 byte 数组中，读到的第一位数据存到 off 位置
+     * 未读满 len 位同样会阻塞，唤醒的情况与上述一致。
+     * <p>
      * Reads {@code len}
      * bytes from
      * an input stream.
@@ -236,20 +251,24 @@ interface DataInput {
      * and so on. The number of bytes read is,
      * at most, equal to {@code len}.
      *
-     * @param   b    the buffer into which the data is read.
-     * @param   off  an int specifying the offset in the data array {@code b}.
-     * @param   len  an int specifying the number of bytes to read.
-     * @throws  NullPointerException if {@code b} is {@code null}.
-     * @throws  IndexOutOfBoundsException if {@code off} is negative,
-     *          {@code len} is negative, or {@code len} is greater than
-     *          {@code b.length - off}.
-     * @throws  EOFException  if this stream reaches the end before reading
-     *          all the bytes.
-     * @throws  IOException   if an I/O error occurs.
+     * @param b   the buffer into which the data is read.
+     * @param off an int specifying the offset in the data array {@code b}.
+     * @param len an int specifying the number of bytes to read.
+     * @throws NullPointerException      if {@code b} is {@code null}.
+     * @throws IndexOutOfBoundsException if {@code off} is negative,
+     *                                   {@code len} is negative, or {@code len} is greater than
+     *                                   {@code b.length - off}.
+     * @throws EOFException              if this stream reaches the end before reading
+     *                                   all the bytes.
+     * @throws IOException               if an I/O error occurs.
      */
     void readFully(byte b[], int off, int len) throws IOException;
 
     /**
+     * 尝试从 input stream 中跳过 n byte 的数据
+     * 可能跳过的数据会少于 n 字节，只有一个原因
+     * 那就是 input stream  读完了
+     * <p>
      * Makes an attempt to skip over
      * {@code n} bytes
      * of data from the input
@@ -266,13 +285,17 @@ interface DataInput {
      * The actual
      * number of bytes skipped is returned.
      *
-     * @param      n   the number of bytes to be skipped.
-     * @return     the number of bytes actually skipped.
-     * @exception  IOException   if an I/O error occurs.
+     * @param n the number of bytes to be skipped.
+     * @return the number of bytes actually skipped.
+     * @throws IOException if an I/O error occurs.
      */
     int skipBytes(int n) throws IOException;
 
     /**
+     * 从 input stream 中读取一个字节的数据
+     * 如果值为 0，返回 false，如果值为 1，返回 true。
+     * 与 DataOutput 接口的 writeBoolean 方法适配
+     * <p>
      * Reads one input byte and returns
      * {@code true} if that byte is nonzero,
      * {@code false} if that byte is zero.
@@ -280,14 +303,18 @@ interface DataInput {
      * the byte written by the {@code writeBoolean}
      * method of interface {@code DataOutput}.
      *
-     * @return     the {@code boolean} value read.
-     * @exception  EOFException  if this stream reaches the end before reading
-     *               all the bytes.
-     * @exception  IOException   if an I/O error occurs.
+     * @return the {@code boolean} value read.
+     * @throws EOFException if this stream reaches the end before reading
+     *                      all the bytes.
+     * @throws IOException  if an I/O error occurs.
      */
     boolean readBoolean() throws IOException;
 
     /**
+     * 从 input stream 中读取一个字节的数据
+     * 将其视为有符号的 byte 类型数据
+     * 与 DataOutput 接口的 writeByte 方法适配
+     * <p>
      * Reads and returns one input byte.
      * The byte is treated as a signed value in
      * the range {@code -128} through {@code 127},
@@ -296,14 +323,18 @@ interface DataInput {
      * reading the byte written by the {@code writeByte}
      * method of interface {@code DataOutput}.
      *
-     * @return     the 8-bit value read.
-     * @exception  EOFException  if this stream reaches the end before reading
-     *               all the bytes.
-     * @exception  IOException   if an I/O error occurs.
+     * @return the 8-bit value read.
+     * @throws EOFException if this stream reaches the end before reading
+     *                      all the bytes.
+     * @throws IOException  if an I/O error occurs.
      */
     byte readByte() throws IOException;
 
     /**
+     * 从 input stream 中读取一个字节的数据
+     * 将其视为无符号的 byte 类型数据
+     * 与 DataOutput 接口的 writeByte 方法适配
+     * <p>
      * Reads one input byte, zero-extends
      * it to type {@code int}, and returns
      * the result, which is therefore in the range
@@ -316,14 +347,17 @@ interface DataInput {
      * was intended to be a value in the range
      * {@code 0} through {@code 255}.
      *
-     * @return     the unsigned 8-bit value read.
-     * @exception  EOFException  if this stream reaches the end before reading
-     *               all the bytes.
-     * @exception  IOException   if an I/O error occurs.
+     * @return the unsigned 8-bit value read.
+     * @throws EOFException if this stream reaches the end before reading
+     *                      all the bytes.
+     * @throws IOException  if an I/O error occurs.
      */
     int readUnsignedByte() throws IOException;
 
     /**
+     * 从 input stream 中读取两个字节的数据，转为 short 类型的值
+     * 与 DataOutput 接口的 writeShort 方法适配
+     * <p>
      * Reads two input bytes and returns
      * a {@code short} value. Let {@code a}
      * be the first byte read and {@code b}
@@ -337,14 +371,17 @@ interface DataInput {
      * by the {@code writeShort} method of
      * interface {@code DataOutput}.
      *
-     * @return     the 16-bit value read.
-     * @exception  EOFException  if this stream reaches the end before reading
-     *               all the bytes.
-     * @exception  IOException   if an I/O error occurs.
+     * @return the 16-bit value read.
+     * @throws EOFException if this stream reaches the end before reading
+     *                      all the bytes.
+     * @throws IOException  if an I/O error occurs.
      */
     short readShort() throws IOException;
 
     /**
+     * 从 input stream 中读取两个字节的数据，转为无符号 short 类型的值
+     * 与 DataOutput 接口的 writeShort 方法适配
+     * <p>
      * Reads two input bytes and returns
      * an {@code int} value in the range {@code 0}
      * through {@code 65535}. Let {@code a}
@@ -360,14 +397,17 @@ interface DataInput {
      * was intended to be a value in the range
      * {@code 0} through {@code 65535}.
      *
-     * @return     the unsigned 16-bit value read.
-     * @exception  EOFException  if this stream reaches the end before reading
-     *               all the bytes.
-     * @exception  IOException   if an I/O error occurs.
+     * @return the unsigned 16-bit value read.
+     * @throws EOFException if this stream reaches the end before reading
+     *                      all the bytes.
+     * @throws IOException  if an I/O error occurs.
      */
     int readUnsignedShort() throws IOException;
 
     /**
+     * 从 input stream 中读取两个字节的数据，转为 char 类型的值
+     * 与 DataOutput 接口的 writeChar 方法适配
+     * <p>
      * Reads two input bytes and returns a {@code char} value.
      * Let {@code a}
      * be the first byte read and {@code b}
@@ -380,14 +420,17 @@ interface DataInput {
      * the {@code writeChar} method of interface
      * {@code DataOutput}.
      *
-     * @return     the {@code char} value read.
-     * @exception  EOFException  if this stream reaches the end before reading
-     *               all the bytes.
-     * @exception  IOException   if an I/O error occurs.
+     * @return the {@code char} value read.
+     * @throws EOFException if this stream reaches the end before reading
+     *                      all the bytes.
+     * @throws IOException  if an I/O error occurs.
      */
     char readChar() throws IOException;
 
     /**
+     * 从 input stream 中读取四个字节的数据，转为 int 类型的值
+     * 与 DataOutput 接口的 writeInt 方法适配
+     * <p>
      * Reads four input bytes and returns an
      * {@code int} value. Let {@code a-d}
      * be the first through fourth bytes read. The value returned is:
@@ -399,14 +442,17 @@ interface DataInput {
      * for reading bytes written by the {@code writeInt}
      * method of interface {@code DataOutput}.
      *
-     * @return     the {@code int} value read.
-     * @exception  EOFException  if this stream reaches the end before reading
-     *               all the bytes.
-     * @exception  IOException   if an I/O error occurs.
+     * @return the {@code int} value read.
+     * @throws EOFException if this stream reaches the end before reading
+     *                      all the bytes.
+     * @throws IOException  if an I/O error occurs.
      */
     int readInt() throws IOException;
 
     /**
+     * 从 input stream 中读取八个字节的数据，转为 long 类型的值
+     * 与 DataOutput 接口的 writeLong 方法适配
+     * <p>
      * Reads eight input bytes and returns
      * a {@code long} value. Let {@code a-h}
      * be the first through eighth bytes read.
@@ -426,14 +472,17 @@ interface DataInput {
      * for reading bytes written by the {@code writeLong}
      * method of interface {@code DataOutput}.
      *
-     * @return     the {@code long} value read.
-     * @exception  EOFException  if this stream reaches the end before reading
-     *               all the bytes.
-     * @exception  IOException   if an I/O error occurs.
+     * @return the {@code long} value read.
+     * @throws EOFException if this stream reaches the end before reading
+     *                      all the bytes.
+     * @throws IOException  if an I/O error occurs.
      */
     long readLong() throws IOException;
 
     /**
+     * 从 input stream 中读取四个字节的数据，转为 float 类型的值
+     * 与 DataOutput 接口的 writeFloat 方法适配
+     * <p>
      * Reads four input bytes and returns
      * a {@code float} value. It does this
      * by first constructing an {@code int}
@@ -446,14 +495,17 @@ interface DataInput {
      * bytes written by the {@code writeFloat}
      * method of interface {@code DataOutput}.
      *
-     * @return     the {@code float} value read.
-     * @exception  EOFException  if this stream reaches the end before reading
-     *               all the bytes.
-     * @exception  IOException   if an I/O error occurs.
+     * @return the {@code float} value read.
+     * @throws EOFException if this stream reaches the end before reading
+     *                      all the bytes.
+     * @throws IOException  if an I/O error occurs.
      */
     float readFloat() throws IOException;
 
     /**
+     * 从 input stream 中读取八个字节的数据，转为 double 类型的值
+     * 与 DataOutput 接口的 writeDouble 方法适配
+     * <p>
      * Reads eight input bytes and returns
      * a {@code double} value. It does this
      * by first constructing a {@code long}
@@ -466,14 +518,19 @@ interface DataInput {
      * bytes written by the {@code writeDouble}
      * method of interface {@code DataOutput}.
      *
-     * @return     the {@code double} value read.
-     * @exception  EOFException  if this stream reaches the end before reading
-     *               all the bytes.
-     * @exception  IOException   if an I/O error occurs.
+     * @return the {@code double} value read.
+     * @throws EOFException if this stream reaches the end before reading
+     *                      all the bytes.
+     * @throws IOException  if an I/O error occurs.
      */
     double readDouble() throws IOException;
 
     /**
+     * 从 input stream 中读取一行的数据
+     * 如果读到连续的 bytes，将每个字节分别转成 character
+     * 直到遇到一个换行符。
+     * 该方法不支持所有的 Unicode 字符集
+     * <p>
      * Reads the next line of text from the input stream.
      * It reads successive bytes, converting
      * each byte separately into a character,
@@ -508,13 +565,16 @@ interface DataInput {
      * that is, {@code (char)256}.
      *
      * @return the next line of text from the input stream,
-     *         or {@code null} if the end of file is
-     *         encountered before a byte can be read.
-     * @exception  IOException  if an I/O error occurs.
+     * or {@code null} if the end of file is
+     * encountered before a byte can be read.
+     * @throws IOException if an I/O error occurs.
      */
     String readLine() throws IOException;
 
     /**
+     * 读取一个用 UTF-8 编码的字符串。
+     * 支持读取用 UTF-8 编码的 Unicode 字符
+     * <p>
      * Reads in a string that has been encoded using a
      * <a href="#modified-utf-8">modified UTF-8</a>
      * format.
@@ -523,6 +583,8 @@ interface DataInput {
      * character string encoded in modified
      * UTF-8 format; this string of characters
      * is then returned as a {@code String}.
+     * <p>
+     * 编码规范定义
      * <p>
      * First, two bytes are read and used to
      * construct an unsigned 16-bit integer in
@@ -592,12 +654,13 @@ interface DataInput {
      * method of interface {@code DataOutput}
      * may be used to write data that is suitable
      * for reading by this method.
-     * @return     a Unicode string.
-     * @exception  EOFException            if this stream reaches the end
-     *               before reading all the bytes.
-     * @exception  IOException             if an I/O error occurs.
-     * @exception  UTFDataFormatException  if the bytes do not represent a
-     *               valid modified UTF-8 encoding of a string.
+     *
+     * @return a Unicode string.
+     * @throws EOFException           if this stream reaches the end
+     *                                before reading all the bytes.
+     * @throws IOException            if an I/O error occurs.
+     * @throws UTFDataFormatException if the bytes do not represent a
+     *                                valid modified UTF-8 encoding of a string.
      */
     String readUTF() throws IOException;
 }
