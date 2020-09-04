@@ -35,6 +35,10 @@ package java.io;
  *
  * @since 1.2
  */
+
+/**
+ * 与 FilenameFilter 比较类似，传入参数不同
+ */
 @FunctionalInterface
 public interface FileFilter {
 
@@ -42,9 +46,9 @@ public interface FileFilter {
      * Tests whether or not the specified abstract pathname should be
      * included in a pathname list.
      *
-     * @param  pathname  The abstract pathname to be tested
-     * @return  <code>true</code> if and only if <code>pathname</code>
-     *          should be included
+     * @param pathname The abstract pathname to be tested
+     * @return <code>true</code> if and only if <code>pathname</code>
+     * should be included
      */
     boolean accept(File pathname);
 }

@@ -34,6 +34,10 @@ import java.io.IOException;
  *
  * @since 1.5
  */
+
+/**
+ * 实现该接口的类要重写 close 方法
+ */
 public interface Closeable extends AutoCloseable {
 
     /**

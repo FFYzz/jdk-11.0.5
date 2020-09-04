@@ -30,37 +30,45 @@ package java.io;
  * types to an output stream in a portable way. An application can
  * then use a data input stream to read the data back in.
  *
- * @author  unascribed
- * @see     java.io.DataInputStream
- * @since   1.0
+ * @author unascribed
+ * @see java.io.DataInputStream
+ * @since 1.0
  */
 public
 class DataOutputStream extends FilterOutputStream implements DataOutput {
     /**
+     * 记录到目前为止写到 output stream 中的字节数
+     * <p>
      * The number of bytes written to the data output stream so far.
      * If this counter overflows, it will be wrapped to Integer.MAX_VALUE.
      */
     protected int written;
 
     /**
+     * 保存 byte 的数组
+     * <p>
      * bytearr is initialized on demand by writeUTF
      */
     private byte[] bytearr = null;
 
     /**
+     * 构造方法
+     * <p>
      * Creates a new data output stream to write data to the specified
      * underlying output stream. The counter <code>written</code> is
      * set to zero.
      *
-     * @param   out   the underlying output stream, to be saved for later
-     *                use.
-     * @see     java.io.FilterOutputStream#out
+     * @param out the underlying output stream, to be saved for later
+     *            use.
+     * @see java.io.FilterOutputStream#out
      */
     public DataOutputStream(OutputStream out) {
         super(out);
     }
 
     /**
+     * 增加写入的字节数
+     * <p>
      * Increases the written counter by the specified value
      * until it reaches Integer.MAX_VALUE.
      */
@@ -73,6 +81,8 @@ class DataOutputStream extends FilterOutputStream implements DataOutput {
     }
 
     /**
+     * 写数据
+     * <p>
      * Writes the specified byte (the low eight bits of the argument
      * <code>b</code>) to the underlying output stream. If no exception
      * is thrown, the counter <code>written</code> is incremented by
@@ -80,9 +90,9 @@ class DataOutputStream extends FilterOutputStream implements DataOutput {
      * <p>
      * Implements the <code>write</code> method of <code>OutputStream</code>.
      *
-     * @param      b   the <code>byte</code> to be written.
-     * @exception  IOException  if an I/O error occurs.
-     * @see        java.io.FilterOutputStream#out
+     * @param b the <code>byte</code> to be written.
+     * @throws IOException if an I/O error occurs.
+     * @see java.io.FilterOutputStream#out
      */
     public synchronized void write(int b) throws IOException {
         out.write(b);
@@ -90,40 +100,46 @@ class DataOutputStream extends FilterOutputStream implements DataOutput {
     }
 
     /**
+     * 将 b 数组中 off -> off + len - 1 的数据写到 output stream (可以认为是 Java 层的缓冲区)
+     * <p>
      * Writes <code>len</code> bytes from the specified byte array
      * starting at offset <code>off</code> to the underlying output stream.
      * If no exception is thrown, the counter <code>written</code> is
      * incremented by <code>len</code>.
      *
-     * @param      b     the data.
-     * @param      off   the start offset in the data.
-     * @param      len   the number of bytes to write.
-     * @exception  IOException  if an I/O error occurs.
-     * @see        java.io.FilterOutputStream#out
+     * @param b   the data.
+     * @param off the start offset in the data.
+     * @param len the number of bytes to write.
+     * @throws IOException if an I/O error occurs.
+     * @see java.io.FilterOutputStream#out
      */
     public synchronized void write(byte b[], int off, int len)
-        throws IOException
-    {
+            throws IOException {
         out.write(b, off, len);
+        // 同时更新 written
         incCount(len);
     }
 
     /**
+     * 将 Java 层的数据 flush 到底层 IO 设备
+     * <p>
      * Flushes this data output stream. This forces any buffered output
      * bytes to be written out to the stream.
      * <p>
      * The <code>flush</code> method of <code>DataOutputStream</code>
      * calls the <code>flush</code> method of its underlying output stream.
      *
-     * @exception  IOException  if an I/O error occurs.
-     * @see        java.io.FilterOutputStream#out
-     * @see        java.io.OutputStream#flush()
+     * @throws IOException if an I/O error occurs.
+     * @see java.io.FilterOutputStream#out
+     * @see java.io.OutputStream#flush()
      */
     public void flush() throws IOException {
         out.flush();
     }
 
     /**
+     * 将 boolean 类型的数据写到 output stream
+     * <p>
      * Writes a <code>boolean</code> to the underlying output stream as
      * a 1-byte value. The value <code>true</code> is written out as the
      * value <code>(byte)1</code>; the value <code>false</code> is
@@ -131,9 +147,9 @@ class DataOutputStream extends FilterOutputStream implements DataOutput {
      * thrown, the counter <code>written</code> is incremented by
      * <code>1</code>.
      *
-     * @param      v   a <code>boolean</code> value to be written.
-     * @exception  IOException  if an I/O error occurs.
-     * @see        java.io.FilterOutputStream#out
+     * @param v a <code>boolean</code> value to be written.
+     * @throws IOException if an I/O error occurs.
+     * @see java.io.FilterOutputStream#out
      */
     public final void writeBoolean(boolean v) throws IOException {
         out.write(v ? 1 : 0);
@@ -145,9 +161,9 @@ class DataOutputStream extends FilterOutputStream implements DataOutput {
      * a 1-byte value. If no exception is thrown, the counter
      * <code>written</code> is incremented by <code>1</code>.
      *
-     * @param      v   a <code>byte</code> value to be written.
-     * @exception  IOException  if an I/O error occurs.
-     * @see        java.io.FilterOutputStream#out
+     * @param v a <code>byte</code> value to be written.
+     * @throws IOException if an I/O error occurs.
+     * @see java.io.FilterOutputStream#out
      */
     public final void writeByte(int v) throws IOException {
         out.write(v);
@@ -159,9 +175,9 @@ class DataOutputStream extends FilterOutputStream implements DataOutput {
      * bytes, high byte first. If no exception is thrown, the counter
      * <code>written</code> is incremented by <code>2</code>.
      *
-     * @param      v   a <code>short</code> to be written.
-     * @exception  IOException  if an I/O error occurs.
-     * @see        java.io.FilterOutputStream#out
+     * @param v a <code>short</code> to be written.
+     * @throws IOException if an I/O error occurs.
+     * @see java.io.FilterOutputStream#out
      */
     public final void writeShort(int v) throws IOException {
         out.write((v >>> 8) & 0xFF);
@@ -174,9 +190,9 @@ class DataOutputStream extends FilterOutputStream implements DataOutput {
      * 2-byte value, high byte first. If no exception is thrown, the
      * counter <code>written</code> is incremented by <code>2</code>.
      *
-     * @param      v   a <code>char</code> value to be written.
-     * @exception  IOException  if an I/O error occurs.
-     * @see        java.io.FilterOutputStream#out
+     * @param v a <code>char</code> value to be written.
+     * @throws IOException if an I/O error occurs.
+     * @see java.io.FilterOutputStream#out
      */
     public final void writeChar(int v) throws IOException {
         out.write((v >>> 8) & 0xFF);
@@ -189,15 +205,15 @@ class DataOutputStream extends FilterOutputStream implements DataOutput {
      * bytes, high byte first. If no exception is thrown, the counter
      * <code>written</code> is incremented by <code>4</code>.
      *
-     * @param      v   an <code>int</code> to be written.
-     * @exception  IOException  if an I/O error occurs.
-     * @see        java.io.FilterOutputStream#out
+     * @param v an <code>int</code> to be written.
+     * @throws IOException if an I/O error occurs.
+     * @see java.io.FilterOutputStream#out
      */
     public final void writeInt(int v) throws IOException {
         out.write((v >>> 24) & 0xFF);
         out.write((v >>> 16) & 0xFF);
-        out.write((v >>>  8) & 0xFF);
-        out.write((v >>>  0) & 0xFF);
+        out.write((v >>> 8) & 0xFF);
+        out.write((v >>> 0) & 0xFF);
         incCount(4);
     }
 
@@ -208,19 +224,19 @@ class DataOutputStream extends FilterOutputStream implements DataOutput {
      * bytes, high byte first. In no exception is thrown, the counter
      * <code>written</code> is incremented by <code>8</code>.
      *
-     * @param      v   a <code>long</code> to be written.
-     * @exception  IOException  if an I/O error occurs.
-     * @see        java.io.FilterOutputStream#out
+     * @param v a <code>long</code> to be written.
+     * @throws IOException if an I/O error occurs.
+     * @see java.io.FilterOutputStream#out
      */
     public final void writeLong(long v) throws IOException {
-        writeBuffer[0] = (byte)(v >>> 56);
-        writeBuffer[1] = (byte)(v >>> 48);
-        writeBuffer[2] = (byte)(v >>> 40);
-        writeBuffer[3] = (byte)(v >>> 32);
-        writeBuffer[4] = (byte)(v >>> 24);
-        writeBuffer[5] = (byte)(v >>> 16);
-        writeBuffer[6] = (byte)(v >>>  8);
-        writeBuffer[7] = (byte)(v >>>  0);
+        writeBuffer[0] = (byte) (v >>> 56);
+        writeBuffer[1] = (byte) (v >>> 48);
+        writeBuffer[2] = (byte) (v >>> 40);
+        writeBuffer[3] = (byte) (v >>> 32);
+        writeBuffer[4] = (byte) (v >>> 24);
+        writeBuffer[5] = (byte) (v >>> 16);
+        writeBuffer[6] = (byte) (v >>> 8);
+        writeBuffer[7] = (byte) (v >>> 0);
         out.write(writeBuffer, 0, 8);
         incCount(8);
     }
@@ -233,10 +249,10 @@ class DataOutputStream extends FilterOutputStream implements DataOutput {
      * exception is thrown, the counter <code>written</code> is
      * incremented by <code>4</code>.
      *
-     * @param      v   a <code>float</code> value to be written.
-     * @exception  IOException  if an I/O error occurs.
-     * @see        java.io.FilterOutputStream#out
-     * @see        java.lang.Float#floatToIntBits(float)
+     * @param v a <code>float</code> value to be written.
+     * @throws IOException if an I/O error occurs.
+     * @see java.io.FilterOutputStream#out
+     * @see java.lang.Float#floatToIntBits(float)
      */
     public final void writeFloat(float v) throws IOException {
         writeInt(Float.floatToIntBits(v));
@@ -250,10 +266,10 @@ class DataOutputStream extends FilterOutputStream implements DataOutput {
      * exception is thrown, the counter <code>written</code> is
      * incremented by <code>8</code>.
      *
-     * @param      v   a <code>double</code> value to be written.
-     * @exception  IOException  if an I/O error occurs.
-     * @see        java.io.FilterOutputStream#out
-     * @see        java.lang.Double#doubleToLongBits(double)
+     * @param v a <code>double</code> value to be written.
+     * @throws IOException if an I/O error occurs.
+     * @see java.io.FilterOutputStream#out
+     * @see java.lang.Double#doubleToLongBits(double)
      */
     public final void writeDouble(double v) throws IOException {
         writeLong(Double.doubleToLongBits(v));
@@ -266,14 +282,14 @@ class DataOutputStream extends FilterOutputStream implements DataOutput {
      * thrown, the counter <code>written</code> is incremented by the
      * length of <code>s</code>.
      *
-     * @param      s   a string of bytes to be written.
-     * @exception  IOException  if an I/O error occurs.
-     * @see        java.io.FilterOutputStream#out
+     * @param s a string of bytes to be written.
+     * @throws IOException if an I/O error occurs.
+     * @see java.io.FilterOutputStream#out
      */
     public final void writeBytes(String s) throws IOException {
         int len = s.length();
-        for (int i = 0 ; i < len ; i++) {
-            out.write((byte)s.charAt(i));
+        for (int i = 0; i < len; i++) {
+            out.write((byte) s.charAt(i));
         }
         incCount(len);
     }
@@ -285,15 +301,16 @@ class DataOutputStream extends FilterOutputStream implements DataOutput {
      * thrown, the counter <code>written</code> is incremented by twice
      * the length of <code>s</code>.
      *
-     * @param      s   a <code>String</code> value to be written.
-     * @exception  IOException  if an I/O error occurs.
-     * @see        java.io.DataOutputStream#writeChar(int)
-     * @see        java.io.FilterOutputStream#out
+     * @param s a <code>String</code> value to be written.
+     * @throws IOException if an I/O error occurs.
+     * @see java.io.DataOutputStream#writeChar(int)
+     * @see java.io.FilterOutputStream#out
      */
     public final void writeChars(String s) throws IOException {
         int len = s.length();
-        for (int i = 0 ; i < len ; i++) {
+        for (int i = 0; i < len; i++) {
             int v = s.charAt(i);
+            // 需要注意的是写入的都是 int 类型的数据
             out.write((v >>> 8) & 0xFF);
             out.write((v >>> 0) & 0xFF);
         }
@@ -316,8 +333,8 @@ class DataOutputStream extends FilterOutputStream implements DataOutput {
      * plus the length of <code>str</code>, and at most two plus
      * thrice the length of <code>str</code>.
      *
-     * @param      str   a string to be written.
-     * @exception  IOException  if an I/O error occurs.
+     * @param str a string to be written.
+     * @throws IOException if an I/O error occurs.
      */
     public final void writeUTF(String str) throws IOException {
         writeUTF(str, this);
@@ -338,77 +355,96 @@ class DataOutputStream extends FilterOutputStream implements DataOutput {
      * plus the length of <code>str</code>, and at most two plus
      * thrice the length of <code>str</code>.
      *
-     * @param      str   a string to be written.
-     * @param      out   destination to write to
-     * @return     The number of bytes written out.
-     * @exception  IOException  if an I/O error occurs.
+     * @param str a string to be written.
+     * @param out destination to write to
+     * @return The number of bytes written out.
+     * @throws IOException if an I/O error occurs.
      */
     static int writeUTF(String str, DataOutput out) throws IOException {
+        // 字符数
         int strlen = str.length();
         int utflen = 0;
         int c, count = 0;
 
         /* use charAt instead of copying String to char array */
+        // 确定所需的字节数
         for (int i = 0; i < strlen; i++) {
             c = str.charAt(i);
+            // 单字节
             if ((c >= 0x0001) && (c <= 0x007F)) {
+                // 存储只需要 1 个字节
                 utflen++;
+                // 三字节
             } else if (c > 0x07FF) {
+                // 存储需要 3 个字节
                 utflen += 3;
+                // 2 字节
             } else {
+                // 存储需要 2 个字节
                 utflen += 2;
             }
         }
 
+        // 写入的总字节不能超过 65535，最大只能 65534。还有留两字节表示数据的长度
+        // 16 位 = 2 字节
         if (utflen > 65535)
             throw new UTFDataFormatException(
-                "encoded string too long: " + utflen + " bytes");
+                    "encoded string too long: " + utflen + " bytes");
 
         byte[] bytearr = null;
+        // 初始化 bytearr
         if (out instanceof DataOutputStream) {
-            DataOutputStream dos = (DataOutputStream)out;
-            if(dos.bytearr == null || (dos.bytearr.length < (utflen+2)))
-                dos.bytearr = new byte[(utflen*2) + 2];
+            DataOutputStream dos = (DataOutputStream) out;
+            if (dos.bytearr == null || (dos.bytearr.length < (utflen + 2)))
+                dos.bytearr = new byte[(utflen * 2) + 2];
             bytearr = dos.bytearr;
         } else {
-            bytearr = new byte[utflen+2];
+            bytearr = new byte[utflen + 2];
         }
 
+        // 前两个字节用于保存数据的长度，字节数
         bytearr[count++] = (byte) ((utflen >>> 8) & 0xFF);
         bytearr[count++] = (byte) ((utflen >>> 0) & 0xFF);
 
-        int i=0;
-        for (i=0; i<strlen; i++) {
-           c = str.charAt(i);
-           if (!((c >= 0x0001) && (c <= 0x007F))) break;
-           bytearr[count++] = (byte) c;
+        int i = 0;
+        // 单字节处理
+        for (i = 0; i < strlen; i++) {
+            c = str.charAt(i);
+            // 如果不是单字节
+            if (!((c >= 0x0001) && (c <= 0x007F))) break;
+            bytearr[count++] = (byte) c;
         }
 
-        for (;i < strlen; i++){
+        for (; i < strlen; i++) {
             c = str.charAt(i);
+            // 如果是单字节
             if ((c >= 0x0001) && (c <= 0x007F)) {
                 bytearr[count++] = (byte) c;
-
+                // 如果是三字节
             } else if (c > 0x07FF) {
                 bytearr[count++] = (byte) (0xE0 | ((c >> 12) & 0x0F));
-                bytearr[count++] = (byte) (0x80 | ((c >>  6) & 0x3F));
-                bytearr[count++] = (byte) (0x80 | ((c >>  0) & 0x3F));
+                bytearr[count++] = (byte) (0x80 | ((c >> 6) & 0x3F));
+                bytearr[count++] = (byte) (0x80 | ((c >> 0) & 0x3F));
+                // 2 字节
             } else {
-                bytearr[count++] = (byte) (0xC0 | ((c >>  6) & 0x1F));
-                bytearr[count++] = (byte) (0x80 | ((c >>  0) & 0x3F));
+                bytearr[count++] = (byte) (0xC0 | ((c >> 6) & 0x1F));
+                bytearr[count++] = (byte) (0x80 | ((c >> 0) & 0x3F));
             }
         }
-        out.write(bytearr, 0, utflen+2);
+        // 将数据写到 output stream 中
+        out.write(bytearr, 0, utflen + 2);
         return utflen + 2;
     }
 
     /**
+     * 返回写入 output stream 的数据数
+     * <p>
      * Returns the current value of the counter <code>written</code>,
      * the number of bytes written to this data output stream so far.
      * If the counter overflows, it will be wrapped to Integer.MAX_VALUE.
      *
-     * @return  the value of the <code>written</code> field.
-     * @see     java.io.DataOutputStream#written
+     * @return the value of the <code>written</code> field.
+     * @see java.io.DataOutputStream#written
      */
     public final int size() {
         return written;

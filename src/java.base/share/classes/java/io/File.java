@@ -34,6 +34,7 @@ import java.util.ArrayList;
 import java.security.SecureRandom;
 import java.nio.file.Path;
 import java.nio.file.FileSystems;
+
 import sun.security.action.GetPropertyAction;
 
 /**
@@ -50,7 +51,7 @@ import sun.security.action.GetPropertyAction;
  *      directory, or <code>"\\\\"</code>&nbsp;for a Microsoft Windows UNC pathname, and
  * <li> A sequence of zero or more string <em>names</em>.
  * </ol>
- *
+ * <p>
  * The first name in an abstract pathname may be a directory name or, in the
  * case of Microsoft Windows UNC pathnames, a hostname.  Each subsequent name
  * in an abstract pathname denotes a directory; the last name may denote
@@ -141,20 +142,26 @@ import sun.security.action.GetPropertyAction;
  * additional file operations, file attributes, and I/O exceptions to help
  * diagnose errors when an operation on a file fails.
  *
- * @author  unascribed
- * @since   1.0
+ * @author unascribed
+ * @since 1.0
  */
 
+/**
+ * File 类的很多方法都委托给了 FileSystem 来是实现
+ */
 public class File
-    implements Serializable, Comparable<File>
-{
+        implements Serializable, Comparable<File> {
 
     /**
+     * 指向本地文件系统
+     * <p>
      * The FileSystem object representing the platform's local file system.
      */
     private static final FileSystem fs = DefaultFileSystem.getFileSystem();
 
     /**
+     * 保存标准化的绝对路径名
+     * <p>
      * This abstract pathname's normalized pathname string. A normalized
      * pathname string uses the default name-separator character and does not
      * contain any duplicate or redundant separators.
@@ -164,16 +171,25 @@ public class File
     private final String path;
 
     /**
+     * 标识文件路径是否有效的 enum
+     * <p>
      * Enum type that indicates the status of a file path.
      */
-    private static enum PathStatus { INVALID, CHECKED };
+    private static enum PathStatus {INVALID, CHECKED}
+
+    ;
 
     /**
+     * 当前文件 PathStatus
+     * <p>
      * The flag indicating whether the file path is invalid.
      */
     private transient PathStatus status = null;
 
     /**
+     * 该方法暂时只能检查 该字符
+     * 检查文件路径是否包含 '\u0000' 字符，如果包含，无效
+     * <p>
      * Check if the file has an invalid path. Currently, the inspection of
      * a file path is very limited, and it only covers Nul character check.
      * Returning true means the path is definitely invalid/garbage. But
@@ -185,19 +201,23 @@ public class File
         PathStatus s = status;
         if (s == null) {
             s = (this.path.indexOf('\u0000') < 0) ? PathStatus.CHECKED
-                                                  : PathStatus.INVALID;
+                    : PathStatus.INVALID;
             status = s;
         }
         return s == PathStatus.INVALID;
     }
 
     /**
+     * 开头表示路径的长度
+     * <p>
      * The length of this abstract pathname's prefix, or zero if it has no
      * prefix.
      */
     private final transient int prefixLength;
 
     /**
+     * 返回 prefixLength 的长度
+     * <p>
      * Returns the length of this abstract pathname's prefix.
      * For use by FileSystem classes.
      */
@@ -206,16 +226,22 @@ public class File
     }
 
     /**
+     * 不同文件系统的路径分隔符
+     * Unix : /
+     * Windows : \\
+     * <p>
      * The system-dependent default name-separator character.  This field is
      * initialized to contain the first character of the value of the system
      * property <code>file.separator</code>.  On UNIX systems the value of this
      * field is <code>'/'</code>; on Microsoft Windows systems it is <code>'\\'</code>.
      *
-     * @see     java.lang.System#getProperty(java.lang.String)
+     * @see java.lang.System#getProperty(java.lang.String)
      */
     public static final char separatorChar = fs.getSeparator();
 
     /**
+     * 系统相关的路径分隔符，转为 String
+     * <p>
      * The system-dependent default name-separator character, represented as a
      * string for convenience.  This string contains a single character, namely
      * {@link #separatorChar}.
@@ -223,6 +249,10 @@ public class File
     public static final String separator = "" + separatorChar;
 
     /**
+     * 系统相关的多个路径的分隔符
+     * Unix 下 :
+     * Windows 下 ;
+     * <p>
      * The system-dependent path-separator character.  This field is
      * initialized to contain the first character of the value of the system
      * property <code>path.separator</code>.  This character is used to
@@ -230,11 +260,13 @@ public class File
      * On UNIX systems, this character is <code>':'</code>; on Microsoft Windows systems it
      * is <code>';'</code>.
      *
-     * @see     java.lang.System#getProperty(java.lang.String)
+     * @see java.lang.System#getProperty(java.lang.String)
      */
     public static final char pathSeparatorChar = fs.getPathSeparator();
 
     /**
+     * pathSeparatorChar 转为 String
+     * <p>
      * The system-dependent path-separator character, represented as a string
      * for convenience.  This string contains a single character, namely
      * {@link #pathSeparatorChar}.
@@ -243,8 +275,13 @@ public class File
 
 
     /* -- Constructors -- */
+    /**
+     * 构造方法只是对 this.path 和 this.prefixLength 进行了初始化
+     */
 
     /**
+     * 私有方法
+     * <p>
      * Internal constructor for already-normalized pathname strings.
      */
     private File(String pathname, int prefixLength) {
@@ -253,6 +290,8 @@ public class File
     }
 
     /**
+     * 私有方法
+     * <p>
      * Internal constructor for already-normalized pathname strings.
      * The parameter order is used to disambiguate this method from the
      * public(File, String) constructor.
@@ -269,15 +308,17 @@ public class File
      * pathname string into an abstract pathname.  If the given string is
      * the empty string, then the result is the empty abstract pathname.
      *
-     * @param   pathname  A pathname string
-     * @throws  NullPointerException
-     *          If the <code>pathname</code> argument is <code>null</code>
+     * @param pathname A pathname string
+     * @throws NullPointerException If the <code>pathname</code> argument is <code>null</code>
      */
     public File(String pathname) {
         if (pathname == null) {
             throw new NullPointerException();
         }
+        // 对路径进行标准化处理
+        // 将路径中的 // 处理为 /
         this.path = fs.normalize(pathname);
+        // 返回前置 / 的个数，一般为 0 个或者 1 个
         this.prefixLength = fs.prefixLength(this.path);
     }
 
@@ -308,26 +349,29 @@ public class File
      * string is converted into an abstract pathname and the child abstract
      * pathname is resolved against the parent.
      *
-     * @param   parent  The parent pathname string
-     * @param   child   The child pathname string
-     * @throws  NullPointerException
-     *          If <code>child</code> is <code>null</code>
+     * @param parent The parent pathname string
+     * @param child  The child pathname string
+     * @throws NullPointerException If <code>child</code> is <code>null</code>
      */
     public File(String parent, String child) {
         if (child == null) {
             throw new NullPointerException();
         }
+        // 初始化 path
         if (parent != null) {
             if (parent.equals("")) {
+                // fs.getDefaultParent() 获取系统相关的根路径，Unix 系统下为 /
+                // 将 parent 与 child 拼接起来
                 this.path = fs.resolve(fs.getDefaultParent(),
-                                       fs.normalize(child));
+                        fs.normalize(child));
             } else {
                 this.path = fs.resolve(fs.normalize(parent),
-                                       fs.normalize(child));
+                        fs.normalize(child));
             }
         } else {
             this.path = fs.normalize(child);
         }
+        // 初始化 prefixLength
         this.prefixLength = fs.prefixLength(this.path);
     }
 
@@ -351,10 +395,9 @@ public class File
      * pathname string is converted into an abstract pathname and the child
      * abstract pathname is resolved against the parent.
      *
-     * @param   parent  The parent abstract pathname
-     * @param   child   The child pathname string
-     * @throws  NullPointerException
-     *          If <code>child</code> is <code>null</code>
+     * @param parent The parent abstract pathname
+     * @param child  The child pathname string
+     * @throws NullPointerException If <code>child</code> is <code>null</code>
      */
     public File(File parent, String child) {
         if (child == null) {
@@ -363,10 +406,10 @@ public class File
         if (parent != null) {
             if (parent.path.equals("")) {
                 this.path = fs.resolve(fs.getDefaultParent(),
-                                       fs.normalize(child));
+                        fs.normalize(child));
             } else {
                 this.path = fs.resolve(parent.path,
-                                       fs.normalize(child));
+                        fs.normalize(child));
             }
         } else {
             this.path = fs.normalize(child);
@@ -388,7 +431,7 @@ public class File
      * new File(</code><i>&nbsp;f</i><code>.{@link #toURI()
      * toURI}()).equals(</code><i>&nbsp;f</i><code>.{@link #getAbsoluteFile() getAbsoluteFile}())
      * </code></blockquote>
-     *
+     * <p>
      * so long as the original abstract pathname, the URI, and the new abstract
      * pathname are all created in (possibly different invocations of) the same
      * Java virtual machine.  This relationship typically does not hold,
@@ -396,17 +439,11 @@ public class File
      * on one operating system is converted into an abstract pathname in a
      * virtual machine on a different operating system.
      *
-     * @param  uri
-     *         An absolute, hierarchical URI with a scheme equal to
-     *         {@code "file"}, a non-empty path component, and undefined
-     *         authority, query, and fragment components
-     *
-     * @throws  NullPointerException
-     *          If {@code uri} is {@code null}
-     *
-     * @throws  IllegalArgumentException
-     *          If the preconditions on the parameter do not hold
-     *
+     * @param uri An absolute, hierarchical URI with a scheme equal to
+     *            {@code "file"}, a non-empty path component, and undefined
+     *            authority, query, and fragment components
+     * @throws NullPointerException     If {@code uri} is {@code null}
+     * @throws IllegalArgumentException If the preconditions on the parameter do not hold
      * @see #toURI()
      * @see java.net.URI
      * @since 1.4
@@ -435,6 +472,7 @@ public class File
         p = fs.fromURIPath(p);
         if (File.separatorChar != '/')
             p = p.replace('/', File.separatorChar);
+        // 初始化 path 以及 prefixLength
         this.path = fs.normalize(p);
         this.prefixLength = fs.prefixLength(this.path);
     }
@@ -443,18 +481,23 @@ public class File
     /* -- Path-component accessors -- */
 
     /**
+     * 返回文件的文件名，如果是陆慕，则返回最后一个目录
+     * <p>
      * Returns the name of the file or directory denoted by this abstract
      * pathname.  This is just the last name in the pathname's name
      * sequence.  If the pathname's name sequence is empty, then the empty
      * string is returned.
      *
-     * @return  The name of the file or directory denoted by this abstract
-     *          pathname, or the empty string if this pathname's name sequence
-     *          is empty
+     * @return The name of the file or directory denoted by this abstract
+     * pathname, or the empty string if this pathname's name sequence
+     * is empty
      */
     public String getName() {
+        // 找到最后一个 / 的位置
         int index = path.lastIndexOf(separatorChar);
+        // 找不到 / 或者 / 在 index = 0 的位置，则返回 去掉 / 后的 name
         if (index < prefixLength) return path.substring(prefixLength);
+        // 返回最后一个 / 后面的 name
         return path.substring(index + 1);
     }
 
@@ -467,17 +510,22 @@ public class File
      * sequence except for the last.  If the name sequence is empty then
      * the pathname does not name a parent directory.
      *
-     * @return  The pathname string of the parent directory named by this
-     *          abstract pathname, or <code>null</code> if this pathname
-     *          does not name a parent
+     * @return The pathname string of the parent directory named by this
+     * abstract pathname, or <code>null</code> if this pathname
+     * does not name a parent
      */
     public String getParent() {
+        // 最后一个 /
         int index = path.lastIndexOf(separatorChar);
+        //
         if (index < prefixLength) {
             if ((prefixLength > 0) && (path.length() > prefixLength))
+                // 返回在开头的 parent
                 return path.substring(0, prefixLength);
+            // 不存在 parent
             return null;
         }
+        // 一般情况
         return path.substring(0, index);
     }
 
@@ -491,24 +539,27 @@ public class File
      * sequence except for the last.  If the name sequence is empty then
      * the pathname does not name a parent directory.
      *
-     * @return  The abstract pathname of the parent directory named by this
-     *          abstract pathname, or <code>null</code> if this pathname
-     *          does not name a parent
-     *
+     * @return The abstract pathname of the parent directory named by this
+     * abstract pathname, or <code>null</code> if this pathname
+     * does not name a parent
      * @since 1.2
      */
     public File getParentFile() {
+        // 会得到路径
         String p = this.getParent();
         if (p == null) return null;
+        // prefixLength 相同
         return new File(p, this.prefixLength);
     }
 
     /**
+     * 传入什么路径，返回的就是什么路径
+     * <p>
      * Converts this abstract pathname into a pathname string.  The resulting
      * string uses the {@link #separator default name-separator character} to
      * separate the names in the name sequence.
      *
-     * @return  The string form of this abstract pathname
+     * @return The string form of this abstract pathname
      */
     public String getPath() {
         return path;
@@ -518,20 +569,25 @@ public class File
     /* -- Path operations -- */
 
     /**
+     * check 传入的路径是否为绝对路径
+     * <p>
      * Tests whether this abstract pathname is absolute.  The definition of
      * absolute pathname is system dependent.  On UNIX systems, a pathname is
      * absolute if its prefix is <code>"/"</code>.  On Microsoft Windows systems, a
      * pathname is absolute if its prefix is a drive specifier followed by
      * <code>"\\"</code>, or if its prefix is <code>"\\\\"</code>.
      *
-     * @return  <code>true</code> if this abstract pathname is absolute,
-     *          <code>false</code> otherwise
+     * @return <code>true</code> if this abstract pathname is absolute,
+     * <code>false</code> otherwise
      */
     public boolean isAbsolute() {
+        // 最终调用 getPrefixLength() 根据返回是否为 0 来判断
         return fs.isAbsolute(this);
     }
 
     /**
+     * 返回文件的绝对路径
+     * <p>
      * Returns the absolute pathname string of this abstract pathname.
      *
      * <p> If this abstract pathname is already absolute, then the pathname
@@ -546,15 +602,14 @@ public class File
      * pathname, if any; if not, it is resolved against the current user
      * directory.
      *
-     * @return  The absolute pathname string denoting the same file or
-     *          directory as this abstract pathname
-     *
-     * @throws  SecurityException
-     *          If a required system property value cannot be accessed.
-     *
-     * @see     java.io.File#isAbsolute()
+     * @return The absolute pathname string denoting the same file or
+     * directory as this abstract pathname
+     * @throws SecurityException If a required system property value cannot be accessed.
+     * @see java.io.File#isAbsolute()
      */
     public String getAbsolutePath() {
+        // 如果是绝对路径，则返回 getPath() 方法，返回的就是绝对路径
+        // 如果不是绝对路径，则需要解析 userDir ，在拼装出绝对路径
         return fs.resolve(this);
     }
 
@@ -562,20 +617,22 @@ public class File
      * Returns the absolute form of this abstract pathname.  Equivalent to
      * <code>new&nbsp;File(this.{@link #getAbsolutePath})</code>.
      *
-     * @return  The absolute abstract pathname denoting the same file or
-     *          directory as this abstract pathname
-     *
-     * @throws  SecurityException
-     *          If a required system property value cannot be accessed.
-     *
+     * @return The absolute abstract pathname denoting the same file or
+     * directory as this abstract pathname
+     * @throws SecurityException If a required system property value cannot be accessed.
      * @since 1.2
      */
     public File getAbsoluteFile() {
+        // 如果传入的是绝对路径，则可以直接输出
+        // 如果是相对路径，则需要取出绝对路径后再创建
         String absPath = getAbsolutePath();
         return new File(absPath, fs.prefixLength(absPath));
     }
 
     /**
+     * 返回标准的文件路径(绝对路径)，标准指的是将路径中的 .. . 进行处理
+     *
+     * <p>
      * Returns the canonical pathname string of this abstract pathname.
      *
      * <p> A canonical pathname is both absolute and unique.  The precise
@@ -596,84 +653,87 @@ public class File
      * file or directory may be different from the canonical form of the same
      * pathname after the file or directory is deleted.
      *
-     * @return  The canonical pathname string denoting the same file or
-     *          directory as this abstract pathname
-     *
-     * @throws  IOException
-     *          If an I/O error occurs, which is possible because the
-     *          construction of the canonical pathname may require
-     *          filesystem queries
-     *
-     * @throws  SecurityException
-     *          If a required system property value cannot be accessed, or
-     *          if a security manager exists and its {@link
-     *          java.lang.SecurityManager#checkRead} method denies
-     *          read access to the file
-     *
-     * @since   1.1
-     * @see     Path#toRealPath
+     * @return The canonical pathname string denoting the same file or
+     * directory as this abstract pathname
+     * @throws IOException       If an I/O error occurs, which is possible because the
+     *                           construction of the canonical pathname may require
+     *                           filesystem queries
+     * @throws SecurityException If a required system property value cannot be accessed, or
+     *                           if a security manager exists and its {@link
+     *                           java.lang.SecurityManager#checkRead} method denies
+     *                           read access to the file
+     * @see Path#toRealPath
+     * @since 1.1
      */
     public String getCanonicalPath() throws IOException {
         if (isInvalid()) {
             throw new IOException("Invalid file path");
         }
+        // 进行处理
         return fs.canonicalize(fs.resolve(this));
     }
 
     /**
+     * 根据标准的
+     * <p>
      * Returns the canonical form of this abstract pathname.  Equivalent to
      * <code>new&nbsp;File(this.{@link #getCanonicalPath})</code>.
      *
-     * @return  The canonical pathname string denoting the same file or
-     *          directory as this abstract pathname
-     *
-     * @throws  IOException
-     *          If an I/O error occurs, which is possible because the
-     *          construction of the canonical pathname may require
-     *          filesystem queries
-     *
-     * @throws  SecurityException
-     *          If a required system property value cannot be accessed, or
-     *          if a security manager exists and its {@link
-     *          java.lang.SecurityManager#checkRead} method denies
-     *          read access to the file
-     *
+     * @return The canonical pathname string denoting the same file or
+     * directory as this abstract pathname
+     * @throws IOException       If an I/O error occurs, which is possible because the
+     *                           construction of the canonical pathname may require
+     *                           filesystem queries
+     * @throws SecurityException If a required system property value cannot be accessed, or
+     *                           if a security manager exists and its {@link
+     *                           java.lang.SecurityManager#checkRead} method denies
+     *                           read access to the file
+     * @see Path#toRealPath
      * @since 1.2
-     * @see     Path#toRealPath
      */
     public File getCanonicalFile() throws IOException {
+        // 获得标准的路径
         String canonPath = getCanonicalPath();
+        // 根据标准的绝对路径创建一个 File 对象
         return new File(canonPath, fs.prefixLength(canonPath));
     }
 
+    /**
+     * 将一个路径中的分隔符都转为 /
+     *
+     * @param path
+     * @param isDirectory
+     * @return
+     */
     private static String slashify(String path, boolean isDirectory) {
         String p = path;
+        // 处理中间的 /
         if (File.separatorChar != '/')
             p = p.replace(File.separatorChar, '/');
+        // 处理开头
         if (!p.startsWith("/"))
             p = "/" + p;
+        // 如果是目录，最后加上 /
         if (!p.endsWith("/") && isDirectory)
             p = p + "/";
         return p;
     }
 
     /**
+     * 废弃
+     * <p>
      * Converts this abstract pathname into a <code>file:</code> URL.  The
      * exact form of the URL is system-dependent.  If it can be determined that
      * the file denoted by this abstract pathname is a directory, then the
      * resulting URL will end with a slash.
      *
-     * @return  A URL object representing the equivalent file URL
-     *
-     * @throws  MalformedURLException
-     *          If the path cannot be parsed as a URL
-     *
-     * @see     #toURI()
-     * @see     java.net.URI
-     * @see     java.net.URI#toURL()
-     * @see     java.net.URL
-     * @since   1.2
-     *
+     * @return A URL object representing the equivalent file URL
+     * @throws MalformedURLException If the path cannot be parsed as a URL
+     * @see #toURI()
+     * @see java.net.URI
+     * @see java.net.URI#toURL()
+     * @see java.net.URL
+     * @since 1.2
      * @deprecated This method does not automatically escape characters that
      * are illegal in URLs.  It is recommended that new code convert an
      * abstract pathname into a URL by first converting it into a URI, via the
@@ -701,7 +761,7 @@ public class File
      * new {@link #File(java.net.URI) File}(</code><i>&nbsp;f</i><code>.toURI()).equals(
      * </code><i>&nbsp;f</i><code>.{@link #getAbsoluteFile() getAbsoluteFile}())
      * </code></blockquote>
-     *
+     * <p>
      * so long as the original abstract pathname, the URI, and the new abstract
      * pathname are all created in (possibly different invocations of) the same
      * Java virtual machine.  Due to the system-dependent nature of abstract
@@ -718,12 +778,11 @@ public class File
      * component of the resulting {@code URI}. The {@link #toPath toPath} method
      * may be used to obtain a {@code Path} representing this abstract pathname.
      *
-     * @return  An absolute, hierarchical URI with a scheme equal to
-     *          {@code "file"}, a path representing this abstract pathname,
-     *          and undefined authority, query, and fragment components
+     * @return An absolute, hierarchical URI with a scheme equal to
+     * {@code "file"}, a path representing this abstract pathname,
+     * and undefined authority, query, and fragment components
      * @throws SecurityException If a required system property value cannot
-     * be accessed.
-     *
+     *                           be accessed.
      * @see #File(java.net.URI)
      * @see java.net.URI
      * @see java.net.URI#toURL()
@@ -731,10 +790,13 @@ public class File
      */
     public URI toURI() {
         try {
+            // 获取绝对路径
             File f = getAbsoluteFile();
+            //
             String sp = slashify(f.getPath(), f.isDirectory());
             if (sp.startsWith("//"))
                 sp = "//" + sp;
+            // 返回 URI
             return new URI("file", null, sp, null);
         } catch (URISyntaxException x) {
             throw new Error(x);         // Can't happen
@@ -745,20 +807,20 @@ public class File
     /* -- Attribute accessors -- */
 
     /**
+     * 是否可读
+     * <p>
      * Tests whether the application can read the file denoted by this
      * abstract pathname. On some platforms it may be possible to start the
      * Java virtual machine with special privileges that allow it to read
      * files that are marked as unreadable. Consequently this method may return
      * {@code true} even though the file does not have read permissions.
      *
-     * @return  <code>true</code> if and only if the file specified by this
-     *          abstract pathname exists <em>and</em> can be read by the
-     *          application; <code>false</code> otherwise
-     *
-     * @throws  SecurityException
-     *          If a security manager exists and its {@link
-     *          java.lang.SecurityManager#checkRead(java.lang.String)}
-     *          method denies read access to the file
+     * @return <code>true</code> if and only if the file specified by this
+     * abstract pathname exists <em>and</em> can be read by the
+     * application; <code>false</code> otherwise
+     * @throws SecurityException If a security manager exists and its {@link
+     *                           java.lang.SecurityManager#checkRead(java.lang.String)}
+     *                           method denies read access to the file
      */
     public boolean canRead() {
         SecurityManager security = System.getSecurityManager();
@@ -768,25 +830,26 @@ public class File
         if (isInvalid()) {
             return false;
         }
+        // 是一个 native 方法
         return fs.checkAccess(this, FileSystem.ACCESS_READ);
     }
 
     /**
+     * 是否可写
+     * <p>
      * Tests whether the application can modify the file denoted by this
      * abstract pathname. On some platforms it may be possible to start the
      * Java virtual machine with special privileges that allow it to modify
      * files that are marked read-only. Consequently this method may return
      * {@code true} even though the file is marked read-only.
      *
-     * @return  <code>true</code> if and only if the file system actually
-     *          contains a file denoted by this abstract pathname <em>and</em>
-     *          the application is allowed to write to the file;
-     *          <code>false</code> otherwise.
-     *
-     * @throws  SecurityException
-     *          If a security manager exists and its {@link
-     *          java.lang.SecurityManager#checkWrite(java.lang.String)}
-     *          method denies write access to the file
+     * @return <code>true</code> if and only if the file system actually
+     * contains a file denoted by this abstract pathname <em>and</em>
+     * the application is allowed to write to the file;
+     * <code>false</code> otherwise.
+     * @throws SecurityException If a security manager exists and its {@link
+     *                           java.lang.SecurityManager#checkWrite(java.lang.String)}
+     *                           method denies write access to the file
      */
     public boolean canWrite() {
         SecurityManager security = System.getSecurityManager();
@@ -796,20 +859,21 @@ public class File
         if (isInvalid()) {
             return false;
         }
+        // 是一个 native 方法
         return fs.checkAccess(this, FileSystem.ACCESS_WRITE);
     }
 
     /**
+     * 是否存在
+     * <p>
      * Tests whether the file or directory denoted by this abstract pathname
      * exists.
      *
-     * @return  <code>true</code> if and only if the file or directory denoted
-     *          by this abstract pathname exists; <code>false</code> otherwise
-     *
-     * @throws  SecurityException
-     *          If a security manager exists and its {@link
-     *          java.lang.SecurityManager#checkRead(java.lang.String)}
-     *          method denies read access to the file or directory
+     * @return <code>true</code> if and only if the file or directory denoted
+     * by this abstract pathname exists; <code>false</code> otherwise
+     * @throws SecurityException If a security manager exists and its {@link
+     *                           java.lang.SecurityManager#checkRead(java.lang.String)}
+     *                           method denies read access to the file or directory
      */
     public boolean exists() {
         SecurityManager security = System.getSecurityManager();
@@ -819,41 +883,46 @@ public class File
         if (isInvalid()) {
             return false;
         }
+        // 是一个 native 方法
         return ((fs.getBooleanAttributes(this) & FileSystem.BA_EXISTS) != 0);
     }
 
     /**
+     * 检测传入的是文件还是目录
+     * <p>
      * Tests whether the file denoted by this abstract pathname is a
      * directory.
      *
      * <p> Where it is required to distinguish an I/O exception from the case
      * that the file is not a directory, or where several attributes of the
      * same file are required at the same time, then the {@link
-     * java.nio.file.Files#readAttributes(Path,Class,LinkOption[])
+     * java.nio.file.Files#readAttributes(Path, Class, LinkOption[])
      * Files.readAttributes} method may be used.
      *
      * @return <code>true</code> if and only if the file denoted by this
-     *          abstract pathname exists <em>and</em> is a directory;
-     *          <code>false</code> otherwise
-     *
-     * @throws  SecurityException
-     *          If a security manager exists and its {@link
-     *          java.lang.SecurityManager#checkRead(java.lang.String)}
-     *          method denies read access to the file
+     * abstract pathname exists <em>and</em> is a directory;
+     * <code>false</code> otherwise
+     * @throws SecurityException If a security manager exists and its {@link
+     *                           java.lang.SecurityManager#checkRead(java.lang.String)}
+     *                           method denies read access to the file
      */
     public boolean isDirectory() {
         SecurityManager security = System.getSecurityManager();
         if (security != null) {
             security.checkRead(path);
         }
+        // 路径合法性检查
         if (isInvalid()) {
             return false;
         }
+        // 通过文件系统操作，调了 native 方法
         return ((fs.getBooleanAttributes(this) & FileSystem.BA_DIRECTORY)
                 != 0);
     }
 
     /**
+     * 是一个文件而不是目录
+     * <p>
      * Tests whether the file denoted by this abstract pathname is a normal
      * file.  A file is <em>normal</em> if it is not a directory and, in
      * addition, satisfies other system-dependent criteria.  Any non-directory
@@ -862,17 +931,15 @@ public class File
      * <p> Where it is required to distinguish an I/O exception from the case
      * that the file is not a normal file, or where several attributes of the
      * same file are required at the same time, then the {@link
-     * java.nio.file.Files#readAttributes(Path,Class,LinkOption[])
+     * java.nio.file.Files#readAttributes(Path, Class, LinkOption[])
      * Files.readAttributes} method may be used.
      *
-     * @return  <code>true</code> if and only if the file denoted by this
-     *          abstract pathname exists <em>and</em> is a normal file;
-     *          <code>false</code> otherwise
-     *
-     * @throws  SecurityException
-     *          If a security manager exists and its {@link
-     *          java.lang.SecurityManager#checkRead(java.lang.String)}
-     *          method denies read access to the file
+     * @return <code>true</code> if and only if the file denoted by this
+     * abstract pathname exists <em>and</em> is a normal file;
+     * <code>false</code> otherwise
+     * @throws SecurityException If a security manager exists and its {@link
+     *                           java.lang.SecurityManager#checkRead(java.lang.String)}
+     *                           method denies read access to the file
      */
     public boolean isFile() {
         SecurityManager security = System.getSecurityManager();
@@ -882,25 +949,25 @@ public class File
         if (isInvalid()) {
             return false;
         }
+        // 是一个 native 方法
         return ((fs.getBooleanAttributes(this) & FileSystem.BA_REGULAR) != 0);
     }
 
     /**
+     * 是否为隐藏文件
+     * <p>
      * Tests whether the file named by this abstract pathname is a hidden
      * file.  The exact definition of <em>hidden</em> is system-dependent.  On
      * UNIX systems, a file is considered to be hidden if its name begins with
      * a period character (<code>'.'</code>).  On Microsoft Windows systems, a file is
      * considered to be hidden if it has been marked as such in the filesystem.
      *
-     * @return  <code>true</code> if and only if the file denoted by this
-     *          abstract pathname is hidden according to the conventions of the
-     *          underlying platform
-     *
-     * @throws  SecurityException
-     *          If a security manager exists and its {@link
-     *          java.lang.SecurityManager#checkRead(java.lang.String)}
-     *          method denies read access to the file
-     *
+     * @return <code>true</code> if and only if the file denoted by this
+     * abstract pathname is hidden according to the conventions of the
+     * underlying platform
+     * @throws SecurityException If a security manager exists and its {@link
+     *                           java.lang.SecurityManager#checkRead(java.lang.String)}
+     *                           method denies read access to the file
      * @since 1.2
      */
     public boolean isHidden() {
@@ -911,15 +978,26 @@ public class File
         if (isInvalid()) {
             return false;
         }
+        // 是一个 native 方法
         return ((fs.getBooleanAttributes(this) & FileSystem.BA_HIDDEN) != 0);
     }
 
     /**
+     * 返回文件上一次修改时间
+     * <p>
      * Returns the time that the file denoted by this abstract pathname was
      * last modified.
      *
-     * @apiNote
-     * While the unit of time of the return value is milliseconds, the
+     * @return A <code>long</code> value representing the time the file was
+     * last modified, measured in milliseconds since the epoch
+     * (00:00:00 GMT, January 1, 1970), or <code>0L</code> if the
+     * file does not exist or if an I/O error occurs.  The value may
+     * be negative indicating the number of milliseconds before the
+     * epoch
+     * @throws SecurityException If a security manager exists and its {@link
+     *                           java.lang.SecurityManager#checkRead(java.lang.String)}
+     *                           method denies read access to the file
+     * @apiNote While the unit of time of the return value is milliseconds, the
      * granularity of the value depends on the underlying file system and may
      * be larger.  For example, some file systems use time stamps in units of
      * seconds.
@@ -928,23 +1006,11 @@ public class File
      * where {@code 0L} is returned, or where several attributes of the
      * same file are required at the same time, or where the time of last
      * access or the creation time are required, then the {@link
-     * java.nio.file.Files#readAttributes(Path,Class,LinkOption[])
+     * java.nio.file.Files#readAttributes(Path, Class, LinkOption[])
      * Files.readAttributes} method may be used.  If however only the
      * time of last modification is required, then the
-     * {@link java.nio.file.Files#getLastModifiedTime(Path,LinkOption[])
+     * {@link java.nio.file.Files#getLastModifiedTime(Path, LinkOption[])
      * Files.getLastModifiedTime} method may be used instead.
-     *
-     * @return  A <code>long</code> value representing the time the file was
-     *          last modified, measured in milliseconds since the epoch
-     *          (00:00:00 GMT, January 1, 1970), or <code>0L</code> if the
-     *          file does not exist or if an I/O error occurs.  The value may
-     *          be negative indicating the number of milliseconds before the
-     *          epoch
-     *
-     * @throws  SecurityException
-     *          If a security manager exists and its {@link
-     *          java.lang.SecurityManager#checkRead(java.lang.String)}
-     *          method denies read access to the file
      */
     public long lastModified() {
         SecurityManager security = System.getSecurityManager();
@@ -954,28 +1020,30 @@ public class File
         if (isInvalid()) {
             return 0L;
         }
+        // 是一个 native 方法
         return fs.getLastModifiedTime(this);
     }
 
     /**
+     * 返回文件的大小
+     * 如果指定路径是目录，那么返回是不确定的
+     * <p>
      * Returns the length of the file denoted by this abstract pathname.
      * The return value is unspecified if this pathname denotes a directory.
      *
      * <p> Where it is required to distinguish an I/O exception from the case
      * that {@code 0L} is returned, or where several attributes of the same file
      * are required at the same time, then the {@link
-     * java.nio.file.Files#readAttributes(Path,Class,LinkOption[])
+     * java.nio.file.Files#readAttributes(Path, Class, LinkOption[])
      * Files.readAttributes} method may be used.
      *
-     * @return  The length, in bytes, of the file denoted by this abstract
-     *          pathname, or <code>0L</code> if the file does not exist.  Some
-     *          operating systems may return <code>0L</code> for pathnames
-     *          denoting system-dependent entities such as devices or pipes.
-     *
-     * @throws  SecurityException
-     *          If a security manager exists and its {@link
-     *          java.lang.SecurityManager#checkRead(java.lang.String)}
-     *          method denies read access to the file
+     * @return The length, in bytes, of the file denoted by this abstract
+     * pathname, or <code>0L</code> if the file does not exist.  Some
+     * operating systems may return <code>0L</code> for pathnames
+     * denoting system-dependent entities such as devices or pipes.
+     * @throws SecurityException If a security manager exists and its {@link
+     *                           java.lang.SecurityManager#checkRead(java.lang.String)}
+     *                           method denies read access to the file
      */
     public long length() {
         SecurityManager security = System.getSecurityManager();
@@ -985,6 +1053,7 @@ public class File
         if (isInvalid()) {
             return 0L;
         }
+        // 是一个 native 方法
         return fs.getLength(this);
     }
 
@@ -992,29 +1061,26 @@ public class File
     /* -- File operations -- */
 
     /**
+     * 如果文件不存在则创建文件，原子操作
+     * <p>
      * Atomically creates a new, empty file named by this abstract pathname if
      * and only if a file with this name does not yet exist.  The check for the
      * existence of the file and the creation of the file if it does not exist
      * are a single operation that is atomic with respect to all other
      * filesystem activities that might affect the file.
-     * <P>
+     * <p>
      * Note: this method should <i>not</i> be used for file-locking, as
      * the resulting protocol cannot be made to work reliably. The
      * {@link java.nio.channels.FileLock FileLock}
      * facility should be used instead.
      *
-     * @return  <code>true</code> if the named file does not exist and was
-     *          successfully created; <code>false</code> if the named file
-     *          already exists
-     *
-     * @throws  IOException
-     *          If an I/O error occurred
-     *
-     * @throws  SecurityException
-     *          If a security manager exists and its {@link
-     *          java.lang.SecurityManager#checkWrite(java.lang.String)}
-     *          method denies write access to the file
-     *
+     * @return <code>true</code> if the named file does not exist and was
+     * successfully created; <code>false</code> if the named file
+     * already exists
+     * @throws IOException       If an I/O error occurred
+     * @throws SecurityException If a security manager exists and its {@link
+     *                           java.lang.SecurityManager#checkWrite(java.lang.String)}
+     *                           method denies write access to the file
      * @since 1.2
      */
     public boolean createNewFile() throws IOException {
@@ -1023,10 +1089,13 @@ public class File
         if (isInvalid()) {
             throw new IOException("Invalid file path");
         }
+        // 是一个 native 方法
         return fs.createFileExclusively(path);
     }
 
     /**
+     * 删除一个文件或者目录，如果是目录，那么目录得是空目录
+     * <p>
      * Deletes the file or directory denoted by this abstract pathname.  If
      * this pathname denotes a directory, then the directory must be empty in
      * order to be deleted.
@@ -1036,13 +1105,11 @@ public class File
      * when a file cannot be deleted. This is useful for error reporting and to
      * diagnose why a file cannot be deleted.
      *
-     * @return  <code>true</code> if and only if the file or directory is
-     *          successfully deleted; <code>false</code> otherwise
-     *
-     * @throws  SecurityException
-     *          If a security manager exists and its {@link
-     *          java.lang.SecurityManager#checkDelete} method denies
-     *          delete access to the file
+     * @return <code>true</code> if and only if the file or directory is
+     * successfully deleted; <code>false</code> otherwise
+     * @throws SecurityException If a security manager exists and its {@link
+     *                           java.lang.SecurityManager#checkDelete} method denies
+     *                           delete access to the file
      */
     public boolean delete() {
         SecurityManager security = System.getSecurityManager();
@@ -1067,19 +1134,16 @@ public class File
      * <p> Once deletion has been requested, it is not possible to cancel the
      * request.  This method should therefore be used with care.
      *
-     * <P>
+     * <p>
      * Note: this method should <i>not</i> be used for file-locking, as
      * the resulting protocol cannot be made to work reliably. The
      * {@link java.nio.channels.FileLock FileLock}
      * facility should be used instead.
      *
-     * @throws  SecurityException
-     *          If a security manager exists and its {@link
-     *          java.lang.SecurityManager#checkDelete} method denies
-     *          delete access to the file
-     *
+     * @throws SecurityException If a security manager exists and its {@link
+     *                           java.lang.SecurityManager#checkDelete} method denies
+     *                           delete access to the file
      * @see #delete
-     *
      * @since 1.2
      */
     public void deleteOnExit() {
@@ -1090,10 +1154,14 @@ public class File
         if (isInvalid()) {
             return;
         }
+        // 加入到 DeleteOnExitHook HOOK 中
         DeleteOnExitHook.add(path);
     }
 
     /**
+     * 如果传入的路径不是目录，则返回 null
+     * 如果是路径，则返回该目录下的所有的文件名，包括目录与文件
+     * <p>
      * Returns an array of strings naming the files and directories in the
      * directory denoted by this abstract pathname.
      *
@@ -1114,16 +1182,14 @@ public class File
      * This may use less resources when working with very large directories, and
      * may be more responsive when working with remote directories.
      *
-     * @return  An array of strings naming the files and directories in the
-     *          directory denoted by this abstract pathname.  The array will be
-     *          empty if the directory is empty.  Returns {@code null} if
-     *          this abstract pathname does not denote a directory, or if an
-     *          I/O error occurs.
-     *
-     * @throws  SecurityException
-     *          If a security manager exists and its {@link
-     *          SecurityManager#checkRead(String)} method denies read access to
-     *          the directory
+     * @return An array of strings naming the files and directories in the
+     * directory denoted by this abstract pathname.  The array will be
+     * empty if the directory is empty.  Returns {@code null} if
+     * this abstract pathname does not denote a directory, or if an
+     * I/O error occurs.
+     * @throws SecurityException If a security manager exists and its {@link
+     *                           SecurityManager#checkRead(String)} method denies read access to
+     *                           the directory
      */
     public String[] list() {
         SecurityManager security = System.getSecurityManager();
@@ -1137,6 +1203,8 @@ public class File
     }
 
     /**
+     * 与 list 方法类似，只不过需要满足 FilenameFilter
+     * <p>
      * Returns an array of strings naming the files and directories in the
      * directory denoted by this abstract pathname that satisfy the specified
      * filter.  The behavior of this method is the same as that of the
@@ -1148,22 +1216,17 @@ public class File
      * of the filter is invoked on this abstract pathname and the name of a
      * file or directory in the directory that it denotes.
      *
-     * @param  filter
-     *         A filename filter
-     *
-     * @return  An array of strings naming the files and directories in the
-     *          directory denoted by this abstract pathname that were accepted
-     *          by the given {@code filter}.  The array will be empty if the
-     *          directory is empty or if no names were accepted by the filter.
-     *          Returns {@code null} if this abstract pathname does not denote
-     *          a directory, or if an I/O error occurs.
-     *
-     * @throws  SecurityException
-     *          If a security manager exists and its {@link
-     *          SecurityManager#checkRead(String)} method denies read access to
-     *          the directory
-     *
-     * @see java.nio.file.Files#newDirectoryStream(Path,String)
+     * @param filter A filename filter
+     * @return An array of strings naming the files and directories in the
+     * directory denoted by this abstract pathname that were accepted
+     * by the given {@code filter}.  The array will be empty if the
+     * directory is empty or if no names were accepted by the filter.
+     * Returns {@code null} if this abstract pathname does not denote
+     * a directory, or if an I/O error occurs.
+     * @throws SecurityException If a security manager exists and its {@link
+     *                           SecurityManager#checkRead(String)} method denies read access to
+     *                           the directory
+     * @see java.nio.file.Files#newDirectoryStream(Path, String)
      */
     public String[] list(FilenameFilter filter) {
         String names[] = list();
@@ -1171,7 +1234,7 @@ public class File
             return names;
         }
         List<String> v = new ArrayList<>();
-        for (int i = 0 ; i < names.length ; i++) {
+        for (int i = 0; i < names.length; i++) {
             if (filter.accept(this, names[i])) {
                 v.add(names[i]);
             }
@@ -1180,6 +1243,8 @@ public class File
     }
 
     /**
+     * 与 list 方法类似，只不过将文件名转为 File 数组的形式
+     * <p>
      * Returns an array of abstract pathnames denoting the files in the
      * directory denoted by this abstract pathname.
      *
@@ -1204,31 +1269,32 @@ public class File
      * directory. This may use less resources when working with very large
      * directories.
      *
-     * @return  An array of abstract pathnames denoting the files and
-     *          directories in the directory denoted by this abstract pathname.
-     *          The array will be empty if the directory is empty.  Returns
-     *          {@code null} if this abstract pathname does not denote a
-     *          directory, or if an I/O error occurs.
-     *
-     * @throws  SecurityException
-     *          If a security manager exists and its {@link
-     *          SecurityManager#checkRead(String)} method denies read access to
-     *          the directory
-     *
-     * @since  1.2
+     * @return An array of abstract pathnames denoting the files and
+     * directories in the directory denoted by this abstract pathname.
+     * The array will be empty if the directory is empty.  Returns
+     * {@code null} if this abstract pathname does not denote a
+     * directory, or if an I/O error occurs.
+     * @throws SecurityException If a security manager exists and its {@link
+     *                           SecurityManager#checkRead(String)} method denies read access to
+     *                           the directory
+     * @since 1.2
      */
     public File[] listFiles() {
         String[] ss = list();
         if (ss == null) return null;
         int n = ss.length;
         File[] fs = new File[n];
+        // 创建 File
         for (int i = 0; i < n; i++) {
             fs[i] = new File(ss[i], this);
         }
+        // 返回数组
         return fs;
     }
 
     /**
+     * 还是类似 list 方法， + FilenameFilter + File 组合
+     * <p>
      * Returns an array of abstract pathnames denoting the files and
      * directories in the directory denoted by this abstract pathname that
      * satisfy the specified filter.  The behavior of this method is the same
@@ -1241,22 +1307,17 @@ public class File
      * invoked on this abstract pathname and the name of a file or directory in
      * the directory that it denotes.
      *
-     * @param  filter
-     *         A filename filter
-     *
-     * @return  An array of abstract pathnames denoting the files and
-     *          directories in the directory denoted by this abstract pathname.
-     *          The array will be empty if the directory is empty.  Returns
-     *          {@code null} if this abstract pathname does not denote a
-     *          directory, or if an I/O error occurs.
-     *
-     * @throws  SecurityException
-     *          If a security manager exists and its {@link
-     *          SecurityManager#checkRead(String)} method denies read access to
-     *          the directory
-     *
-     * @since  1.2
-     * @see java.nio.file.Files#newDirectoryStream(Path,String)
+     * @param filter A filename filter
+     * @return An array of abstract pathnames denoting the files and
+     * directories in the directory denoted by this abstract pathname.
+     * The array will be empty if the directory is empty.  Returns
+     * {@code null} if this abstract pathname does not denote a
+     * directory, or if an I/O error occurs.
+     * @throws SecurityException If a security manager exists and its {@link
+     *                           SecurityManager#checkRead(String)} method denies read access to
+     *                           the directory
+     * @see java.nio.file.Files#newDirectoryStream(Path, String)
+     * @since 1.2
      */
     public File[] listFiles(FilenameFilter filter) {
         String ss[] = list();
@@ -1269,6 +1330,8 @@ public class File
     }
 
     /**
+     * list + Filter + File[]
+     * <p>
      * Returns an array of abstract pathnames denoting the files and
      * directories in the directory denoted by this abstract pathname that
      * satisfy the specified filter.  The behavior of this method is the same
@@ -1279,22 +1342,17 @@ public class File
      * the {@link FileFilter#accept FileFilter.accept(File)} method of the
      * filter is invoked on the pathname.
      *
-     * @param  filter
-     *         A file filter
-     *
-     * @return  An array of abstract pathnames denoting the files and
-     *          directories in the directory denoted by this abstract pathname.
-     *          The array will be empty if the directory is empty.  Returns
-     *          {@code null} if this abstract pathname does not denote a
-     *          directory, or if an I/O error occurs.
-     *
-     * @throws  SecurityException
-     *          If a security manager exists and its {@link
-     *          SecurityManager#checkRead(String)} method denies read access to
-     *          the directory
-     *
-     * @since  1.2
-     * @see java.nio.file.Files#newDirectoryStream(Path,java.nio.file.DirectoryStream.Filter)
+     * @param filter A file filter
+     * @return An array of abstract pathnames denoting the files and
+     * directories in the directory denoted by this abstract pathname.
+     * The array will be empty if the directory is empty.  Returns
+     * {@code null} if this abstract pathname does not denote a
+     * directory, or if an I/O error occurs.
+     * @throws SecurityException If a security manager exists and its {@link
+     *                           SecurityManager#checkRead(String)} method denies read access to
+     *                           the directory
+     * @see java.nio.file.Files#newDirectoryStream(Path, java.nio.file.DirectoryStream.Filter)
+     * @since 1.2
      */
     public File[] listFiles(FileFilter filter) {
         String ss[] = list();
@@ -1309,61 +1367,67 @@ public class File
     }
 
     /**
+     * 创建一个目录，前提是父目录已经存在
+     * <p>
      * Creates the directory named by this abstract pathname.
      *
-     * @return  <code>true</code> if and only if the directory was
-     *          created; <code>false</code> otherwise
-     *
-     * @throws  SecurityException
-     *          If a security manager exists and its {@link
-     *          java.lang.SecurityManager#checkWrite(java.lang.String)}
-     *          method does not permit the named directory to be created
+     * @return <code>true</code> if and only if the directory was
+     * created; <code>false</code> otherwise
+     * @throws SecurityException If a security manager exists and its {@link
+     *                           java.lang.SecurityManager#checkWrite(java.lang.String)}
+     *                           method does not permit the named directory to be created
      */
     public boolean mkdir() {
         SecurityManager security = System.getSecurityManager();
         if (security != null) {
+            // 先检查是否能写
             security.checkWrite(path);
         }
         if (isInvalid()) {
             return false;
         }
+        // native 方法
         return fs.createDirectory(this);
     }
 
     /**
+     * 创建一个目录，以当前传入的绝对路径名。
+     * 会递归创建父目录
+     * <p>
      * Creates the directory named by this abstract pathname, including any
      * necessary but nonexistent parent directories.  Note that if this
      * operation fails it may have succeeded in creating some of the necessary
      * parent directories.
      *
-     * @return  <code>true</code> if and only if the directory was created,
-     *          along with all necessary parent directories; <code>false</code>
-     *          otherwise
-     *
-     * @throws  SecurityException
-     *          If a security manager exists and its {@link
-     *          java.lang.SecurityManager#checkRead(java.lang.String)}
-     *          method does not permit verification of the existence of the
-     *          named directory and all necessary parent directories; or if
-     *          the {@link
-     *          java.lang.SecurityManager#checkWrite(java.lang.String)}
-     *          method does not permit the named directory and all necessary
-     *          parent directories to be created
+     * @return <code>true</code> if and only if the directory was created,
+     * along with all necessary parent directories; <code>false</code>
+     * otherwise
+     * @throws SecurityException If a security manager exists and its {@link
+     *                           java.lang.SecurityManager#checkRead(java.lang.String)}
+     *                           method does not permit verification of the existence of the
+     *                           named directory and all necessary parent directories; or if
+     *                           the {@link
+     *                           java.lang.SecurityManager#checkWrite(java.lang.String)}
+     *                           method does not permit the named directory and all necessary
+     *                           parent directories to be created
      */
     public boolean mkdirs() {
+        // 先检查是否存在
         if (exists()) {
             return false;
         }
+        // 调用 mkdir 尝试创建
         if (mkdir()) {
             return true;
         }
         File canonFile = null;
         try {
+            // 获取标准 File
             canonFile = getCanonicalFile();
         } catch (IOException e) {
             return false;
         }
-
+        // 获取父路径
         File parent = canonFile.getParentFile();
         return (parent != null && (parent.mkdirs() || parent.exists()) &&
                 canonFile.mkdir());
@@ -1371,6 +1435,8 @@ public class File
 
     /**
      * Renames the file denoted by this abstract pathname.
+     * <p>
+     * 平台相关，使用该方法一定要注意 check 方法的返回值，可以重命名文件，也可以移动文件
      *
      * <p> Many aspects of the behavior of this method are inherently
      * platform-dependent: The rename operation might not be able to move a
@@ -1383,18 +1449,13 @@ public class File
      * java.nio.file.Files#move move} method to move or rename a file in a
      * platform independent manner.
      *
-     * @param  dest  The new abstract pathname for the named file
-     *
-     * @return  <code>true</code> if and only if the renaming succeeded;
-     *          <code>false</code> otherwise
-     *
-     * @throws  SecurityException
-     *          If a security manager exists and its {@link
-     *          java.lang.SecurityManager#checkWrite(java.lang.String)}
-     *          method denies write access to either the old or new pathnames
-     *
-     * @throws  NullPointerException
-     *          If parameter <code>dest</code> is <code>null</code>
+     * @param dest The new abstract pathname for the named file
+     * @return <code>true</code> if and only if the renaming succeeded;
+     * <code>false</code> otherwise
+     * @throws SecurityException    If a security manager exists and its {@link
+     *                              java.lang.SecurityManager#checkWrite(java.lang.String)}
+     *                              method denies write access to either the old or new pathnames
+     * @throws NullPointerException If parameter <code>dest</code> is <code>null</code>
      */
     public boolean renameTo(File dest) {
         SecurityManager security = System.getSecurityManager();
@@ -1412,6 +1473,8 @@ public class File
     }
 
     /**
+     * 设置上次文件更新时间
+     * <p>
      * Sets the last-modified time of the file or directory named by this
      * abstract pathname.
      *
@@ -1422,19 +1485,14 @@ public class File
      * {@link #lastModified} method will return the (possibly
      * truncated) <code>time</code> argument that was passed to this method.
      *
-     * @param  time  The new last-modified time, measured in milliseconds since
-     *               the epoch (00:00:00 GMT, January 1, 1970)
-     *
+     * @param time The new last-modified time, measured in milliseconds since
+     *             the epoch (00:00:00 GMT, January 1, 1970)
      * @return <code>true</code> if and only if the operation succeeded;
-     *          <code>false</code> otherwise
-     *
-     * @throws  IllegalArgumentException  If the argument is negative
-     *
-     * @throws  SecurityException
-     *          If a security manager exists and its {@link
-     *          java.lang.SecurityManager#checkWrite(java.lang.String)}
-     *          method denies write access to the named file
-     *
+     * <code>false</code> otherwise
+     * @throws IllegalArgumentException If the argument is negative
+     * @throws SecurityException        If a security manager exists and its {@link
+     *                                  java.lang.SecurityManager#checkWrite(java.lang.String)}
+     *                                  method denies write access to the named file
      * @since 1.2
      */
     public boolean setLastModified(long time) {
@@ -1446,10 +1504,13 @@ public class File
         if (isInvalid()) {
             return false;
         }
+        // native 方法
         return fs.setLastModifiedTime(this, time);
     }
 
     /**
+     * 将文件设置为仅可读
+     * <p>
      * Marks the file or directory named by this abstract pathname so that
      * only read operations are allowed. After invoking this method the file
      * or directory will not change until it is either deleted or marked
@@ -1459,13 +1520,10 @@ public class File
      * directory may be deleted depends upon the underlying system.
      *
      * @return <code>true</code> if and only if the operation succeeded;
-     *          <code>false</code> otherwise
-     *
-     * @throws  SecurityException
-     *          If a security manager exists and its {@link
-     *          java.lang.SecurityManager#checkWrite(java.lang.String)}
-     *          method denies write access to the named file
-     *
+     * <code>false</code> otherwise
+     * @throws SecurityException If a security manager exists and its {@link
+     *                           java.lang.SecurityManager#checkWrite(java.lang.String)}
+     *                           method denies write access to the named file
      * @since 1.2
      */
     public boolean setReadOnly() {
@@ -1480,6 +1538,8 @@ public class File
     }
 
     /**
+     * 将文件设置为可写以及仅 owner 可写
+     * <p>
      * Sets the owner's or everybody's write permission for this abstract
      * pathname. On some platforms it may be possible to start the Java virtual
      * machine with special privileges that allow it to modify files that
@@ -1489,26 +1549,19 @@ public class File
      * file attributes including file permissions. This may be used when finer
      * manipulation of file permissions is required.
      *
-     * @param   writable
-     *          If <code>true</code>, sets the access permission to allow write
-     *          operations; if <code>false</code> to disallow write operations
-     *
-     * @param   ownerOnly
-     *          If <code>true</code>, the write permission applies only to the
-     *          owner's write permission; otherwise, it applies to everybody.  If
-     *          the underlying file system can not distinguish the owner's write
-     *          permission from that of others, then the permission will apply to
-     *          everybody, regardless of this value.
-     *
-     * @return  <code>true</code> if and only if the operation succeeded. The
-     *          operation will fail if the user does not have permission to change
-     *          the access permissions of this abstract pathname.
-     *
-     * @throws  SecurityException
-     *          If a security manager exists and its {@link
-     *          java.lang.SecurityManager#checkWrite(java.lang.String)}
-     *          method denies write access to the named file
-     *
+     * @param writable  If <code>true</code>, sets the access permission to allow write
+     *                  operations; if <code>false</code> to disallow write operations
+     * @param ownerOnly If <code>true</code>, the write permission applies only to the
+     *                  owner's write permission; otherwise, it applies to everybody.  If
+     *                  the underlying file system can not distinguish the owner's write
+     *                  permission from that of others, then the permission will apply to
+     *                  everybody, regardless of this value.
+     * @return <code>true</code> if and only if the operation succeeded. The
+     * operation will fail if the user does not have permission to change
+     * the access permissions of this abstract pathname.
+     * @throws SecurityException If a security manager exists and its {@link
+     *                           java.lang.SecurityManager#checkWrite(java.lang.String)}
+     *                           method denies write access to the named file
      * @since 1.6
      */
     public boolean setWritable(boolean writable, boolean ownerOnly) {
@@ -1523,6 +1576,8 @@ public class File
     }
 
     /**
+     * 设置是否可写，仅 owner 可写
+     * <p>
      * A convenience method to set the owner's write permission for this abstract
      * pathname. On some platforms it may be possible to start the Java virtual
      * machine with special privileges that allow it to modify files that
@@ -1535,19 +1590,14 @@ public class File
      *     file.setWritable(arg, true)
      * }</pre>
      *
-     * @param   writable
-     *          If <code>true</code>, sets the access permission to allow write
-     *          operations; if <code>false</code> to disallow write operations
-     *
-     * @return  <code>true</code> if and only if the operation succeeded.  The
-     *          operation will fail if the user does not have permission to
-     *          change the access permissions of this abstract pathname.
-     *
-     * @throws  SecurityException
-     *          If a security manager exists and its {@link
-     *          java.lang.SecurityManager#checkWrite(java.lang.String)}
-     *          method denies write access to the file
-     *
+     * @param writable If <code>true</code>, sets the access permission to allow write
+     *                 operations; if <code>false</code> to disallow write operations
+     * @return <code>true</code> if and only if the operation succeeded.  The
+     * operation will fail if the user does not have permission to
+     * change the access permissions of this abstract pathname.
+     * @throws SecurityException If a security manager exists and its {@link
+     *                           java.lang.SecurityManager#checkWrite(java.lang.String)}
+     *                           method denies write access to the file
      * @since 1.6
      */
     public boolean setWritable(boolean writable) {
@@ -1555,6 +1605,8 @@ public class File
     }
 
     /**
+     * 设置是否可读以及仅 owner 可读
+     * <p>
      * Sets the owner's or everybody's read permission for this abstract
      * pathname. On some platforms it may be possible to start the Java virtual
      * machine with special privileges that allow it to read files that are
@@ -1564,29 +1616,22 @@ public class File
      * file attributes including file permissions. This may be used when finer
      * manipulation of file permissions is required.
      *
-     * @param   readable
-     *          If <code>true</code>, sets the access permission to allow read
-     *          operations; if <code>false</code> to disallow read operations
-     *
-     * @param   ownerOnly
-     *          If <code>true</code>, the read permission applies only to the
-     *          owner's read permission; otherwise, it applies to everybody.  If
-     *          the underlying file system can not distinguish the owner's read
-     *          permission from that of others, then the permission will apply to
-     *          everybody, regardless of this value.
-     *
-     * @return  <code>true</code> if and only if the operation succeeded.  The
-     *          operation will fail if the user does not have permission to
-     *          change the access permissions of this abstract pathname.  If
-     *          <code>readable</code> is <code>false</code> and the underlying
-     *          file system does not implement a read permission, then the
-     *          operation will fail.
-     *
-     * @throws  SecurityException
-     *          If a security manager exists and its {@link
-     *          java.lang.SecurityManager#checkWrite(java.lang.String)}
-     *          method denies write access to the file
-     *
+     * @param readable  If <code>true</code>, sets the access permission to allow read
+     *                  operations; if <code>false</code> to disallow read operations
+     * @param ownerOnly If <code>true</code>, the read permission applies only to the
+     *                  owner's read permission; otherwise, it applies to everybody.  If
+     *                  the underlying file system can not distinguish the owner's read
+     *                  permission from that of others, then the permission will apply to
+     *                  everybody, regardless of this value.
+     * @return <code>true</code> if and only if the operation succeeded.  The
+     * operation will fail if the user does not have permission to
+     * change the access permissions of this abstract pathname.  If
+     * <code>readable</code> is <code>false</code> and the underlying
+     * file system does not implement a read permission, then the
+     * operation will fail.
+     * @throws SecurityException If a security manager exists and its {@link
+     *                           java.lang.SecurityManager#checkWrite(java.lang.String)}
+     *                           method denies write access to the file
      * @since 1.6
      */
     public boolean setReadable(boolean readable, boolean ownerOnly) {
@@ -1601,6 +1646,8 @@ public class File
     }
 
     /**
+     * 设置可读且仅 owner 可读
+     * <p>
      * A convenience method to set the owner's read permission for this abstract
      * pathname. On some platforms it may be possible to start the Java virtual
      * machine with special privileges that allow it to read files that are
@@ -1613,22 +1660,17 @@ public class File
      *     file.setReadable(arg, true)
      * }</pre>
      *
-     * @param  readable
-     *          If <code>true</code>, sets the access permission to allow read
-     *          operations; if <code>false</code> to disallow read operations
-     *
-     * @return  <code>true</code> if and only if the operation succeeded.  The
-     *          operation will fail if the user does not have permission to
-     *          change the access permissions of this abstract pathname.  If
-     *          <code>readable</code> is <code>false</code> and the underlying
-     *          file system does not implement a read permission, then the
-     *          operation will fail.
-     *
-     * @throws  SecurityException
-     *          If a security manager exists and its {@link
-     *          java.lang.SecurityManager#checkWrite(java.lang.String)}
-     *          method denies write access to the file
-     *
+     * @param readable If <code>true</code>, sets the access permission to allow read
+     *                 operations; if <code>false</code> to disallow read operations
+     * @return <code>true</code> if and only if the operation succeeded.  The
+     * operation will fail if the user does not have permission to
+     * change the access permissions of this abstract pathname.  If
+     * <code>readable</code> is <code>false</code> and the underlying
+     * file system does not implement a read permission, then the
+     * operation will fail.
+     * @throws SecurityException If a security manager exists and its {@link
+     *                           java.lang.SecurityManager#checkWrite(java.lang.String)}
+     *                           method denies write access to the file
      * @since 1.6
      */
     public boolean setReadable(boolean readable) {
@@ -1636,6 +1678,8 @@ public class File
     }
 
     /**
+     * 是否可执行且仅 owner 可执行
+     * <p>
      * Sets the owner's or everybody's execute permission for this abstract
      * pathname. On some platforms it may be possible to start the Java virtual
      * machine with special privileges that allow it to execute files that are
@@ -1645,29 +1689,22 @@ public class File
      * file attributes including file permissions. This may be used when finer
      * manipulation of file permissions is required.
      *
-     * @param   executable
-     *          If <code>true</code>, sets the access permission to allow execute
-     *          operations; if <code>false</code> to disallow execute operations
-     *
-     * @param   ownerOnly
-     *          If <code>true</code>, the execute permission applies only to the
-     *          owner's execute permission; otherwise, it applies to everybody.
-     *          If the underlying file system can not distinguish the owner's
-     *          execute permission from that of others, then the permission will
-     *          apply to everybody, regardless of this value.
-     *
-     * @return  <code>true</code> if and only if the operation succeeded.  The
-     *          operation will fail if the user does not have permission to
-     *          change the access permissions of this abstract pathname.  If
-     *          <code>executable</code> is <code>false</code> and the underlying
-     *          file system does not implement an execute permission, then the
-     *          operation will fail.
-     *
-     * @throws  SecurityException
-     *          If a security manager exists and its {@link
-     *          java.lang.SecurityManager#checkWrite(java.lang.String)}
-     *          method denies write access to the file
-     *
+     * @param executable If <code>true</code>, sets the access permission to allow execute
+     *                   operations; if <code>false</code> to disallow execute operations
+     * @param ownerOnly  If <code>true</code>, the execute permission applies only to the
+     *                   owner's execute permission; otherwise, it applies to everybody.
+     *                   If the underlying file system can not distinguish the owner's
+     *                   execute permission from that of others, then the permission will
+     *                   apply to everybody, regardless of this value.
+     * @return <code>true</code> if and only if the operation succeeded.  The
+     * operation will fail if the user does not have permission to
+     * change the access permissions of this abstract pathname.  If
+     * <code>executable</code> is <code>false</code> and the underlying
+     * file system does not implement an execute permission, then the
+     * operation will fail.
+     * @throws SecurityException If a security manager exists and its {@link
+     *                           java.lang.SecurityManager#checkWrite(java.lang.String)}
+     *                           method denies write access to the file
      * @since 1.6
      */
     public boolean setExecutable(boolean executable, boolean ownerOnly) {
@@ -1682,6 +1719,8 @@ public class File
     }
 
     /**
+     * 默认仅 owner 可执行，设置是否可执行
+     * <p>
      * A convenience method to set the owner's execute permission for this
      * abstract pathname. On some platforms it may be possible to start the Java
      * virtual machine with special privileges that allow it to execute files
@@ -1694,22 +1733,17 @@ public class File
      *     file.setExecutable(arg, true)
      * }</pre>
      *
-     * @param   executable
-     *          If <code>true</code>, sets the access permission to allow execute
-     *          operations; if <code>false</code> to disallow execute operations
-     *
-     * @return   <code>true</code> if and only if the operation succeeded.  The
-     *           operation will fail if the user does not have permission to
-     *           change the access permissions of this abstract pathname.  If
-     *           <code>executable</code> is <code>false</code> and the underlying
-     *           file system does not implement an execute permission, then the
-     *           operation will fail.
-     *
-     * @throws  SecurityException
-     *          If a security manager exists and its {@link
-     *          java.lang.SecurityManager#checkWrite(java.lang.String)}
-     *          method denies write access to the file
-     *
+     * @param executable If <code>true</code>, sets the access permission to allow execute
+     *                   operations; if <code>false</code> to disallow execute operations
+     * @return <code>true</code> if and only if the operation succeeded.  The
+     * operation will fail if the user does not have permission to
+     * change the access permissions of this abstract pathname.  If
+     * <code>executable</code> is <code>false</code> and the underlying
+     * file system does not implement an execute permission, then the
+     * operation will fail.
+     * @throws SecurityException If a security manager exists and its {@link
+     *                           java.lang.SecurityManager#checkWrite(java.lang.String)}
+     *                           method denies write access to the file
      * @since 1.6
      */
     public boolean setExecutable(boolean executable) {
@@ -1717,20 +1751,19 @@ public class File
     }
 
     /**
+     * 返回是否能够执行
+     * <p>
      * Tests whether the application can execute the file denoted by this
      * abstract pathname. On some platforms it may be possible to start the
      * Java virtual machine with special privileges that allow it to execute
      * files that are not marked executable. Consequently this method may return
      * {@code true} even though the file does not have execute permissions.
      *
-     * @return  <code>true</code> if and only if the abstract pathname exists
-     *          <em>and</em> the application is allowed to execute the file
-     *
-     * @throws  SecurityException
-     *          If a security manager exists and its {@link
-     *          java.lang.SecurityManager#checkExec(java.lang.String)}
-     *          method denies execute access to the file
-     *
+     * @return <code>true</code> if and only if the abstract pathname exists
+     * <em>and</em> the application is allowed to execute the file
+     * @throws SecurityException If a security manager exists and its {@link
+     *                           java.lang.SecurityManager#checkExec(java.lang.String)}
+     *                           method denies execute access to the file
      * @since 1.6
      */
     public boolean canExecute() {
@@ -1748,6 +1781,9 @@ public class File
     /* -- Filesystem interface -- */
 
     /**
+     * 返回文件系统根路径
+     * Windows 下可能有多个
+     * <p>
      * List the available filesystem roots.
      *
      * <p> A particular Java platform may support zero or more
@@ -1781,13 +1817,12 @@ public class File
      * particular root directory, then that directory will not appear in the
      * result.
      *
-     * @return  An array of {@code File} objects denoting the available
-     *          filesystem roots, or {@code null} if the set of roots could not
-     *          be determined.  The array will be empty if there are no
-     *          filesystem roots.
-     *
-     * @since  1.2
+     * @return An array of {@code File} objects denoting the available
+     * filesystem roots, or {@code null} if the set of roots could not
+     * be determined.  The array will be empty if there are no
+     * filesystem roots.
      * @see java.nio.file.FileStore
+     * @since 1.2
      */
     public static File[] listRoots() {
         return fs.listRoots();
@@ -1797,19 +1832,18 @@ public class File
     /* -- Disk usage -- */
 
     /**
+     * 返回当前路径下的全部空间
+     * <p>
      * Returns the size of the partition <a href="#partName">named</a> by this
      * abstract pathname.
      *
-     * @return  The size, in bytes, of the partition or {@code 0L} if this
-     *          abstract pathname does not name a partition
-     *
-     * @throws  SecurityException
-     *          If a security manager has been installed and it denies
-     *          {@link RuntimePermission}{@code ("getFileSystemAttributes")}
-     *          or its {@link SecurityManager#checkRead(String)} method denies
-     *          read access to the file named by this abstract pathname
-     *
-     * @since  1.6
+     * @return The size, in bytes, of the partition or {@code 0L} if this
+     * abstract pathname does not name a partition
+     * @throws SecurityException If a security manager has been installed and it denies
+     *                           {@link RuntimePermission}{@code ("getFileSystemAttributes")}
+     *                           or its {@link SecurityManager#checkRead(String)} method denies
+     *                           read access to the file named by this abstract pathname
+     * @since 1.6
      */
     public long getTotalSpace() {
         SecurityManager sm = System.getSecurityManager();
@@ -1824,6 +1858,8 @@ public class File
     }
 
     /**
+     * 返回当前路径下的可用空间
+     * <p>
      * Returns the number of unallocated bytes in the partition <a
      * href="#partName">named</a> by this abstract path name.
      *
@@ -1836,18 +1872,15 @@ public class File
      * makes no guarantee that write operations to this file system
      * will succeed.
      *
-     * @return  The number of unallocated bytes on the partition or {@code 0L}
-     *          if the abstract pathname does not name a partition.  This
-     *          value will be less than or equal to the total file system size
-     *          returned by {@link #getTotalSpace}.
-     *
-     * @throws  SecurityException
-     *          If a security manager has been installed and it denies
-     *          {@link RuntimePermission}{@code ("getFileSystemAttributes")}
-     *          or its {@link SecurityManager#checkRead(String)} method denies
-     *          read access to the file named by this abstract pathname
-     *
-     * @since  1.6
+     * @return The number of unallocated bytes on the partition or {@code 0L}
+     * if the abstract pathname does not name a partition.  This
+     * value will be less than or equal to the total file system size
+     * returned by {@link #getTotalSpace}.
+     * @throws SecurityException If a security manager has been installed and it denies
+     *                           {@link RuntimePermission}{@code ("getFileSystemAttributes")}
+     *                           or its {@link SecurityManager#checkRead(String)} method denies
+     *                           read access to the file named by this abstract pathname
+     * @since 1.6
      */
     public long getFreeSpace() {
         SecurityManager sm = System.getSecurityManager();
@@ -1862,6 +1895,8 @@ public class File
     }
 
     /**
+     * 返回当前路径下已使用的空间
+     * <p>
      * Returns the number of bytes available to this virtual machine on the
      * partition <a href="#partName">named</a> by this abstract pathname.  When
      * possible, this method checks for write permissions and other operating
@@ -1877,18 +1912,15 @@ public class File
      * virtual machine.  This method makes no guarantee that write operations
      * to this file system will succeed.
      *
-     * @return  The number of available bytes on the partition or {@code 0L}
-     *          if the abstract pathname does not name a partition.  On
-     *          systems where this information is not available, this method
-     *          will be equivalent to a call to {@link #getFreeSpace}.
-     *
-     * @throws  SecurityException
-     *          If a security manager has been installed and it denies
-     *          {@link RuntimePermission}{@code ("getFileSystemAttributes")}
-     *          or its {@link SecurityManager#checkRead(String)} method denies
-     *          read access to the file named by this abstract pathname
-     *
-     * @since  1.6
+     * @return The number of available bytes on the partition or {@code 0L}
+     * if the abstract pathname does not name a partition.  On
+     * systems where this information is not available, this method
+     * will be equivalent to a call to {@link #getFreeSpace}.
+     * @throws SecurityException If a security manager has been installed and it denies
+     *                           {@link RuntimePermission}{@code ("getFileSystemAttributes")}
+     *                           or its {@link SecurityManager#checkRead(String)} method denies
+     *                           read access to the file named by this abstract pathname
+     * @since 1.6
      */
     public long getUsableSpace() {
         SecurityManager sm = System.getSecurityManager();
@@ -1904,29 +1936,36 @@ public class File
 
     /* -- Temporary files -- */
 
+    /**
+     * 临时的目录
+     */
     private static class TempDirectory {
-        private TempDirectory() { }
+        private TempDirectory() {
+        }
 
         // temporary directory location
+        // 创建在 临时目录下
         private static final File tmpdir = new File(
                 GetPropertyAction.privilegedGetProperty("java.io.tmpdir"));
+
         static File location() {
             return tmpdir;
         }
 
         // file name generation
         private static final SecureRandom random = new SecureRandom();
+
         private static int shortenSubName(int subNameLength, int excess,
-            int nameMin) {
+                                          int nameMin) {
             int newLength = Math.max(nameMin, subNameLength - excess);
             if (newLength < subNameLength) {
                 return newLength;
             }
             return subNameLength;
         }
+
         static File generateFile(String prefix, String suffix, File dir)
-            throws IOException
-        {
+                throws IOException {
             long n = random.nextLong();
             String nus = Long.toUnsignedString(n);
 
@@ -1935,7 +1974,8 @@ public class File
 
             int prefixLength = prefix.length();
             int nusLength = nus.length();
-            int suffixLength = suffix.length();;
+            int suffixLength = suffix.length();
+            ;
 
             String name;
             int nameMax = fs.getNameMax(dir.getPath());
@@ -1953,7 +1993,7 @@ public class File
                     // Attempt to shorten the suffix length to no less than
                     // 0 or 4 depending on whether it begins with a dot ('.')
                     suffixLength = shortenSubName(suffixLength, excess,
-                        suffix.indexOf(".") == 0 ? 4 : 0);
+                            suffix.indexOf(".") == 0 ? 4 : 0);
                     suffixLength = shortenSubName(suffixLength, excess, 3);
                     excess = prefixLength + nusLength + suffixLength - nameMax;
                 }
@@ -1965,13 +2005,13 @@ public class File
                 }
 
                 StringBuilder sb =
-                    new StringBuilder(prefixLength + nusLength + suffixLength);
+                        new StringBuilder(prefixLength + nusLength + suffixLength);
                 sb.append(prefixLength < prefix.length() ?
-                    prefix.substring(0, prefixLength) : prefix);
+                        prefix.substring(0, prefixLength) : prefix);
                 sb.append(nusLength < nus.length() ?
-                    nus.substring(0, nusLength) : nus);
+                        nus.substring(0, nusLength) : nus);
                 sb.append(suffixLength < suffix.length() ?
-                    suffix.substring(0, suffixLength) : suffix);
+                        suffix.substring(0, suffixLength) : suffix);
                 name = sb.toString();
             }
 
@@ -1984,13 +2024,15 @@ public class File
                     throw new IOException("Unable to create temporary file");
                 else
                     throw new IOException("Unable to create temporary file, "
-                        + name);
+                            + name);
             }
             return f;
         }
     }
 
     /**
+     * 返回一个临时的目录
+     *
      * <p> Creates a new empty file in the specified directory, using the
      * given prefix and suffix strings to generate its name.  If this method
      * returns successfully then it is guaranteed that:
@@ -2002,7 +2044,7 @@ public class File
      *      abstract pathname again in the current invocation of the virtual
      *      machine.
      * </ol>
-     *
+     * <p>
      * This method provides only part of a temporary-file facility.  To arrange
      * for a file created by this method to be deleted automatically, use the
      * {@link #deleteOnExit} method.
@@ -2033,45 +2075,35 @@ public class File
      * is invoked, but programmatic changes to this property are not guaranteed
      * to have any effect upon the temporary directory used by this method.
      *
-     * @param  prefix     The prefix string to be used in generating the file's
-     *                    name; must be at least three characters long
-     *
-     * @param  suffix     The suffix string to be used in generating the file's
-     *                    name; may be <code>null</code>, in which case the
-     *                    suffix <code>".tmp"</code> will be used
-     *
-     * @param  directory  The directory in which the file is to be created, or
-     *                    <code>null</code> if the default temporary-file
-     *                    directory is to be used
-     *
-     * @return  An abstract pathname denoting a newly-created empty file
-     *
-     * @throws  IllegalArgumentException
-     *          If the <code>prefix</code> argument contains fewer than three
-     *          characters
-     *
-     * @throws  IOException  If a file could not be created
-     *
-     * @throws  SecurityException
-     *          If a security manager exists and its {@link
-     *          java.lang.SecurityManager#checkWrite(java.lang.String)}
-     *          method does not allow a file to be created
-     *
+     * @param prefix    The prefix string to be used in generating the file's
+     *                  name; must be at least three characters long
+     * @param suffix    The suffix string to be used in generating the file's
+     *                  name; may be <code>null</code>, in which case the
+     *                  suffix <code>".tmp"</code> will be used
+     * @param directory The directory in which the file is to be created, or
+     *                  <code>null</code> if the default temporary-file
+     *                  directory is to be used
+     * @return An abstract pathname denoting a newly-created empty file
+     * @throws IllegalArgumentException If the <code>prefix</code> argument contains fewer than three
+     *                                  characters
+     * @throws IOException              If a file could not be created
+     * @throws SecurityException        If a security manager exists and its {@link
+     *                                  java.lang.SecurityManager#checkWrite(java.lang.String)}
+     *                                  method does not allow a file to be created
      * @since 1.2
      */
     public static File createTempFile(String prefix, String suffix,
                                       File directory)
-        throws IOException
-    {
+            throws IOException {
         if (prefix.length() < 3) {
             throw new IllegalArgumentException("Prefix string \"" + prefix +
-                "\" too short: length must be at least 3");
+                    "\" too short: length must be at least 3");
         }
         if (suffix == null)
             suffix = ".tmp";
 
         File tmpdir = (directory != null) ? directory
-                                          : TempDirectory.location();
+                : TempDirectory.location();
         SecurityManager sm = System.getSecurityManager();
         File f;
         do {
@@ -2096,6 +2128,8 @@ public class File
     }
 
     /**
+     * 在临时目录下创建一个临时的文件目录
+     * <p>
      * Creates an empty file in the default temporary-file directory, using
      * the given prefix and suffix to generate its name. Invoking this method
      * is equivalent to invoking {@link #createTempFile(java.lang.String,
@@ -2103,59 +2137,51 @@ public class File
      * createTempFile(prefix,&nbsp;suffix,&nbsp;null)}.
      *
      * <p> The {@link
-     * java.nio.file.Files#createTempFile(String,String,java.nio.file.attribute.FileAttribute[])
+     * java.nio.file.Files#createTempFile(String, String, java.nio.file.attribute.FileAttribute[])
      * Files.createTempFile} method provides an alternative method to create an
      * empty file in the temporary-file directory. Files created by that method
      * may have more restrictive access permissions to files created by this
      * method and so may be more suited to security-sensitive applications.
      *
-     * @param  prefix     The prefix string to be used in generating the file's
-     *                    name; must be at least three characters long
-     *
-     * @param  suffix     The suffix string to be used in generating the file's
-     *                    name; may be <code>null</code>, in which case the
-     *                    suffix <code>".tmp"</code> will be used
-     *
-     * @return  An abstract pathname denoting a newly-created empty file
-     *
-     * @throws  IllegalArgumentException
-     *          If the <code>prefix</code> argument contains fewer than three
-     *          characters
-     *
-     * @throws  IOException  If a file could not be created
-     *
-     * @throws  SecurityException
-     *          If a security manager exists and its {@link
-     *          java.lang.SecurityManager#checkWrite(java.lang.String)}
-     *          method does not allow a file to be created
-     *
+     * @param prefix The prefix string to be used in generating the file's
+     *               name; must be at least three characters long
+     * @param suffix The suffix string to be used in generating the file's
+     *               name; may be <code>null</code>, in which case the
+     *               suffix <code>".tmp"</code> will be used
+     * @return An abstract pathname denoting a newly-created empty file
+     * @throws IllegalArgumentException If the <code>prefix</code> argument contains fewer than three
+     *                                  characters
+     * @throws IOException              If a file could not be created
+     * @throws SecurityException        If a security manager exists and its {@link
+     *                                  java.lang.SecurityManager#checkWrite(java.lang.String)}
+     *                                  method does not allow a file to be created
+     * @see java.nio.file.Files#createTempDirectory(String, FileAttribute[])
      * @since 1.2
-     * @see java.nio.file.Files#createTempDirectory(String,FileAttribute[])
      */
     public static File createTempFile(String prefix, String suffix)
-        throws IOException
-    {
+            throws IOException {
         return createTempFile(prefix, suffix, null);
     }
 
     /* -- Basic infrastructure -- */
 
     /**
+     * 实现了 Comparable 接口，默认比较规则为字符串比较
+     * 字符串为调用 getPath 方法得到
+     * <p>
      * Compares two abstract pathnames lexicographically.  The ordering
      * defined by this method depends upon the underlying system.  On UNIX
      * systems, alphabetic case is significant in comparing pathnames; on Microsoft Windows
      * systems it is not.
      *
-     * @param   pathname  The abstract pathname to be compared to this abstract
-     *                    pathname
-     *
-     * @return  Zero if the argument is equal to this abstract pathname, a
-     *          value less than zero if this abstract pathname is
-     *          lexicographically less than the argument, or a value greater
-     *          than zero if this abstract pathname is lexicographically
-     *          greater than the argument
-     *
-     * @since   1.2
+     * @param pathname The abstract pathname to be compared to this abstract
+     *                 pathname
+     * @return Zero if the argument is equal to this abstract pathname, a
+     * value less than zero if this abstract pathname is
+     * lexicographically less than the argument, or a value greater
+     * than zero if this abstract pathname is lexicographically
+     * greater than the argument
+     * @since 1.2
      */
     public int compareTo(File pathname) {
         return fs.compare(this, pathname);
@@ -2170,14 +2196,13 @@ public class File
      * systems, alphabetic case is significant in comparing pathnames; on Microsoft Windows
      * systems it is not.
      *
-     * @param   obj   The object to be compared with this abstract pathname
-     *
-     * @return  <code>true</code> if and only if the objects are the same;
-     *          <code>false</code> otherwise
+     * @param obj The object to be compared with this abstract pathname
+     * @return <code>true</code> if and only if the objects are the same;
+     * <code>false</code> otherwise
      */
     public boolean equals(Object obj) {
         if ((obj != null) && (obj instanceof File)) {
-            return compareTo((File)obj) == 0;
+            return compareTo((File) obj) == 0;
         }
         return false;
     }
@@ -2194,47 +2219,52 @@ public class File
      * value <code>1234321</code>.  Locale is not taken into account on
      * lowercasing the pathname string.
      *
-     * @return  A hash code for this abstract pathname
+     * @return A hash code for this abstract pathname
      */
     public int hashCode() {
         return fs.hashCode(this);
     }
 
     /**
+     * 简单的返回当前文件的名字
+     * 调用 getPath() 方法
+     * <p>
      * Returns the pathname string of this abstract pathname.  This is just the
      * string returned by the {@link #getPath} method.
      *
-     * @return  The string form of this abstract pathname
+     * @return The string form of this abstract pathname
      */
     public String toString() {
         return getPath();
     }
 
     /**
+     * 序列化方法
+     * <p>
      * WriteObject is called to save this filename.
      * The separator character is saved also so it can be replaced
      * in case the path is reconstituted on a different host type.
      *
-     * @serialData  Default fields followed by separator character.
+     * @serialData Default fields followed by separator character.
      */
     private synchronized void writeObject(java.io.ObjectOutputStream s)
-        throws IOException
-    {
+            throws IOException {
         s.defaultWriteObject();
         s.writeChar(separatorChar); // Add the separator character
     }
 
     /**
+     * 反序列化方法
+     * <p>
      * readObject is called to restore this filename.
      * The original separator character is read.  If it is different
      * than the separator character on this system, then the old separator
      * is replaced by the local separator.
      */
     private synchronized void readObject(java.io.ObjectInputStream s)
-         throws IOException, ClassNotFoundException
-    {
+            throws IOException, ClassNotFoundException {
         ObjectInputStream.GetField fields = s.readFields();
-        String pathField = (String)fields.get("path", null);
+        String pathField = (String) fields.get("path", null);
         char sep = s.readChar(); // read the previous separator char
         if (sep != separatorChar)
             pathField = pathField.replace(sep, separatorChar);
@@ -2250,7 +2280,9 @@ public class File
     private static final long PREFIX_LENGTH_OFFSET
             = UNSAFE.objectFieldOffset(File.class, "prefixLength");
 
-    /** use serialVersionUID from JDK 1.0.2 for interoperability */
+    /**
+     * use serialVersionUID from JDK 1.0.2 for interoperability
+     */
     private static final long serialVersionUID = 301077366599181567L;
 
     // -- Integration with java.nio.file --
@@ -2258,6 +2290,8 @@ public class File
     private transient volatile Path filePath;
 
     /**
+     * 将 File 转为 Path
+     * <p>
      * Returns a {@link Path java.nio.file.Path} object constructed from
      * this abstract path. The resulting {@code Path} is associated with the
      * {@link java.nio.file.FileSystems#getDefault default-filesystem}.
@@ -2274,14 +2308,11 @@ public class File
      * method returns a {@code Path} that may be used to access the current
      * user directory.
      *
-     * @return  a {@code Path} constructed from this abstract path
-     *
-     * @throws  java.nio.file.InvalidPathException
-     *          if a {@code Path} object cannot be constructed from the abstract
-     *          path (see {@link java.nio.file.FileSystem#getPath FileSystem.getPath})
-     *
-     * @since   1.7
+     * @return a {@code Path} constructed from this abstract path
+     * @throws java.nio.file.InvalidPathException if a {@code Path} object cannot be constructed from the abstract
+     *                                            path (see {@link java.nio.file.FileSystem#getPath FileSystem.getPath})
      * @see Path#toFile
+     * @since 1.7
      */
     public Path toPath() {
         Path result = filePath;

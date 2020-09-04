@@ -36,10 +36,13 @@ package java.io;
  * constructors if the file does exist but for some reason is inaccessible, for
  * example when an attempt is made to open a read-only file for writing.
  *
- * @author  unascribed
- * @since   1.0
+ * @author unascribed
+ * @since 1.0
  */
 
+/**
+ * 继承自 IOException，非运行时异常，CHECKED 异常
+ */
 public class FileNotFoundException extends IOException {
     private static final long serialVersionUID = -897856973823710492L;
 
@@ -58,7 +61,7 @@ public class FileNotFoundException extends IOException {
      * <code>{@link java.lang.Throwable#getMessage}</code>
      * method of class <code>java.lang.Throwable</code>.
      *
-     * @param   s   the detail message.
+     * @param s the detail message.
      */
     public FileNotFoundException(String s) {
         super(s);
@@ -75,8 +78,8 @@ public class FileNotFoundException extends IOException {
      */
     private FileNotFoundException(String path, String reason) {
         super(path + ((reason == null)
-                      ? ""
-                      : " (" + reason + ")"));
+                ? ""
+                : " (" + reason + ")"));
     }
 
 }

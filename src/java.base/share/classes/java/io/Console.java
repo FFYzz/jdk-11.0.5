@@ -27,6 +27,7 @@ package java.io;
 
 import java.util.*;
 import java.nio.charset.Charset;
+
 import jdk.internal.misc.JavaIOAccess;
 import jdk.internal.misc.SharedSecrets;
 import sun.nio.cs.StreamDecoder;
@@ -87,166 +88,148 @@ import sun.nio.cs.StreamEncoder;
  * }
  * }</pre></blockquote>
  *
- * @author  Xueming Shen
- * @since   1.6
+ * @author Xueming Shen
+ * @since 1.6
  */
 
-public final class Console implements Flushable
-{
-   /**
-    * Retrieves the unique {@link java.io.PrintWriter PrintWriter} object
-    * associated with this console.
-    *
-    * @return  The printwriter associated with this console
-    */
+/**
+ * 类似于 Scanner，不看
+ */
+public final class Console implements Flushable {
+    /**
+     * Retrieves the unique {@link java.io.PrintWriter PrintWriter} object
+     * associated with this console.
+     *
+     * @return The printwriter associated with this console
+     */
     public PrintWriter writer() {
         return pw;
     }
 
-   /**
-    * Retrieves the unique {@link java.io.Reader Reader} object associated
-    * with this console.
-    * <p>
-    * This method is intended to be used by sophisticated applications, for
-    * example, a {@link java.util.Scanner} object which utilizes the rich
-    * parsing/scanning functionality provided by the {@code Scanner}:
-    * <blockquote><pre>
-    * Console con = System.console();
-    * if (con != null) {
-    *     Scanner sc = new Scanner(con.reader());
-    *     ...
-    * }
-    * </pre></blockquote>
-    * <p>
-    * For simple applications requiring only line-oriented reading, use
-    * {@link #readLine}.
-    * <p>
-    * The bulk read operations {@link java.io.Reader#read(char[]) read(char[]) },
-    * {@link java.io.Reader#read(char[], int, int) read(char[], int, int) } and
-    * {@link java.io.Reader#read(java.nio.CharBuffer) read(java.nio.CharBuffer)}
-    * on the returned object will not read in characters beyond the line
-    * bound for each invocation, even if the destination buffer has space for
-    * more characters. The {@code Reader}'s {@code read} methods may block if a
-    * line bound has not been entered or reached on the console's input device.
-    * A line bound is considered to be any one of a line feed ({@code '\n'}),
-    * a carriage return ({@code '\r'}), a carriage return followed immediately
-    * by a linefeed, or an end of stream.
-    *
-    * @return  The reader associated with this console
-    */
+    /**
+     * Retrieves the unique {@link java.io.Reader Reader} object associated
+     * with this console.
+     * <p>
+     * This method is intended to be used by sophisticated applications, for
+     * example, a {@link java.util.Scanner} object which utilizes the rich
+     * parsing/scanning functionality provided by the {@code Scanner}:
+     * <blockquote><pre>
+     * Console con = System.console();
+     * if (con != null) {
+     *     Scanner sc = new Scanner(con.reader());
+     *     ...
+     * }
+     * </pre></blockquote>
+     * <p>
+     * For simple applications requiring only line-oriented reading, use
+     * {@link #readLine}.
+     * <p>
+     * The bulk read operations {@link java.io.Reader#read(char[]) read(char[]) },
+     * {@link java.io.Reader#read(char[], int, int) read(char[], int, int) } and
+     * {@link java.io.Reader#read(java.nio.CharBuffer) read(java.nio.CharBuffer)}
+     * on the returned object will not read in characters beyond the line
+     * bound for each invocation, even if the destination buffer has space for
+     * more characters. The {@code Reader}'s {@code read} methods may block if a
+     * line bound has not been entered or reached on the console's input device.
+     * A line bound is considered to be any one of a line feed ({@code '\n'}),
+     * a carriage return ({@code '\r'}), a carriage return followed immediately
+     * by a linefeed, or an end of stream.
+     *
+     * @return The reader associated with this console
+     */
     public Reader reader() {
         return reader;
     }
 
-   /**
-    * Writes a formatted string to this console's output stream using
-    * the specified format string and arguments.
-    *
-    * @param  fmt
-    *         A format string as described in <a
-    *         href="../util/Formatter.html#syntax">Format string syntax</a>
-    *
-    * @param  args
-    *         Arguments referenced by the format specifiers in the format
-    *         string.  If there are more arguments than format specifiers, the
-    *         extra arguments are ignored.  The number of arguments is
-    *         variable and may be zero.  The maximum number of arguments is
-    *         limited by the maximum dimension of a Java array as defined by
-    *         <cite>The Java&trade; Virtual Machine Specification</cite>.
-    *         The behaviour on a
-    *         {@code null} argument depends on the <a
-    *         href="../util/Formatter.html#syntax">conversion</a>.
-    *
-    * @throws  IllegalFormatException
-    *          If a format string contains an illegal syntax, a format
-    *          specifier that is incompatible with the given arguments,
-    *          insufficient arguments given the format string, or other
-    *          illegal conditions.  For specification of all possible
-    *          formatting errors, see the <a
-    *          href="../util/Formatter.html#detail">Details</a> section
-    *          of the formatter class specification.
-    *
-    * @return  This console
-    */
-    public Console format(String fmt, Object ...args) {
+    /**
+     * Writes a formatted string to this console's output stream using
+     * the specified format string and arguments.
+     *
+     * @param fmt  A format string as described in <a
+     *             href="../util/Formatter.html#syntax">Format string syntax</a>
+     * @param args Arguments referenced by the format specifiers in the format
+     *             string.  If there are more arguments than format specifiers, the
+     *             extra arguments are ignored.  The number of arguments is
+     *             variable and may be zero.  The maximum number of arguments is
+     *             limited by the maximum dimension of a Java array as defined by
+     *             <cite>The Java&trade; Virtual Machine Specification</cite>.
+     *             The behaviour on a
+     *             {@code null} argument depends on the <a
+     *             href="../util/Formatter.html#syntax">conversion</a>.
+     * @return This console
+     * @throws IllegalFormatException If a format string contains an illegal syntax, a format
+     *                                specifier that is incompatible with the given arguments,
+     *                                insufficient arguments given the format string, or other
+     *                                illegal conditions.  For specification of all possible
+     *                                formatting errors, see the <a
+     *                                href="../util/Formatter.html#detail">Details</a> section
+     *                                of the formatter class specification.
+     */
+    public Console format(String fmt, Object... args) {
         formatter.format(fmt, args).flush();
         return this;
     }
 
-   /**
-    * A convenience method to write a formatted string to this console's
-    * output stream using the specified format string and arguments.
-    *
-    * <p> An invocation of this method of the form
-    * {@code con.printf(format, args)} behaves in exactly the same way
-    * as the invocation of
-    * <pre>con.format(format, args)</pre>.
-    *
-    * @param  format
-    *         A format string as described in <a
-    *         href="../util/Formatter.html#syntax">Format string syntax</a>.
-    *
-    * @param  args
-    *         Arguments referenced by the format specifiers in the format
-    *         string.  If there are more arguments than format specifiers, the
-    *         extra arguments are ignored.  The number of arguments is
-    *         variable and may be zero.  The maximum number of arguments is
-    *         limited by the maximum dimension of a Java array as defined by
-    *         <cite>The Java&trade; Virtual Machine Specification</cite>.
-    *         The behaviour on a
-    *         {@code null} argument depends on the <a
-    *         href="../util/Formatter.html#syntax">conversion</a>.
-    *
-    * @throws  IllegalFormatException
-    *          If a format string contains an illegal syntax, a format
-    *          specifier that is incompatible with the given arguments,
-    *          insufficient arguments given the format string, or other
-    *          illegal conditions.  For specification of all possible
-    *          formatting errors, see the <a
-    *          href="../util/Formatter.html#detail">Details</a> section of the
-    *          formatter class specification.
-    *
-    * @return  This console
-    */
-    public Console printf(String format, Object ... args) {
+    /**
+     * A convenience method to write a formatted string to this console's
+     * output stream using the specified format string and arguments.
+     *
+     * <p> An invocation of this method of the form
+     * {@code con.printf(format, args)} behaves in exactly the same way
+     * as the invocation of
+     * <pre>con.format(format, args)</pre>.
+     *
+     * @param format A format string as described in <a
+     *               href="../util/Formatter.html#syntax">Format string syntax</a>.
+     * @param args   Arguments referenced by the format specifiers in the format
+     *               string.  If there are more arguments than format specifiers, the
+     *               extra arguments are ignored.  The number of arguments is
+     *               variable and may be zero.  The maximum number of arguments is
+     *               limited by the maximum dimension of a Java array as defined by
+     *               <cite>The Java&trade; Virtual Machine Specification</cite>.
+     *               The behaviour on a
+     *               {@code null} argument depends on the <a
+     *               href="../util/Formatter.html#syntax">conversion</a>.
+     * @return This console
+     * @throws IllegalFormatException If a format string contains an illegal syntax, a format
+     *                                specifier that is incompatible with the given arguments,
+     *                                insufficient arguments given the format string, or other
+     *                                illegal conditions.  For specification of all possible
+     *                                formatting errors, see the <a
+     *                                href="../util/Formatter.html#detail">Details</a> section of the
+     *                                formatter class specification.
+     */
+    public Console printf(String format, Object... args) {
         return format(format, args);
     }
 
-   /**
-    * Provides a formatted prompt, then reads a single line of text from the
-    * console.
-    *
-    * @param  fmt
-    *         A format string as described in <a
-    *         href="../util/Formatter.html#syntax">Format string syntax</a>.
-    *
-    * @param  args
-    *         Arguments referenced by the format specifiers in the format
-    *         string.  If there are more arguments than format specifiers, the
-    *         extra arguments are ignored.  The maximum number of arguments is
-    *         limited by the maximum dimension of a Java array as defined by
-    *         <cite>The Java&trade; Virtual Machine Specification</cite>.
-    *
-    * @throws  IllegalFormatException
-    *          If a format string contains an illegal syntax, a format
-    *          specifier that is incompatible with the given arguments,
-    *          insufficient arguments given the format string, or other
-    *          illegal conditions.  For specification of all possible
-    *          formatting errors, see the <a
-    *          href="../util/Formatter.html#detail">Details</a> section
-    *          of the formatter class specification.
-    *
-    * @throws IOError
-    *         If an I/O error occurs.
-    *
-    * @return  A string containing the line read from the console, not
-    *          including any line-termination characters, or {@code null}
-    *          if an end of stream has been reached.
-    */
-    public String readLine(String fmt, Object ... args) {
+    /**
+     * Provides a formatted prompt, then reads a single line of text from the
+     * console.
+     *
+     * @param fmt  A format string as described in <a
+     *             href="../util/Formatter.html#syntax">Format string syntax</a>.
+     * @param args Arguments referenced by the format specifiers in the format
+     *             string.  If there are more arguments than format specifiers, the
+     *             extra arguments are ignored.  The maximum number of arguments is
+     *             limited by the maximum dimension of a Java array as defined by
+     *             <cite>The Java&trade; Virtual Machine Specification</cite>.
+     * @return A string containing the line read from the console, not
+     * including any line-termination characters, or {@code null}
+     * if an end of stream has been reached.
+     * @throws IllegalFormatException If a format string contains an illegal syntax, a format
+     *                                specifier that is incompatible with the given arguments,
+     *                                insufficient arguments given the format string, or other
+     *                                illegal conditions.  For specification of all possible
+     *                                formatting errors, see the <a
+     *                                href="../util/Formatter.html#detail">Details</a> section
+     *                                of the formatter class specification.
+     * @throws IOError                If an I/O error occurs.
+     */
+    public String readLine(String fmt, Object... args) {
         String line = null;
         synchronized (writeLock) {
-            synchronized(readLock) {
+            synchronized (readLock) {
                 if (!fmt.isEmpty())
                     pw.format(fmt, args);
                 try {
@@ -261,56 +244,46 @@ public final class Console implements Flushable
         return line;
     }
 
-   /**
-    * Reads a single line of text from the console.
-    *
-    * @throws IOError
-    *         If an I/O error occurs.
-    *
-    * @return  A string containing the line read from the console, not
-    *          including any line-termination characters, or {@code null}
-    *          if an end of stream has been reached.
-    */
+    /**
+     * Reads a single line of text from the console.
+     *
+     * @return A string containing the line read from the console, not
+     * including any line-termination characters, or {@code null}
+     * if an end of stream has been reached.
+     * @throws IOError If an I/O error occurs.
+     */
     public String readLine() {
         return readLine("");
     }
 
-   /**
-    * Provides a formatted prompt, then reads a password or passphrase from
-    * the console with echoing disabled.
-    *
-    * @param  fmt
-    *         A format string as described in <a
-    *         href="../util/Formatter.html#syntax">Format string syntax</a>
-    *         for the prompt text.
-    *
-    * @param  args
-    *         Arguments referenced by the format specifiers in the format
-    *         string.  If there are more arguments than format specifiers, the
-    *         extra arguments are ignored.  The maximum number of arguments is
-    *         limited by the maximum dimension of a Java array as defined by
-    *         <cite>The Java&trade; Virtual Machine Specification</cite>.
-    *
-    * @throws  IllegalFormatException
-    *          If a format string contains an illegal syntax, a format
-    *          specifier that is incompatible with the given arguments,
-    *          insufficient arguments given the format string, or other
-    *          illegal conditions.  For specification of all possible
-    *          formatting errors, see the <a
-    *          href="../util/Formatter.html#detail">Details</a>
-    *          section of the formatter class specification.
-    *
-    * @throws IOError
-    *         If an I/O error occurs.
-    *
-    * @return  A character array containing the password or passphrase read
-    *          from the console, not including any line-termination characters,
-    *          or {@code null} if an end of stream has been reached.
-    */
-    public char[] readPassword(String fmt, Object ... args) {
+    /**
+     * Provides a formatted prompt, then reads a password or passphrase from
+     * the console with echoing disabled.
+     *
+     * @param fmt  A format string as described in <a
+     *             href="../util/Formatter.html#syntax">Format string syntax</a>
+     *             for the prompt text.
+     * @param args Arguments referenced by the format specifiers in the format
+     *             string.  If there are more arguments than format specifiers, the
+     *             extra arguments are ignored.  The maximum number of arguments is
+     *             limited by the maximum dimension of a Java array as defined by
+     *             <cite>The Java&trade; Virtual Machine Specification</cite>.
+     * @return A character array containing the password or passphrase read
+     * from the console, not including any line-termination characters,
+     * or {@code null} if an end of stream has been reached.
+     * @throws IllegalFormatException If a format string contains an illegal syntax, a format
+     *                                specifier that is incompatible with the given arguments,
+     *                                insufficient arguments given the format string, or other
+     *                                illegal conditions.  For specification of all possible
+     *                                formatting errors, see the <a
+     *                                href="../util/Formatter.html#detail">Details</a>
+     *                                section of the formatter class specification.
+     * @throws IOError                If an I/O error occurs.
+     */
+    public char[] readPassword(String fmt, Object... args) {
         char[] passwd = null;
         synchronized (writeLock) {
-            synchronized(readLock) {
+            synchronized (readLock) {
                 installShutdownHook();
                 try {
                     restoreEcho = echo(false);
@@ -350,17 +323,18 @@ public final class Console implements Flushable
             // Add a shutdown hook to restore console's echo state should
             // it be necessary.
             SharedSecrets.getJavaLangAccess()
-                .registerShutdownHook(0 /* shutdown hook invocation order */,
-                    false /* only register if shutdown is not in progress */,
-                    new Runnable() {
-                        public void run() {
-                            try {
-                                if (restoreEcho) {
-                                    echo(true);
+                    .registerShutdownHook(0 /* shutdown hook invocation order */,
+                            false /* only register if shutdown is not in progress */,
+                            new Runnable() {
+                                public void run() {
+                                    try {
+                                        if (restoreEcho) {
+                                            echo(true);
+                                        }
+                                    } catch (IOException x) {
+                                    }
                                 }
-                            } catch (IOException x) { }
-                        }
-                    });
+                            });
         } catch (IllegalStateException e) {
             // shutdown is already in progress and readPassword is first used
             // by a shutdown hook
@@ -368,16 +342,14 @@ public final class Console implements Flushable
         shutdownHookInstalled = true;
     }
 
-   /**
-    * Reads a password or passphrase from the console with echoing disabled
-    *
-    * @throws IOError
-    *         If an I/O error occurs.
-    *
-    * @return  A character array containing the password or passphrase read
-    *          from the console, not including any line-termination characters,
-    *          or {@code null} if an end of stream has been reached.
-    */
+    /**
+     * Reads a password or passphrase from the console with echoing disabled
+     *
+     * @return A character array containing the password or passphrase read
+     * from the console, not including any line-termination characters,
+     * or {@code null} if an end of stream has been reached.
+     * @throws IOError If an I/O error occurs.
+     */
     public char[] readPassword() {
         return readPassword("");
     }
@@ -400,7 +372,9 @@ public final class Console implements Flushable
     private char[] rcb;
     private boolean restoreEcho;
     private boolean shutdownHookInstalled;
+
     private static native String encoding();
+
     /*
      * Sets the console echo status to {@code on} and returns the previous
      * console on/off status.
@@ -414,11 +388,11 @@ public final class Console implements Flushable
         int len = reader.read(rcb, 0, rcb.length);
         if (len < 0)
             return null;  //EOL
-        if (rcb[len-1] == '\r')
+        if (rcb[len - 1] == '\r')
             len--;        //remove CR at end;
-        else if (rcb[len-1] == '\n') {
+        else if (rcb[len - 1] == '\n') {
             len--;        //remove LF at end;
-            if (len > 0 && rcb[len-1] == '\r')
+            if (len > 0 && rcb[len - 1] == '\r')
                 len--;    //remove the CR, if there is one
         }
         char[] b = new char[len];
@@ -444,31 +418,34 @@ public final class Console implements Flushable
         private char[] cb;
         private int nChars, nextChar;
         boolean leftoverLF;
+
         LineReader(Reader in) {
             this.in = in;
             cb = new char[1024];
             nextChar = nChars = 0;
             leftoverLF = false;
         }
-        public void close () {}
+
+        public void close() {
+        }
+
         public boolean ready() throws IOException {
             //in.ready synchronizes on readLock already
             return in.ready();
         }
 
         public int read(char cbuf[], int offset, int length)
-            throws IOException
-        {
+                throws IOException {
             int off = offset;
             int end = offset + length;
             if (offset < 0 || offset > cbuf.length || length < 0 ||
-                end < 0 || end > cbuf.length) {
+                    end < 0 || end > cbuf.length) {
                 throw new IndexOutOfBoundsException();
             }
-            synchronized(readLock) {
+            synchronized (readLock) {
                 boolean eof = false;
                 char c = 0;
-                for (;;) {
+                for (; ; ) {
                     if (nextChar >= nChars) {   //fill
                         int n = 0;
                         do {
@@ -478,7 +455,7 @@ public final class Console implements Flushable
                             nChars = n;
                             nextChar = 0;
                             if (n < cb.length &&
-                                cb[n-1] != '\n' && cb[n-1] != '\r') {
+                                    cb[n - 1] != '\n' && cb[n - 1] != '\r') {
                                 /*
                                  * we're in canonical mode so each "fill" should
                                  * come back with an eol. if there no lf or nl at
@@ -536,12 +513,12 @@ public final class Console implements Flushable
                             }
                             return off - offset;
                         } else if (off == end) {
-                           if (cbuf == rcb) {
+                            if (cbuf == rcb) {
                                 cbuf = grow();
                                 end = cbuf.length;
-                           } else {
-                               return off - offset;
-                           }
+                            } else {
+                                return off - offset;
+                            }
                         }
                     }
                     if (eof)
@@ -570,8 +547,11 @@ public final class Console implements Flushable
             }
         });
     }
+
     private static Console cons;
+
     private static native boolean istty();
+
     private Console() {
         readLock = new Object();
         writeLock = new Object();
@@ -579,20 +559,24 @@ public final class Console implements Flushable
         if (csname != null) {
             try {
                 cs = Charset.forName(csname);
-            } catch (Exception x) {}
+            } catch (Exception x) {
+            }
         }
         if (cs == null)
             cs = Charset.defaultCharset();
         out = StreamEncoder.forOutputStreamWriter(
-                  new FileOutputStream(FileDescriptor.out),
-                  writeLock,
-                  cs);
-        pw = new PrintWriter(out, true) { public void close() {} };
+                new FileOutputStream(FileDescriptor.out),
+                writeLock,
+                cs);
+        pw = new PrintWriter(out, true) {
+            public void close() {
+            }
+        };
         formatter = new Formatter(out);
         reader = new LineReader(StreamDecoder.forInputStreamReader(
-                     new FileInputStream(FileDescriptor.in),
-                     readLock,
-                     cs));
+                new FileInputStream(FileDescriptor.in),
+                readLock,
+                cs));
         rcb = new char[1024];
     }
 }

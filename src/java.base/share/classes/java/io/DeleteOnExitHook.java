@@ -26,6 +26,7 @@ package java.io;
 
 import java.util.*;
 import java.io.File;
+
 import jdk.internal.misc.SharedSecrets;
 
 /**
@@ -35,7 +36,11 @@ import jdk.internal.misc.SharedSecrets;
  */
 
 class DeleteOnExitHook {
+    /**
+     * 用 LinkedHashSet 保存，可以去重，即使多次存放也不会多次 exit
+     */
     private static LinkedHashSet<String> files = new LinkedHashSet<>();
+
     static {
         // DeleteOnExitHook must be the last shutdown hook to be invoked.
         // Application shutdown hooks may add the first file to the
@@ -43,20 +48,22 @@ class DeleteOnExitHook {
         // registered during shutdown in progress. So set the
         // registerShutdownInProgress parameter to true.
         SharedSecrets.getJavaLangAccess()
-            .registerShutdownHook(2 /* Shutdown hook invocation order */,
-                true /* register even if shutdown in progress */,
-                new Runnable() {
-                    public void run() {
-                       runHooks();
-                    }
-                }
-        );
+                // 注册 hook
+                .registerShutdownHook(2 /* Shutdown hook invocation order */,
+                        true /* register even if shutdown in progress */,
+                        new Runnable() {
+                            public void run() {
+                                runHooks();
+                            }
+                        }
+                );
     }
 
-    private DeleteOnExitHook() {}
+    private DeleteOnExitHook() {
+    }
 
     static synchronized void add(String file) {
-        if(files == null) {
+        if (files == null) {
             // DeleteOnExitHook is running. Too late to add a file
             throw new IllegalStateException("Shutdown in progress");
         }
@@ -64,6 +71,9 @@ class DeleteOnExitHook {
         files.add(file);
     }
 
+    /**
+     * 触发
+     */
     static void runHooks() {
         LinkedHashSet<String> theFiles;
 
@@ -78,6 +88,7 @@ class DeleteOnExitHook {
         // Last in first deleted.
         Collections.reverse(toBeDeleted);
         for (String filename : toBeDeleted) {
+            // delete 操作
             (new File(filename)).delete();
         }
     }
