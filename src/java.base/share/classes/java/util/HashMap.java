@@ -153,9 +153,6 @@ import jdk.internal.misc.SharedSecrets;
  * 7. TreeNode 形态下，TreeNode 的 root 不一定等于链表的首节点，但是 root 节点一定是 tab 在相应位置的第一个元素
  * 8. Map.Entry 与 Node 的关系？
  *  Node 实现了 Map.Entry 接口
- *
- * @param <K>
- * @param <V>
  */
 public class HashMap<K,V> extends AbstractMap<K,V>
     implements Map<K,V>, Cloneable, Serializable {
@@ -1567,8 +1564,6 @@ public class HashMap<K,V> extends AbstractMap<K,V>
 
     /**
      * 对每个 key-value 对执行 action
-     *
-     * @param action
      */
     @Override
     public void forEach(BiConsumer<? super K, ? super V> action) {
@@ -1589,8 +1584,6 @@ public class HashMap<K,V> extends AbstractMap<K,V>
 
     /**
      * 根据 key 和 value 重新计算 value
-     *
-     * @param function
      */
     @Override
     public void replaceAll(BiFunction<? super K, ? super V, ? extends V> function) {

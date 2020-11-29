@@ -122,7 +122,6 @@ class DataInputStream extends FilterInputStream implements DataInput {
      * 最多读取 len 长度个数据。
      * 返回实际读取的数据的长度。
      * <p>
-     * <p>
      * Reads up to <code>len</code> bytes of data from the contained
      * input stream into an array of bytes.  An attempt is made to read
      * as many as <code>len</code> bytes, but a smaller number may be read,

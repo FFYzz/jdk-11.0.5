@@ -228,8 +228,6 @@ public class ByteArrayInputStream extends InputStream {
 
     /**
      * 读取缓冲区中所有的数据
-     *
-     * @return
      */
     public synchronized byte[] readAllBytes() {
         // 返回 [pos,count) 的数据
@@ -243,11 +241,6 @@ public class ByteArrayInputStream extends InputStream {
     /**
      * 与 read(byte b[], int off, int len) 方法比较类似
      * 只不过该方法不是线程安全的方法
-     *
-     * @param b
-     * @param off
-     * @param len
-     * @return
      */
     public int readNBytes(byte[] b, int off, int len) {
         int n = read(b, off, len);
@@ -257,10 +250,6 @@ public class ByteArrayInputStream extends InputStream {
     /**
      * 将缓冲区中未读的数据写入到传入的 OutputStream 中
      * 并调用 OutputStream::write 方法
-     *
-     * @param out
-     * @return
-     * @throws IOException
      */
     public synchronized long transferTo(OutputStream out) throws IOException {
         // 可读的字节数
