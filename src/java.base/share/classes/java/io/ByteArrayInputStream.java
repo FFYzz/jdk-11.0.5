@@ -174,7 +174,7 @@ public class ByteArrayInputStream extends InputStream {
     }
 
     /**
-     * 从缓冲区中读取最多 len 长度的数据，并保存到传入的数组中 b[off] -> b[off + len]
+     * 从缓冲区中读取最多 len 长度的数据，并保存到传入的数组中 b[off] -&gt; b[off + len]
      * <p>
      * Reads up to {@code len} bytes of data into an array of bytes from this
      * input stream.  If {@code pos} equals {@code count}, then {@code -1} is

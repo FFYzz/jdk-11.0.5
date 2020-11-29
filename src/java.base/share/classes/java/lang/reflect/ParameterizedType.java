@@ -46,6 +46,9 @@ package java.lang.reflect;
  */
 public interface ParameterizedType extends Type {
     /**
+     * 泛型参数的实际类型，按顺序存储。比如
+     * Map&lt;String, Integer&gt; 返回的就是 String 以及 Integer
+     *
      * Returns an array of {@code Type} objects representing the actual type
      * arguments to this type.
      *
@@ -65,6 +68,9 @@ public interface ParameterizedType extends Type {
     Type[] getActualTypeArguments();
 
     /**
+     * 返回对象的类型，比如
+     * Comparable&lt;Map&lt;String, Integer&gt;&gt; 返回的就是 java.lang.Comparable
+     *
      * Returns the {@code Type} object representing the class or interface
      * that declared this type.
      *
@@ -75,6 +81,8 @@ public interface ParameterizedType extends Type {
     Type getRawType();
 
     /**
+     * 内部类(接口) 的外部 Type
+     *
      * Returns a {@code Type} object representing the type that this type
      * is a member of.  For example, if this type is {@code O<T>.I<S>},
      * return a representation of {@code O<T>}.

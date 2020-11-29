@@ -100,7 +100,7 @@ class DataOutputStream extends FilterOutputStream implements DataOutput {
     }
 
     /**
-     * 将 b 数组中 off -> off + len - 1 的数据写到 output stream (可以认为是 Java 层的缓冲区)
+     * 将 b 数组中 off -&gt; off + len - 1 的数据写到 output stream (可以认为是 Java 层的缓冲区)
      * <p>
      * Writes <code>len</code> bytes from the specified byte array
      * starting at offset <code>off</code> to the underlying output stream.

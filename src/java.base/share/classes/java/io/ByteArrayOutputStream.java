@@ -164,7 +164,7 @@ public class ByteArrayOutputStream extends OutputStream {
     }
 
     /**
-     * 将 b[off] -> b[off + len] 的数据写入到缓冲区 buf 中
+     * 将 b[off] -&gt;; b[off + len] 的数据写入到缓冲区 buf 中
      * <p>
      * Writes {@code len} bytes from the specified byte array
      * starting at offset {@code off} to this {@code ByteArrayOutputStream}.
