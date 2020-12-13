@@ -94,6 +94,8 @@ public abstract class AbstractQueuedLongSynchronizer
     private transient volatile Node tail;
 
     /**
+     * long 类型
+     *
      * The synchronization state.
      */
     private volatile long state;

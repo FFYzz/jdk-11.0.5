@@ -803,7 +803,7 @@ public abstract class AbstractQueuedSynchronizer
     }
 
     /**
-     * shared 模式下，释放锁
+     * shared 模式下，完全释放锁之后的逻辑
      * 唤醒后继节点，并且进行传播
      *
      * Release action for shared mode -- signals successor and ensures
@@ -1613,7 +1613,9 @@ public abstract class AbstractQueuedSynchronizer
             throws InterruptedException {
         if (Thread.interrupted())
             throw new InterruptedException();
+        // 先通过 tryAcquireShared 获取一次，获取失败返回 -1
         if (tryAcquireShared(arg) < 0)
+            // 阻塞获取
             doAcquireSharedInterruptibly(arg);
     }
 
@@ -1656,6 +1658,7 @@ public abstract class AbstractQueuedSynchronizer
      */
     public final boolean releaseShared(int arg) {
         if (tryReleaseShared(arg)) {
+            // 读锁完全释放成功之后的逻辑
             doReleaseShared();
             return true;
         }

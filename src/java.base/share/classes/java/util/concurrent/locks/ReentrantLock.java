@@ -374,8 +374,7 @@ public class ReentrantLock implements Lock, java.io.Serializable {
      *
      * <ul>
      *
-     * 获取到了锁
-     * <li>The lock is acquired by the current thread; or
+     * <li>The lock is acquired by the current thread 获取到了锁 ; or
      *
      * 被其他线程中断
      * <li>Some other thread {@linkplain Thread#interrupt interrupts} the
