@@ -180,6 +180,8 @@ import java.util.concurrent.TimeUnit;
 public interface Condition {
 
     /**
+     * await 等待直到被 signal 或者被中断
+     *
      * Causes the current thread to wait until it is signalled or
      * {@linkplain Thread#interrupt interrupted}.
      *
@@ -232,6 +234,8 @@ public interface Condition {
     void await() throws InterruptedException;
 
     /**
+     * await 不响应中断
+     *
      * Causes the current thread to wait until it is signalled.
      *
      * <p>The lock associated with this condition is atomically
@@ -268,6 +272,9 @@ public interface Condition {
     void awaitUninterruptibly();
 
     /**
+     * 带超时时间的 await
+     * 能够响应中断
+     *
      * Causes the current thread to wait until it is signalled or interrupted,
      * or the specified waiting time elapses.
      *
@@ -376,6 +383,9 @@ public interface Condition {
     boolean await(long time, TimeUnit unit) throws InterruptedException;
 
     /**
+     * await 直到一个 ddl
+     * 可响应中断或者被 signal
+     *
      * Causes the current thread to wait until it is signalled or interrupted,
      * or the specified deadline elapses.
      *
@@ -453,6 +463,8 @@ public interface Condition {
     boolean awaitUntil(Date deadline) throws InterruptedException;
 
     /**
+     * 唤醒一个 await 的线程
+     *
      * Wakes up one waiting thread.
      *
      * <p>If any threads are waiting on this condition then one
@@ -471,6 +483,8 @@ public interface Condition {
     void signal();
 
     /**
+     * 唤醒所有的线程
+     *
      * Wakes up all waiting threads.
      *
      * <p>If any threads are waiting on this condition then they are

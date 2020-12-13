@@ -166,9 +166,27 @@ import java.util.concurrent.TimeUnit;
  * @since 1.5
  * @author Doug Lea
  */
+
+/**
+ * Lock 接口定义
+ * 加锁方法:
+ * 1. lock
+ * 2. lockInterruptibly
+ * 3. tryLock
+ * 4. tryLock(time)
+ *
+ * 释放锁方法:
+ * 1. unlock
+ *
+ * 条件对象:
+ * newCondition
+ */
 public interface Lock {
 
     /**
+     * 获取锁
+     * 获取失败则阻塞，直到被前驱节点唤醒
+     *
      * Acquires the lock.
      *
      * <p>If the lock is not available then the current thread becomes
@@ -186,6 +204,8 @@ public interface Lock {
     void lock();
 
     /**
+     * 在 lock 的基础上相应中断
+     *
      * Acquires the lock unless the current thread is
      * {@linkplain Thread#interrupt interrupted}.
      *
@@ -234,6 +254,9 @@ public interface Lock {
     void lockInterruptibly() throws InterruptedException;
 
     /**
+     * 快速获取锁的一个方法，直接返回获取的结果。
+     * 根据结果做后续的动作
+     *
      * Acquires the lock only if it is free at the time of invocation.
      *
      * <p>Acquires the lock if it is available and returns immediately
@@ -323,6 +346,8 @@ public interface Lock {
     boolean tryLock(long time, TimeUnit unit) throws InterruptedException;
 
     /**
+     * 释放锁
+     *
      * Releases the lock.
      *
      * <p><b>Implementation Considerations</b>
@@ -337,6 +362,8 @@ public interface Lock {
     void unlock();
 
     /**
+     * 返回一个 Condition 实例，该实例与 Lock 实例绑定
+     *
      * Returns a new {@link Condition} instance that is bound to this
      * {@code Lock} instance.
      *
