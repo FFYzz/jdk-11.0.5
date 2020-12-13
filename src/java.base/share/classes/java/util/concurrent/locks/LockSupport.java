@@ -38,6 +38,8 @@ package java.util.concurrent.locks;
 import jdk.internal.misc.Unsafe;
 
 /**
+ * 提供了基础的线程阻塞原语操作
+ *
  * Basic thread blocking primitives for creating locks and other
  * synchronization classes.
  *
@@ -137,14 +139,24 @@ import jdk.internal.misc.Unsafe;
  * @since 1.5
  */
 public class LockSupport {
+
+    // 不能够被实例化
     private LockSupport() {} // Cannot be instantiated.
 
+    /**
+     * 设置 blocker blocker 的作用主要为记录当前线程阻塞在哪个对象上
+     *
+     * @param t
+     * @param arg
+     */
     private static void setBlocker(Thread t, Object arg) {
         // Even though volatile, hotspot doesn't need a write barrier here.
         U.putObject(t, PARKBLOCKER, arg);
     }
 
     /**
+     * 唤醒 thread 线程，也不一定是唤醒，也有可能是将 thread 的 permit 从 0 置为 1.
+     *
      * Makes available the permit for the given thread, if it
      * was not already available.  If the thread was blocked on
      * {@code park} then it will unblock.  Otherwise, its next call
@@ -191,7 +203,9 @@ public class LockSupport {
     public static void park(Object blocker) {
         Thread t = Thread.currentThread();
         setBlocker(t, blocker);
+        // 这里会阻塞住
         U.park(false, 0L);
+        // 接触阻塞后，blocker 会设为 null
         setBlocker(t, null);
     }
 
@@ -231,6 +245,8 @@ public class LockSupport {
         if (nanos > 0) {
             Thread t = Thread.currentThread();
             setBlocker(t, blocker);
+            // 阻塞 nanos 时间
+            // 超过 nanos 时间后自动唤醒
             U.park(false, nanos);
             setBlocker(t, null);
         }
