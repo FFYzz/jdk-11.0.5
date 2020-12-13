@@ -1165,7 +1165,7 @@ public abstract class AbstractQueuedSynchronizer
                     throw new InterruptedException();
             }
         } catch (Throwable t) {
-            // 抛出中断异常后取消后去
+            // 抛出中断异常后取消获取
             cancelAcquire(node);
             throw t;
         }
@@ -1514,6 +1514,9 @@ public abstract class AbstractQueuedSynchronizer
 
     /**
      * 独占模式下，带超时时间的获取锁
+     * 首先马上尝试一次获取锁，支持抢占
+     * 如果第一次获取未获取到，则进入队列
+     * 在指定时间内获取到，则返回 true，否则返回 false
      *
      * Attempts to acquire in exclusive mode, aborting if interrupted,
      * and failing if the given timeout elapses.  Implemented by first
