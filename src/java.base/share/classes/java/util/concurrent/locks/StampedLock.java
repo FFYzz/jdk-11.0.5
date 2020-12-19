@@ -230,9 +230,6 @@ import jdk.internal.vm.annotation.ReservedStackAccess;
 /**
  * 可重入吗？
  * 不可重入
- * 低 7 为表示读锁的个数 + overFlow 的值
- * 高 24 位表示持有写锁的 stamp
- * 第 8 为表示是否持有写锁
  */
 public class StampedLock implements java.io.Serializable {
     /*
@@ -798,8 +795,6 @@ public class StampedLock implements java.io.Serializable {
 
     /**
      * 返回 stamp
-     * 释放写锁的时候 + WBIT
-     * 获取写锁的时候 + WBIT
      *
      * Returns an unlocked state, incrementing the version and
      * avoiding special failure value 0L.
