@@ -73,7 +73,6 @@ import java.lang.invoke.VarHandle;
 
 /**
  * 包装 long 类型的 field，使得能够对其展开原子操作
- * @param <T>
  */
 public abstract class AtomicLongFieldUpdater<T> {
     /**
