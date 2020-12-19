@@ -51,6 +51,11 @@ import java.util.function.LongUnaryOperator;
  * @since 1.5
  * @author Doug Lea
  */
+
+/**
+ * AtomicLong 怎么用的也还是 Unsafe ?
+ * 看提交记录，发现是改成 VarHandle 之后报了 LinkageError 之后，又改回 Unsafe 了
+ */
 public class AtomicLong extends Number implements java.io.Serializable {
     private static final long serialVersionUID = 1927816293512124184L;
 

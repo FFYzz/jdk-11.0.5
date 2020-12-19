@@ -48,8 +48,14 @@ import java.util.function.UnaryOperator;
  * @author Doug Lea
  * @param <V> The type of object referred to by this reference
  */
+
+/**
+ * 原子操作引用变量
+ */
 public class AtomicReference<V> implements java.io.Serializable {
     private static final long serialVersionUID = -1848883965231344442L;
+
+    // 引用 VarHandle
     private static final VarHandle VALUE;
     static {
         try {
@@ -60,6 +66,7 @@ public class AtomicReference<V> implements java.io.Serializable {
         }
     }
 
+    // 内部操作的值
     private volatile V value;
 
     /**

@@ -47,10 +47,16 @@ import java.util.function.IntUnaryOperator;
  * @since 1.5
  * @author Doug Lea
  */
+
+/**
+ * 通过 cas 更新整型数组
+ * 通过 cas 更新数组上某个 index 位置的值
+ */
 public class AtomicIntegerArray implements java.io.Serializable {
     private static final long serialVersionUID = 2862133569453604235L;
     private static final VarHandle AA
         = MethodHandles.arrayElementVarHandle(int[].class);
+    // 目标数组
     private final int[] array;
 
     /**

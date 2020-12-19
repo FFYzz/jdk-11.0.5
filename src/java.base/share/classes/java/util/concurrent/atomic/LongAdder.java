@@ -78,17 +78,23 @@ public class LongAdder extends Striped64 implements Serializable {
     }
 
     /**
+     * 将给定值加入到计数中
+     *
      * Adds the given value.
      *
      * @param x the value to add
      */
     public void add(long x) {
         Cell[] cs; long b, v; int m; Cell c;
+        // 如果 cells 已经初始化，则直接进入 if 逻辑里面
+        // 或者先尝试通过 base 更新
         if ((cs = cells) != null || !casBase(b = base, b + x)) {
             boolean uncontended = true;
             if (cs == null || (m = cs.length - 1) < 0 ||
                 (c = cs[getProbe() & m]) == null ||
+                    // 尝试更新当前线程分配的 cell 上的值
                 !(uncontended = c.cas(v = c.value, v + x)))
+                // 调用 Striped64 中的 longAccumulate 方法
                 longAccumulate(x, null, uncontended);
         }
     }
@@ -108,6 +114,10 @@ public class LongAdder extends Striped64 implements Serializable {
     }
 
     /**
+     * 返回当前的 sum
+     * 不一定是一个 snapshot 的值
+     * 在计算的过程中每个 cell 的值可能会变动
+     *
      * Returns the current sum.  The returned value is <em>NOT</em> an
      * atomic snapshot; invocation in the absence of concurrent
      * updates returns an accurate result, but concurrent updates that
@@ -128,6 +138,10 @@ public class LongAdder extends Striped64 implements Serializable {
     }
 
     /**
+     * 将 base 置为 0
+     * 调用每个 cell 的 reset
+     * 并发更新可能
+     *
      * Resets variables maintaining the sum to zero.  This method may
      * be a useful alternative to creating a new adder, but is only
      * effective if there are no concurrent updates.  Because this
@@ -140,6 +154,7 @@ public class LongAdder extends Striped64 implements Serializable {
         if (cs != null) {
             for (Cell c : cs)
                 if (c != null)
+                    // cell 的值置为 0
                     c.reset();
         }
     }

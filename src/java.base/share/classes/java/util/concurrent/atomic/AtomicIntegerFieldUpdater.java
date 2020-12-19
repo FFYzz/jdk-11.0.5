@@ -70,6 +70,11 @@ import java.lang.invoke.VarHandle;
  * @author Doug Lea
  * @param <T> The type of the object holding the updatable field
  */
+
+/**
+ * 将 volatile int 类型的值封装成 AtomicIntegerFieldUpdater
+ * 使得对原来 int 类型变量能够进行原子操作
+ */
 public abstract class AtomicIntegerFieldUpdater<T> {
     /**
      * Creates and returns an updater for objects with the given field.
@@ -372,11 +377,13 @@ public abstract class AtomicIntegerFieldUpdater<T> {
     }
 
     /**
+     * 提供了一个标准实现
      * Standard hotspot implementation using intrinsics.
      */
     private static final class AtomicIntegerFieldUpdaterImpl<T>
         extends AtomicIntegerFieldUpdater<T> {
         private static final Unsafe U = Unsafe.getUnsafe();
+        // 变量在内存中的偏移量
         private final long offset;
         /**
          * if field is protected, the subclass constructing updater, else
@@ -384,23 +391,31 @@ public abstract class AtomicIntegerFieldUpdater<T> {
          */
         private final Class<?> cclass;
         /** class holding the field */
+        /**
+         * 被操作对象堆在的 class
+         */
         private final Class<T> tclass;
 
         AtomicIntegerFieldUpdaterImpl(final Class<T> tclass,
                                       final String fieldName,
                                       final Class<?> caller) {
+            // 要操作的字段对象
             final Field field;
+            // 操作字段对象的修饰符
             final int modifiers;
             try {
+                // 获取 field
                 field = AccessController.doPrivileged(
                     new PrivilegedExceptionAction<Field>() {
                         public Field run() throws NoSuchFieldException {
                             return tclass.getDeclaredField(fieldName);
                         }
                     });
+                // 获取修饰符
                 modifiers = field.getModifiers();
                 sun.reflect.misc.ReflectUtil.ensureMemberAccess(
                     caller, tclass, null, modifiers);
+                // 获取对象的类加载器
                 ClassLoader cl = tclass.getClassLoader();
                 ClassLoader ccl = caller.getClassLoader();
                 if ((ccl != null) && (ccl != cl) &&
@@ -426,6 +441,7 @@ public abstract class AtomicIntegerFieldUpdater<T> {
             // If the updater refers to a protected field of a declaring class
             // outside the current package, the receiver argument will be
             // narrowed to the type of the accessing class.
+            // 初始化字段
             this.cclass = (Modifier.isProtected(modifiers) &&
                            tclass.isAssignableFrom(caller) &&
                            !isSamePackage(tclass, caller))
@@ -485,6 +501,8 @@ public abstract class AtomicIntegerFieldUpdater<T> {
                         " using an instance of " +
                         obj.getClass().getName()));
         }
+
+        // 下面就是一些原子操作
 
         public final boolean compareAndSet(T obj, int expect, int update) {
             accessCheck(obj);

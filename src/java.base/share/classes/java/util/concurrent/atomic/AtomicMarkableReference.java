@@ -50,10 +50,17 @@ import java.lang.invoke.VarHandle;
  * @author Doug Lea
  * @param <V> The type of object referred to by this reference
  */
+
+/**
+ * 对 ABA 问题的一种补救
+ * 只有两种状态，true 或者 false
+ */
 public class AtomicMarkableReference<V> {
 
     private static class Pair<T> {
+        // 对对象的引用
         final T reference;
+        // boolean 标记
         final boolean mark;
         private Pair(T reference, boolean mark) {
             this.reference = reference;
@@ -64,6 +71,9 @@ public class AtomicMarkableReference<V> {
         }
     }
 
+    /**
+     * volatile pair
+     */
     private volatile Pair<V> pair;
 
     /**
@@ -78,6 +88,8 @@ public class AtomicMarkableReference<V> {
     }
 
     /**
+     * 返回引用
+     *
      * Returns the current value of the reference.
      *
      * @return the current value of the reference
@@ -87,6 +99,8 @@ public class AtomicMarkableReference<V> {
     }
 
     /**
+     * 返回标记值
+     *
      * Returns the current value of the mark.
      *
      * @return the current value of the mark
@@ -96,6 +110,8 @@ public class AtomicMarkableReference<V> {
     }
 
     /**
+     * 返回当前的 pair
+     *
      * Returns the current values of both the reference and the mark.
      * Typical usage is {@code boolean[1] holder; ref = v.get(holder); }.
      *
@@ -110,6 +126,8 @@ public class AtomicMarkableReference<V> {
     }
 
     /**
+     * cas 更新引用 和 布尔标记
+     *
      * Atomically sets the value of both the reference and mark
      * to the given update values if the
      * current reference is {@code ==} to the expected reference
@@ -134,6 +152,8 @@ public class AtomicMarkableReference<V> {
     }
 
     /**
+     * cas 更新 Pair
+     *
      * Atomically sets the value of both the reference and mark
      * to the given update values if the
      * current reference is {@code ==} to the expected reference
@@ -149,16 +169,20 @@ public class AtomicMarkableReference<V> {
                                  V       newReference,
                                  boolean expectedMark,
                                  boolean newMark) {
+        // 当前的 Pair
         Pair<V> current = pair;
         return
             expectedReference == current.reference &&
             expectedMark == current.mark &&
             ((newReference == current.reference &&
               newMark == current.mark) ||
+                    // cas 更新 pair
              casPair(current, Pair.of(newReference, newMark)));
     }
 
     /**
+     * 无条件的设置引用和标记
+     *
      * Unconditionally sets the value of both the reference and mark.
      *
      * @param newReference the new value for the reference
@@ -166,7 +190,9 @@ public class AtomicMarkableReference<V> {
      */
     public void set(V newReference, boolean newMark) {
         Pair<V> current = pair;
+        // 引用或者布尔标志有一个不同即可
         if (newReference != current.reference || newMark != current.mark)
+            // 创建一个新的 pair
             this.pair = Pair.of(newReference, newMark);
     }
 
@@ -184,10 +210,13 @@ public class AtomicMarkableReference<V> {
      * @return {@code true} if successful
      */
     public boolean attemptMark(V expectedReference, boolean newMark) {
+        // 获取当前的 Pair
         Pair<V> current = pair;
         return
+                // 引用要相等
             expectedReference == current.reference &&
             (newMark == current.mark ||
+                    // cas 更新 Pair
              casPair(current, Pair.of(expectedReference, newMark)));
     }
 
@@ -203,6 +232,9 @@ public class AtomicMarkableReference<V> {
         }
     }
 
+    /**
+     * cas 更新 Pair
+     */
     private boolean casPair(Pair<V> cmp, Pair<V> val) {
         return PAIR.compareAndSet(this, cmp, val);
     }

@@ -88,6 +88,10 @@ import java.lang.invoke.VarHandle;
  * @param <T> The type of the object holding the updatable field
  * @param <V> The type of the field
  */
+
+/**
+ * 用于封装 Reference，使得能够对 Reference 进行原子操作
+ */
 public abstract class AtomicReferenceFieldUpdater<T,V> {
 
     /**
@@ -295,6 +299,9 @@ public abstract class AtomicReferenceFieldUpdater<T,V> {
         return next;
     }
 
+    /**
+     * AtomicReferenceFieldUpdater 的默认实现
+     */
     private static final class AtomicReferenceFieldUpdaterImpl<T,V>
         extends AtomicReferenceFieldUpdater<T,V> {
         private static final Unsafe U = Unsafe.getUnsafe();

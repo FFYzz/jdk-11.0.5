@@ -47,10 +47,15 @@ import java.util.function.LongUnaryOperator;
  * @since 1.5
  * @author Doug Lea
  */
+
+/**
+ * long 类型数组的原子操作
+ */
 public class AtomicLongArray implements java.io.Serializable {
     private static final long serialVersionUID = -2308431214976778248L;
     private static final VarHandle AA
         = MethodHandles.arrayElementVarHandle(long[].class);
+    // 操作的目标数组
     private final long[] array;
 
     /**

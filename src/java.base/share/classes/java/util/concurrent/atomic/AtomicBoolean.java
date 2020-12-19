@@ -48,9 +48,15 @@ import java.lang.invoke.VarHandle;
  * @since 1.5
  * @author Doug Lea
  */
+
+/**
+ * 通过 VarHandle 实现值的 读、写、原子更新(cas 更新)
+ */
 public class AtomicBoolean implements java.io.Serializable {
     private static final long serialVersionUID = 4654671469794556979L;
+    // 通过该变量操作 value 属性
     private static final VarHandle VALUE;
+    // 初始化 VALUE
     static {
         try {
             MethodHandles.Lookup l = MethodHandles.lookup();
@@ -60,6 +66,11 @@ public class AtomicBoolean implements java.io.Serializable {
         }
     }
 
+    /**
+     * 内部保存的值，volatile 变量
+     * true: 内部保存 1
+     * false: 内部保存 0
+     */
     private volatile int value;
 
     /**
@@ -72,12 +83,16 @@ public class AtomicBoolean implements java.io.Serializable {
     }
 
     /**
+     * 默认为 false，也就是 value 值为 0
+     *
      * Creates a new {@code AtomicBoolean} with initial value {@code false}.
      */
     public AtomicBoolean() {
     }
 
     /**
+     * 返回当前值
+     *
      * Returns the current value,
      * with memory effects as specified by {@link VarHandle#getVolatile}.
      *
@@ -98,12 +113,15 @@ public class AtomicBoolean implements java.io.Serializable {
      * the actual value was not equal to the expected value.
      */
     public final boolean compareAndSet(boolean expectedValue, boolean newValue) {
+        // 调用 VarHandle 的 cas 方法
         return VALUE.compareAndSet(this,
                                    (expectedValue ? 1 : 0),
                                    (newValue ? 1 : 0));
     }
 
     /**
+     * 已被废弃
+     *
      * Possibly atomically sets the value to {@code newValue}
      * if the current value {@code == expectedValue},
      * with memory effects as specified by {@link VarHandle#weakCompareAndSetPlain}.

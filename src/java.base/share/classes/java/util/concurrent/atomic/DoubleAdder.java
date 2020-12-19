@@ -61,6 +61,10 @@ import java.io.Serializable;
  * @since 1.8
  * @author Doug Lea
  */
+
+/**
+ * 与 LongAddr 类似
+ */
 public class DoubleAdder extends Striped64 implements Serializable {
     private static final long serialVersionUID = 7249069246863182397L;
 
@@ -82,6 +86,8 @@ public class DoubleAdder extends Striped64 implements Serializable {
     }
 
     /**
+     * 增加给定的 double 型值 x
+     *
      * Adds the given value.
      *
      * @param x the value to add

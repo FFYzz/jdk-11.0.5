@@ -50,10 +50,17 @@ import java.lang.invoke.VarHandle;
  * @author Doug Lea
  * @param <V> The type of object referred to by this reference
  */
+
+/**
+ * 对 ABA 问题的一种补救
+ * 以 stamp 的形式 int类型
+ */
 public class AtomicStampedReference<V> {
 
     private static class Pair<T> {
+        // 持有的引用
         final T reference;
+        // stamp
         final int stamp;
         private Pair(T reference, int stamp) {
             this.reference = reference;

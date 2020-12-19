@@ -121,7 +121,9 @@ abstract class Striped64 extends Number {
      * JVM intrinsics note: It would be possible to use a release-only
      * form of CAS here, if it were provided.
      */
-    @jdk.internal.vm.annotation.Contended static final class Cell {
+    @jdk.internal.vm.annotation.Contended
+    static final class Cell {
+        // 内部维护的值
         volatile long value;
         Cell(long x) { value = x; }
         final boolean cas(long cmp, long val) {
@@ -138,6 +140,7 @@ abstract class Striped64 extends Number {
         }
 
         // VarHandle mechanics
+        // value 的 varHanlde
         private static final VarHandle VALUE;
         static {
             try {
@@ -150,42 +153,59 @@ abstract class Striped64 extends Number {
     }
 
     /** Number of CPUS, to place bound on table size */
+    /**
+     * CPU 数，虚拟核
+     */
     static final int NCPU = Runtime.getRuntime().availableProcessors();
 
     /**
+     * cell 的个数
      * Table of cells. When non-null, size is a power of 2.
      */
     transient volatile Cell[] cells;
 
     /**
+     * 没有发生竞争的情况下使用 base 来保存计数
+     *
      * Base value, used mainly when there is no contention, but also as
      * a fallback during table initialization races. Updated via CAS.
      */
     transient volatile long base;
 
     /**
+     * 创建 cell 或者扩容 cell 的时候使用的自旋锁
+     *
      * Spinlock (locked via CAS) used when resizing and/or creating Cells.
      */
     transient volatile int cellsBusy;
 
     /**
+     * 包内可用
+     *
      * Package-private default constructor.
      */
     Striped64() {
     }
 
     /**
+     * cas 更新 base
+     *
      * CASes the base field.
      */
     final boolean casBase(long cmp, long val) {
         return BASE.compareAndSet(this, cmp, val);
     }
 
+    /**
+     * 设置 base，返回 base 原来的值
+     */
     final long getAndSetBase(long val) {
         return (long)BASE.getAndSet(this, val);
     }
 
     /**
+     * cas 更新 cellsBusy
+     *
      * CASes the cellsBusy field from 0 to 1 to acquire lock.
      */
     final boolean casCellsBusy() {
@@ -193,6 +213,8 @@ abstract class Striped64 extends Number {
     }
 
     /**
+     * 返回当前线程的 probe 值
+     *
      * Returns the probe value for the current thread.
      * Duplicated from ThreadLocalRandom because of packaging restrictions.
      */
@@ -209,6 +231,7 @@ abstract class Striped64 extends Number {
         probe ^= probe << 13;   // xorshift
         probe ^= probe >>> 17;
         probe ^= probe << 5;
+        // 设置当前线程的 probe
         THREAD_PROBE.set(Thread.currentThread(), probe);
         return probe;
     }
@@ -227,29 +250,45 @@ abstract class Striped64 extends Number {
      */
     final void longAccumulate(long x, LongBinaryOperator fn,
                               boolean wasUncontended) {
+        // 存储线程的 probe 值
         int h;
+        // 如果getProbe() 方法返回 0 ，说明随机数未初始化
         if ((h = getProbe()) == 0) {
+            // 初始化 ThreadLocalRandom
+            // 并出初始化 probe 值
             ThreadLocalRandom.current(); // force initialization
+            // 获取 probe 值
             h = getProbe();
+            // 如果都未初始化，表示肯定还不存在竞争
             wasUncontended = true;
         }
+        // 是否发生碰撞的标志
         boolean collide = false;                // True if last slot nonempty
+        // 自旋
         done: for (;;) {
             Cell[] cs; Cell c; int n; long v;
+            // cells 已经初始化
             if ((cs = cells) != null && (n = cs.length) > 0) {
+                // 当前位置的 cell 为 null
                 if ((c = cs[(n - 1) & h]) == null) {
+                    // 未进行 cells 扩容动作
                     if (cellsBusy == 0) {       // Try to attach new Cell
+                        // 创建一个新的 cell
                         Cell r = new Cell(x);   // Optimistically create
+                        // 获取锁
                         if (cellsBusy == 0 && casCellsBusy()) {
                             try {               // Recheck under lock
                                 Cell[] rs; int m, j;
                                 if ((rs = cells) != null &&
                                     (m = rs.length) > 0 &&
                                     rs[j = (m - 1) & h] == null) {
+                                    // 放到 rs[j] 位置上
                                     rs[j] = r;
+                                    // 初始化结束
                                     break done;
                                 }
                             } finally {
+                                // 释放锁
                                 cellsBusy = 0;
                             }
                             continue;           // Slot is now non-empty
@@ -257,29 +296,48 @@ abstract class Striped64 extends Number {
                     }
                     collide = false;
                 }
+                // 当前线程所在的 Cell 不为空，且更新失败了
+                // 这里简单地设为 true ，相当于简单地自旋一次
+                // 通过下面的语句修改线程的 probe 再重新尝试
                 else if (!wasUncontended)       // CAS already known to fail
                     wasUncontended = true;      // Continue after rehash
+                // 通过 CAS 更新当前线程所在 Cell 的值，如果成功了就返回
                 else if (c.cas(v = c.value,
                                (fn == null) ? v + x : fn.applyAsLong(v, x)))
+                    // 跳出，结束
                     break;
+                // cells 的个数 > CPU 虚拟核的个数
+                // 或者 cells 扩容了
                 else if (n >= NCPU || cells != cs)
                     collide = false;            // At max size or stale
                 else if (!collide)
+                    // 走到这里说明发生冲突了
                     collide = true;
+                // 获取锁
                 else if (cellsBusy == 0 && casCellsBusy()) {
                     try {
+                        // cells 没改变
                         if (cells == cs)        // Expand table unless stale
+                            // 扩容
                             cells = Arrays.copyOf(cs, n << 1);
                     } finally {
+                        // 释放锁
                         cellsBusy = 0;
                     }
+                    // 设置冲突为 false
                     collide = false;
+                    // 跳过该次循环，继续尝试写入
                     continue;                   // Retry with expanded table
                 }
+                // 重新生成 probe
                 h = advanceProbe(h);
             }
+            // cellsBusy == 0 此时没有对 cell 的操作
+            // cells == cs cells 没有改变
+            // casCellsBusy() 获取到了 cellsBusy 锁
             else if (cellsBusy == 0 && cells == cs && casCellsBusy()) {
                 try {                           // Initialize table
+                    // 创建 cells
                     if (cells == cs) {
                         Cell[] rs = new Cell[2];
                         rs[h & 1] = new Cell(x);
@@ -287,16 +345,21 @@ abstract class Striped64 extends Number {
                         break done;
                     }
                 } finally {
+                    // 将 cellBusy 更改回 0
                     cellsBusy = 0;
                 }
             }
             // Fall back on using base
+            // 在 base 上更新
             else if (casBase(v = base,
                              (fn == null) ? v + x : fn.applyAsLong(v, x)))
                 break done;
         }
     }
 
+    /**
+     * 执行 DoubleBinaryOperator 函数
+     */
     private static long apply(DoubleBinaryOperator fn, long v, double x) {
         double d = Double.longBitsToDouble(v);
         d = (fn == null) ? d + x : fn.applyAsDouble(d, x);
@@ -311,21 +374,34 @@ abstract class Striped64 extends Number {
      */
     final void doubleAccumulate(double x, DoubleBinaryOperator fn,
                                 boolean wasUncontended) {
+        // 保存当前线程的 probe
         int h;
+        // 如果 == 0 说明没有初始化
         if ((h = getProbe()) == 0) {
+            // 初始化 ThreadLocalRandom
+            // 并出初始化 probe 值
             ThreadLocalRandom.current(); // force initialization
+            // 获取当前线程的 probe 值
             h = getProbe();
+            // 未发生竞争
             wasUncontended = true;
         }
+        // 是否发生碰撞标志
         boolean collide = false;                // True if last slot nonempty
         done: for (;;) {
             Cell[] cs; Cell c; int n; long v;
+            // 已经初始化 cells
             if ((cs = cells) != null && (n = cs.length) > 0) {
+                // 如果当前线程计算出来的 cells 中的位置没有初始化
                 if ((c = cs[(n - 1) & h]) == null) {
+                    // 当前锁未被占有
                     if (cellsBusy == 0) {       // Try to attach new Cell
+                        // 创建当前的 cell， 将 double 值转为 longBits
                         Cell r = new Cell(Double.doubleToRawLongBits(x));
+                        // 获取锁
                         if (cellsBusy == 0 && casCellsBusy()) {
                             try {               // Recheck under lock
+                                // 放到计算出来的位置下
                                 Cell[] rs; int m, j;
                                 if ((rs = cells) != null &&
                                     (m = rs.length) > 0 &&
@@ -334,11 +410,13 @@ abstract class Striped64 extends Number {
                                     break done;
                                 }
                             } finally {
+                                // 释放锁
                                 cellsBusy = 0;
                             }
                             continue;           // Slot is now non-empty
                         }
                     }
+                    // 当前线程其他持有着锁
                     collide = false;
                 }
                 else if (!wasUncontended)       // CAS already known to fail

@@ -82,7 +82,13 @@ import java.util.function.LongBinaryOperator;
 public class LongAccumulator extends Striped64 implements Serializable {
     private static final long serialVersionUID = 7249069246863182397L;
 
+    /**
+     * 定义计算操作
+     */
     private final LongBinaryOperator function;
+    /**
+     * base
+     */
     private final long identity;
 
     /**
@@ -98,14 +104,18 @@ public class LongAccumulator extends Striped64 implements Serializable {
     }
 
     /**
+     * 更新 x
+     *
      * Updates with the given value.
      *
      * @param x the value
      */
     public void accumulate(long x) {
         Cell[] cs; long b, v, r; int m; Cell c;
+        // 如果已经初始化 cells
         if ((cs = cells) != null
             || ((r = function.applyAsLong(b = base, x)) != b
+                // cas 失败
                 && !casBase(b, r))) {
             boolean uncontended = true;
             if (cs == null
@@ -113,12 +123,15 @@ public class LongAccumulator extends Striped64 implements Serializable {
                 || (c = cs[getProbe() & m]) == null
                 || !(uncontended =
                      (r = function.applyAsLong(v = c.value, x)) == v
+                             // 当前线程绑定的 cell 上进行 cas 上更新
                      || c.cas(v, r)))
                 longAccumulate(x, function, uncontended);
         }
     }
 
     /**
+     * 计算结果
+     *
      * Returns the current value.  The returned value is <em>NOT</em>
      * an atomic snapshot; invocation in the absence of concurrent
      * updates returns an accurate result, but concurrent updates that
@@ -139,6 +152,8 @@ public class LongAccumulator extends Striped64 implements Serializable {
     }
 
     /**
+     * 重置为 0
+     *
      * Resets variables maintaining updates to the identity value.
      * This method may be a useful alternative to creating a new
      * updater, but is only effective if there are no concurrent

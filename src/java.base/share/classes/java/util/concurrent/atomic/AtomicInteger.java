@@ -51,6 +51,12 @@ import java.util.function.IntUnaryOperator;
  * @since 1.5
  * @author Doug Lea
  */
+
+/**
+ * cas 操作更新
+ * 但是很奇怪为什么 AtomicInteger 还是使用了 Unsafe ??
+ * 看提交记录，发现是改成 VarHandle 之后报了 LinkageError 之后，又改回 Unsafe 了
+ */
 public class AtomicInteger extends Number implements java.io.Serializable {
     private static final long serialVersionUID = 6214790243416807050L;
 
@@ -59,8 +65,12 @@ public class AtomicInteger extends Number implements java.io.Serializable {
      * are unresolved cyclic startup dependencies.
      */
     private static final jdk.internal.misc.Unsafe U = jdk.internal.misc.Unsafe.getUnsafe();
+    // 还是通过 Unsafe 来实现的 ????
     private static final long VALUE = U.objectFieldOffset(AtomicInteger.class, "value");
 
+    /**
+     * 保存的值
+     */
     private volatile int value;
 
     /**

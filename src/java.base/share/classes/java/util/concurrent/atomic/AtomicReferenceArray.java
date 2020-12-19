@@ -51,10 +51,18 @@ import java.util.function.UnaryOperator;
  * @author Doug Lea
  * @param <E> The base class of elements held in this array
  */
+
+/**
+ * 原子操作引用数组
+ * 可以原子操作引用数组中指定 index 位置的值
+ */
 public class AtomicReferenceArray<E> implements java.io.Serializable {
     private static final long serialVersionUID = -6209656149925076980L;
+    // 目标引用数组的 VarHandle
     private static final VarHandle AA
         = MethodHandles.arrayElementVarHandle(Object[].class);
+
+    // 目标数组
     private final Object[] array; // must have exact type Object[]
 
     /**

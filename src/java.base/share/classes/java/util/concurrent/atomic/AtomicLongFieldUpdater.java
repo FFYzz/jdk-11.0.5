@@ -70,6 +70,11 @@ import java.lang.invoke.VarHandle;
  * @author Doug Lea
  * @param <T> The type of the object holding the updatable field
  */
+
+/**
+ * 包装 long 类型的 field，使得能够对其展开原子操作
+ * @param <T>
+ */
 public abstract class AtomicLongFieldUpdater<T> {
     /**
      * Creates and returns an updater for objects with the given field.
@@ -374,6 +379,9 @@ public abstract class AtomicLongFieldUpdater<T> {
         return next;
     }
 
+    /**
+     * 基于 cas 的 AtomicLongFieldUpdater 实现
+     */
     private static final class CASUpdater<T> extends AtomicLongFieldUpdater<T> {
         private static final Unsafe U = Unsafe.getUnsafe();
         private final long offset;
@@ -515,6 +523,9 @@ public abstract class AtomicLongFieldUpdater<T> {
         }
     }
 
+    /**
+     * 基于锁的 AtomicLongFieldUpdater 实现
+     */
     private static final class LockedUpdater<T> extends AtomicLongFieldUpdater<T> {
         private static final Unsafe U = Unsafe.getUnsafe();
         private final long offset;
