@@ -198,8 +198,6 @@ import java.util.NoSuchElementException;
 
 /**
  * 很多接口都与 Deque 中的接口定义一致
- *
- * @param <E>
  */
 public interface BlockingDeque<E> extends BlockingQueue<E>, Deque<E> {
     /*
@@ -705,7 +703,7 @@ public interface BlockingDeque<E> extends BlockingQueue<E>, Deque<E> {
     int size();
 
     /**
-     * 返回迭代器，顺序从 head -> tail
+     * 返回迭代器，顺序从 head -&gt; tail
      * <p>
      * Returns an iterator over the elements in this deque in proper sequence.
      * The elements will be returned in order from first (head) to last (tail).

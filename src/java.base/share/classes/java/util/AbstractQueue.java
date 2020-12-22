@@ -64,8 +64,6 @@ package java.util;
 
 /**
  * 抽象的 Queue 实现
- *
- * @param <E>
  */
 public abstract class AbstractQueue<E>
         extends AbstractCollection<E>

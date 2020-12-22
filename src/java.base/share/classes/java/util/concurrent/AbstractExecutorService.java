@@ -241,7 +241,7 @@ public abstract class AbstractExecutorService implements ExecutorService {
                 }
                 // 有任务已经完成
                 if (f != null) {
-                    --active;5
+                    --active;
                     try {
                         // 直接返回
                         return f.get();
@@ -265,12 +265,6 @@ public abstract class AbstractExecutorService implements ExecutorService {
 
     /**
      * 任意一个任务完成即返回，不带超时时间
-     *
-     * @param tasks
-     * @param <T>
-     * @return
-     * @throws InterruptedException
-     * @throws ExecutionException
      */
     public <T> T invokeAny(Collection<? extends Callable<T>> tasks)
             throws InterruptedException, ExecutionException {
@@ -284,15 +278,6 @@ public abstract class AbstractExecutorService implements ExecutorService {
 
     /**
      * 任意一个任务完成即返回，不带超时时间
-     *
-     * @param tasks
-     * @param timeout
-     * @param unit
-     * @param <T>
-     * @return
-     * @throws InterruptedException
-     * @throws ExecutionException
-     * @throws TimeoutException
      */
     public <T> T invokeAny(Collection<? extends Callable<T>> tasks,
                            long timeout, TimeUnit unit)
@@ -303,11 +288,6 @@ public abstract class AbstractExecutorService implements ExecutorService {
     /**
      * 所有的任务都需要返回
      * 不带超时时间
-     *
-     * @param tasks
-     * @param <T>
-     * @return
-     * @throws InterruptedException
      */
     public <T> List<Future<T>> invokeAll(Collection<? extends Callable<T>> tasks)
             throws InterruptedException {
@@ -349,13 +329,6 @@ public abstract class AbstractExecutorService implements ExecutorService {
     /**
      * 所有的任务都需要返回
      * 不带超时时间
-     *
-     * @param tasks
-     * @param timeout
-     * @param unit
-     * @param <T>
-     * @return
-     * @throws InterruptedException
      */
     public <T> List<Future<T>> invokeAll(Collection<? extends Callable<T>> tasks,
                                          long timeout, TimeUnit unit)

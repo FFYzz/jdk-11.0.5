@@ -88,9 +88,9 @@ package java.util.concurrent;
 public interface Future<V> {
 
     /**
-     * task 还未开始 -> 返回 true
-     * task 在进行中 -> 根据 mayInterruptIfRunning 来决定是否可以中断
-     * task 已经结束 -> 返回 false
+     * task 还未开始 -&gt; 返回 true
+     * task 在进行中 -&gt; 根据 mayInterruptIfRunning 来决定是否可以中断
+     * task 已经结束 -&gt; 返回 false
      * <p>
      * Attempts to cancel execution of this task.  This attempt will
      * fail if the task has already completed, has already been cancelled,

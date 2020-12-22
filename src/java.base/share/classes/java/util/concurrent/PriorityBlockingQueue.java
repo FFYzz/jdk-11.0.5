@@ -126,8 +126,6 @@ import jdk.internal.misc.SharedSecrets;
  * 因为底层存储结构是一个平衡二叉堆的结构，堆的维护需要使用到 index
  * 4. PriorityBlockingQueue 是一个大顶堆还是小顶堆？
  * 小顶堆
- *
- * @param <E>
  */
 @SuppressWarnings("unchecked")
 public class PriorityBlockingQueue<E> extends AbstractQueue<E>

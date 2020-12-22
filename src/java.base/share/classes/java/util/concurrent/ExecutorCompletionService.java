@@ -237,9 +237,6 @@ public class ExecutorCompletionService<V> implements CompletionService<V> {
     /**
      * 从队列中取出已经完成的任务
      * 若队列为空，则会阻塞。
-     *
-     * @return
-     * @throws InterruptedException
      */
     public Future<V> take() throws InterruptedException {
         return completionQueue.take();
@@ -248,8 +245,6 @@ public class ExecutorCompletionService<V> implements CompletionService<V> {
     /**
      * 从队列中取出已经完成的任务
      * 若队列为空，则返回 null
-     *
-     * @return
      */
     public Future<V> poll() {
         return completionQueue.poll();
@@ -257,11 +252,6 @@ public class ExecutorCompletionService<V> implements CompletionService<V> {
 
     /**
      * 带超时时间的从队列中取出已经完成的任务
-     *
-     * @param timeout
-     * @param unit
-     * @return
-     * @throws InterruptedException
      */
     public Future<V> poll(long timeout, TimeUnit unit)
             throws InterruptedException {

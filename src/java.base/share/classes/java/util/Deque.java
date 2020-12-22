@@ -206,8 +206,6 @@ package java.util;
 
 /**
  * 接口定义
- *
- * @param <E>
  */
 public interface Deque<E> extends Queue<E> {
     /**

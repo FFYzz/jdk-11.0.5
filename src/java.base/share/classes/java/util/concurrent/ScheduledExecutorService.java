@@ -147,14 +147,14 @@ public interface ScheduledExecutorService extends ExecutorService {
      * <p>The sequence of task executions continues indefinitely until
      * one of the following exceptional completions occur:
      * <ul>
-     * 1. 通过返回的 future 调用 cancell 方法
      * <li>The task is {@linkplain Future#cancel explicitly cancelled}
      * via the returned future.
-     * 2. executor 被终止
+     * 1. 通过返回的 future 调用 cancell 方法
      * <li>The executor terminates, also resulting in task cancellation.
-     * 3. 执行中的 task 抛出异常
+     * 2. executor 被终止
      * <li>An execution of the task throws an exception.  In this case
      * calling {@link Future#get() get} on the returned future will throw
+     * 3. 执行中的 task 抛出异常
      * {@link ExecutionException}, holding the exception as its cause.
      * </ul>
      * Subsequent executions are suppressed.  Subsequent calls to

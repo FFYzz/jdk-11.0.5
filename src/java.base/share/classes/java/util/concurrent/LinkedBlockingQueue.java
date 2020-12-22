@@ -103,8 +103,6 @@ import java.util.function.Predicate;
  * 6. little tips
  * 匹配数组中匹配命中的位置，可以使用位操作的方法，声明一个 long 类型的变量，通过左移来标记。
  * 如果匹配到了，则 64 位变量上相应位置的 bite 值为 1.
- *
- * @param <E>
  */
 public class LinkedBlockingQueue<E> extends AbstractQueue<E>
         implements BlockingQueue<E>, java.io.Serializable {

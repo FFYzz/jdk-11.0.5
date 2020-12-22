@@ -182,8 +182,6 @@ public class FutureTask<V> implements RunnableFuture<V> {
 
     /**
      * 这里的 Done 并不一定指正常执行完成，还有可能是异常或者取消
-     *
-     * @return
      */
     public boolean isDone() {
         return state != NEW;

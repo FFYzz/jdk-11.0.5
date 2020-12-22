@@ -49,10 +49,8 @@ import java.util.function.Function;
  * in this interface takes only a few basic forms, which expand out to
  * a larger set of methods to capture a range of usage styles:
  *
+ * Function/Consumer/Runnable 按阶段执行，先1后2然后3， 用于处理过程，compose 用于得到结果。
  * <ul>
- * 按阶段执行，先1后2然后3。
- * Function/Consumer/Runnable 用于处理过程，compose 用于得到结果。
- *
  * <li>The computation performed by a stage may be expressed as a
  * Function, Consumer, or Runnable (using methods with names including
  * <em>apply</em>, <em>accept</em>, or <em>run</em>, respectively)

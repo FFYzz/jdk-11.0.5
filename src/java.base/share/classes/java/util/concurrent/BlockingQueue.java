@@ -198,8 +198,6 @@ import java.util.Queue;
  * add/remove
  * put/take
  * offer/poll
- *
- * @param <E>
  */
 public interface BlockingQueue<E> extends Queue<E> {
     /**

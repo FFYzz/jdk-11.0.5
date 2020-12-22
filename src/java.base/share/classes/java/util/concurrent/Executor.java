@@ -113,7 +113,6 @@ package java.util.concurrent;
  *   }
  * }}</pre>
  * <p>
- * <p>
  * ExecutorService 是一个继承 Executor 的更易扩展的接口
  * ThreadPoolExecutor 提供了一个易扩展的线程池实现
  * Executors 提供了一些方便的工厂方法，用于获取线程池
