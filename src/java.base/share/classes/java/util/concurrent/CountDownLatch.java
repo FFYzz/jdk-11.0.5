@@ -154,32 +154,60 @@ import java.util.concurrent.locks.AbstractQueuedSynchronizer;
  * @since 1.5
  * @author Doug Lea
  */
+
+/**
+ * 基于 AQS 实现
+ * 主要重写了 AQS 的 tryAcquireShared 与 tryReleaseShared 方法
+ * 一个线程等待多个其他线程完成
+ * 一个线程多次调用 countDown 方法与多个线程调用一次 countDown 方法的效果一直，因为为了不破坏
+ * CountDownLatch 的设计初衷，一个线程不能进行多次调用 countDown 方法
+ */
 public class CountDownLatch {
     /**
+     * 内部实现的同步器
+     *
      * Synchronization control For CountDownLatch.
      * Uses AQS state to represent count.
      */
     private static final class Sync extends AbstractQueuedSynchronizer {
         private static final long serialVersionUID = 4982264981922014374L;
 
+        /**
+         * 构造方法设置 state
+         */
         Sync(int count) {
             setState(count);
         }
 
+        /**
+         * 返回当前的 state
+         */
         int getCount() {
             return getState();
         }
 
+        /**
+         * await 会调用到该方法
+         * 返回当前的 state
+         */
         protected int tryAcquireShared(int acquires) {
+            // 如果 state 为 0，说明当前的 count 已经减到 0 了，当前阻塞的线程可以继续执行了
             return (getState() == 0) ? 1 : -1;
         }
 
+        /**
+         * countDown 方法会调到该方法
+         * 返回是否释放成功
+         */
         protected boolean tryReleaseShared(int releases) {
             // Decrement count; signal when transition to zero
             for (;;) {
+                // 获取当前线程
                 int c = getState();
+                // 如果已经是未持有锁状态，直接返回 false
                 if (c == 0)
                     return false;
+                // state -1
                 int nextc = c - 1;
                 if (compareAndSetState(c, nextc))
                     return nextc == 0;
@@ -202,6 +230,8 @@ public class CountDownLatch {
     }
 
     /**
+     * 阻塞等待，除非 coungdown 到 0 或者 被中断
+     *
      * Causes the current thread to wait until the latch has counted down to
      * zero, unless the thread is {@linkplain Thread#interrupt interrupted}.
      *
@@ -233,6 +263,9 @@ public class CountDownLatch {
     }
 
     /**
+     * 阻塞等待一段时间，超时只有直接继续执行
+     * 中断和超时都能从阻塞中唤醒
+     *
      * Causes the current thread to wait until the latch has counted down to
      * zero, unless the thread is {@linkplain Thread#interrupt interrupted},
      * or the specified waiting time elapses.
@@ -279,6 +312,8 @@ public class CountDownLatch {
     }
 
     /**
+     * 同一个线程调用两次会释放两次锁，因此会破坏设计的初衷，所以不能够调用两次
+     *
      * Decrements the count of the latch, releasing all waiting threads if
      * the count reaches zero.
      *
