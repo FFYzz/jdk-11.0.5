@@ -34,6 +34,9 @@ import jdk.internal.misc.SharedSecrets;
 import jdk.internal.ref.PhantomCleanable;
 
 /**
+ * fd 指向一个打开的文件或者一个 socket 连接等等
+ * 该类主要用于 FileInputStream/FileOutputStream 中
+ * <p>
  * Instances of the file descriptor class serve as an opaque handle
  * to the underlying machine-specific structure representing an open
  * file, an open socket, or another source or sink of bytes.
@@ -42,11 +45,14 @@ import jdk.internal.ref.PhantomCleanable;
  * <p>
  * Applications should not create their own file descriptors.
  *
- * @author  Pavani Diwanji
- * @since   1.0
+ * @author Pavani Diwanji
+ * @since 1.0
  */
 public final class FileDescriptor {
 
+    /**
+     * 底层会维护一个打开文件的数组，fd 就是数组的下标
+     */
     private int fd;
 
     private long handle;
@@ -115,11 +121,15 @@ public final class FileDescriptor {
     }
 
     /**
+     * PhantomCleanable 继承自 PhantomReference ，虚引用
+     * <p>
      * Cleanup in case FileDescriptor is not explicitly closed.
      */
     private PhantomCleanable<FileDescriptor> cleanup;
 
     /**
+     * 创建一个无效的 fd 对象
+     * <p>
      * Constructs an (invalid) FileDescriptor object.
      * The fd or handle is set later.
      */
@@ -129,9 +139,13 @@ public final class FileDescriptor {
     }
 
     /**
+     * private
+     * 用于创建以下的标准 fd
+     * <p>
      * Used for standard input, output, and error only.
      * For Windows the corresponding handle is initialized.
      * For Unix the append mode is cached.
+     *
      * @param fd the raw fd number (0, 1, 2)
      */
     private FileDescriptor(int fd) {
@@ -140,12 +154,16 @@ public final class FileDescriptor {
         this.append = getAppend(fd);
     }
 
+    // 以下为三个预定的 fd
+    // 0 -> 标准输入
+    // 1 -> 标准输出
+    // 2 -> 标准错误输出
     /**
      * A handle to the standard input stream. Usually, this file
      * descriptor is not used directly, but rather via the input stream
      * known as {@code System.in}.
      *
-     * @see     java.lang.System#in
+     * @see java.lang.System#in
      */
     public static final FileDescriptor in = new FileDescriptor(0);
 
@@ -153,7 +171,8 @@ public final class FileDescriptor {
      * A handle to the standard output stream. Usually, this file
      * descriptor is not used directly, but rather via the output stream
      * known as {@code System.out}.
-     * @see     java.lang.System#out
+     *
+     * @see java.lang.System#out
      */
     public static final FileDescriptor out = new FileDescriptor(1);
 
@@ -162,16 +181,18 @@ public final class FileDescriptor {
      * descriptor is not used directly, but rather via the output stream
      * known as {@code System.err}.
      *
-     * @see     java.lang.System#err
+     * @see java.lang.System#err
      */
     public static final FileDescriptor err = new FileDescriptor(2);
 
     /**
+     * 返回 fd 是否有效
+     * <p>
      * Tests if this file descriptor object is valid.
      *
-     * @return  {@code true} if the file descriptor object represents a
-     *          valid, open file, socket, or other active I/O connection;
-     *          {@code false} otherwise.
+     * @return {@code true} if the file descriptor object represents a
+     * valid, open file, socket, or other active I/O connection;
+     * {@code false} otherwise.
      */
     public boolean valid() {
         return (handle != -1) || (fd != -1);
@@ -186,24 +207,23 @@ public final class FileDescriptor {
      * system, sync will not return until all in-memory modified copies
      * of buffers associated with this FileDescriptor have been
      * written to the physical medium.
-     *
+     * <p>
      * sync is meant to be used by code that requires physical
      * storage (such as a file) to be in a known state  For
      * example, a class that provided a simple transaction facility
      * might use sync to ensure that all changes to a file caused
      * by a given transaction were recorded on a storage medium.
-     *
+     * <p>
      * sync only affects buffers downstream of this FileDescriptor.  If
      * any in-memory buffering is being done by the application (for
      * example, by a BufferedOutputStream object), those buffers must
      * be flushed into the FileDescriptor (for example, by invoking
      * OutputStream.flush) before that data will be affected by sync.
      *
-     * @exception SyncFailedException
-     *        Thrown when the buffers cannot be flushed,
-     *        or because the system cannot guarantee that all the
-     *        buffers have been synchronized with physical media.
-     * @since     1.1
+     * @throws SyncFailedException Thrown when the buffers cannot be flushed,
+     *                             or because the system cannot guarantee that all the
+     *                             buffers have been synchronized with physical media.
+     * @since 1.1
      */
     public native void sync() throws SyncFailedException;
 
@@ -221,10 +241,13 @@ public final class FileDescriptor {
     private static native boolean getAppend(int fd);
 
     /**
+     * 设置 fd
+     * <p>
      * Set the fd.
      * Used on Unix and for sockets on Windows and Unix.
      * If setting to -1, clear the cleaner.
      * The {@link #registerCleanup} method should be called for new fds.
+     *
      * @param fd the raw fd or -1 to indicate closed
      */
     @SuppressWarnings("unchecked")
@@ -237,10 +260,13 @@ public final class FileDescriptor {
     }
 
     /**
+     * 设置 handle
+     * <p>
      * Set the handle.
      * Used on Windows for regular files.
      * If setting to -1, clear the cleaner.
      * The {@link #registerCleanup} method should be called for new handles.
+     *
      * @param handle the handle or -1 to indicate closed
      */
     @SuppressWarnings("unchecked")
@@ -253,9 +279,12 @@ public final class FileDescriptor {
     }
 
     /**
+     * 为当前的 fd 实例注册一个 cleanup
+     * <p>
      * Register a cleanup for the current handle.
      * Used directly in java.io and indirectly via fdAccess.
      * The cleanup should be registered after the handle is set in the FileDescriptor.
+     *
      * @param cleanable a PhantomCleanable to register
      */
     @SuppressWarnings("unchecked")
@@ -268,6 +297,8 @@ public final class FileDescriptor {
     }
 
     /**
+     * 反注册一个 cleanup
+     * <p>
      * Unregister a cleanup for the current raw fd or handle.
      * Used directly in java.io and indirectly via fdAccess.
      * Normally {@link #close()} should be used except in cases where
@@ -289,6 +320,7 @@ public final class FileDescriptor {
      * The native code sets the fd and handle to -1.
      * Clear the cleaner so the close does not happen twice.
      * Package private to allow it to be used in java.io.
+     *
      * @throws IOException if close fails
      */
     @SuppressWarnings("unchecked")
@@ -310,6 +342,8 @@ public final class FileDescriptor {
      */
 
     /**
+     * 给 fd 附上一个 Closeable
+     *
      * Attach a Closeable to this FD for tracking.
      * parent reference is added to otherParents when
      * needed to make closeAll simpler.
@@ -330,7 +364,7 @@ public final class FileDescriptor {
     /**
      * Cycle through all Closeables sharing this FD and call
      * close() on each one.
-     *
+     * <p>
      * The caller closeable gets to call close0().
      */
     @SuppressWarnings("try")
@@ -343,7 +377,7 @@ public final class FileDescriptor {
                     for (Closeable referent : otherParents) {
                         try {
                             referent.close();
-                        } catch(IOException x) {
+                        } catch (IOException x) {
                             if (ioe == null) {
                                 ioe = x;
                             } else {
@@ -352,7 +386,7 @@ public final class FileDescriptor {
                         }
                     }
                 }
-            } catch(IOException ex) {
+            } catch (IOException ex) {
                 /*
                  * If releaser close() throws IOException
                  * add other exceptions as suppressed.
