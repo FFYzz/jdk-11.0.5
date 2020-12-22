@@ -150,21 +150,40 @@ public class CyclicBarrier {
      */
     private static class Generation {
         Generation() {}                 // prevent access constructor creation
+        // 表示当次 CyclicBarrier 有没有被破坏
         boolean broken;                 // initially false
     }
 
     /** The lock for guarding barrier entry */
+    /**
+     * 内部使用的锁
+     */
     private final ReentrantLock lock = new ReentrantLock();
     /** Condition to wait on until tripped */
+    /**
+     * 内部使用的条件等待队列
+     * 线程任务执行完了，但是 barrier 还没有 tripped(触发)，就会在 trip condition 上等待
+     */
     private final Condition trip = lock.newCondition();
     /** The number of parties */
     private final int parties;
     /** The command to run when tripped */
+    /**
+     * 当所有线程达到 barrier 之后可以额外处理的事情
+     * 并没有重新开一个线程进行处理，而是在最后一个到达 barrier 的线程上进行处理
+     * 直接调用了 run 方法
+     */
     private final Runnable barrierCommand;
     /** The current generation */
+    /**
+     * CyclicBarrier 是可以循环使用的，每次循环使用都会创建一个新的 Generation
+     */
     private Generation generation = new Generation();
 
     /**
+     * 当前还未达到 barrier 的 party 的数量
+     * 一开始为 CyclicBarrier 传入的值
+     *
      * Number of parties still waiting. Counts down from parties to 0
      * on each generation.  It is reset to parties on each new
      * generation or when broken.
@@ -172,11 +191,14 @@ public class CyclicBarrier {
     private int count;
 
     /**
+     * 开启新一轮
+     *
      * Updates state on barrier trip and wakes up everyone.
      * Called only while holding lock.
      */
     private void nextGeneration() {
         // signal completion of last generation
+        // 唤醒所有在 await 的线程
         trip.signalAll();
         // set up next generation
         count = parties;
@@ -184,42 +206,59 @@ public class CyclicBarrier {
     }
 
     /**
+     *
+     *
      * Sets current barrier generation as broken and wakes up everyone.
      * Called only while holding lock.
      */
     private void breakBarrier() {
+        // 被 broken 标记
         generation.broken = true;
+        // 重置 parties
         count = parties;
+        // 唤醒所有的线程
         trip.signalAll();
     }
 
     /**
+     * 最主要的方法
+     *
      * Main barrier code, covering the various policies.
      */
     private int dowait(boolean timed, long nanos)
         throws InterruptedException, BrokenBarrierException,
                TimeoutException {
         final ReentrantLock lock = this.lock;
+        // 先加锁
         lock.lock();
         try {
+            // 当前的 Generation
             final Generation g = generation;
 
+            // 如果被 broken 了，则抛出异常
             if (g.broken)
                 throw new BrokenBarrierException();
 
+            // 如果被中断了，同样抛出异常
             if (Thread.interrupted()) {
                 breakBarrier();
                 throw new InterruptedException();
             }
 
+            // 调用了 wait 方法说明达到 barrier 了
+            // count 计数减一
             int index = --count;
+            // 如果全部的 party 都到达了 barrier，也就是 tripped
             if (index == 0) {  // tripped
+                // 用于标记是否执行完 command
                 boolean ranAction = false;
                 try {
                     final Runnable command = barrierCommand;
+                    // 如果 Runnable 不为 null，则执行 Runnable
                     if (command != null)
                         command.run();
                     ranAction = true;
+                    // 开启新的一轮
                     nextGeneration();
                     return 0;
                 } finally {
@@ -229,14 +268,20 @@ public class CyclicBarrier {
             }
 
             // loop until tripped, broken, interrupted, or timed out
+            // 还没有全部都达到 barrier
             for (;;) {
                 try {
+                    // 未设置超时等待
                     if (!timed)
+                        // 直接 await 在 codition 队列中
                         trip.await();
+                    // 走到这里说明设置了超时等待，需要再次检查剩余时间
                     else if (nanos > 0L)
+                        // 阻塞指定时间
                         nanos = trip.awaitNanos(nanos);
                 } catch (InterruptedException ie) {
-                    if (g == generation && ! g.broken) {
+                    // 处理中断异常
+                    if (g == generation && !g.broken) {
                         breakBarrier();
                         throw ie;
                     } else {
@@ -296,6 +341,9 @@ public class CyclicBarrier {
     }
 
     /**
+     * 返回 party 的数量
+     * 构造函数中传入
+     *
      * Returns the number of parties required to trip this barrier.
      *
      * @return the number of parties required to trip this barrier
@@ -305,6 +353,13 @@ public class CyclicBarrier {
     }
 
     /**
+     * 阻塞等待，直到
+     * 1. 所有的 party 都到达了 barrier
+     * 2. 当前等待线程被中断
+     * 3. 其他等待线程被中断
+     * 4. 其他线程等待超时
+     * 5. 其他线程调用了 reset 方法
+     *
      * Waits until all {@linkplain #getParties parties} have invoked
      * {@code await} on this barrier.
      *
@@ -367,6 +422,14 @@ public class CyclicBarrier {
     }
 
     /**
+     * 阻塞等待，直到
+     * 1. 所有的 party 都到达了 barrier
+     * 2. 当前等待线程被中断
+     * 3. 其他等待线程被中断
+     * 4. 其他线程等待超时
+     * 5. 其他线程调用了 reset 方法
+     * 6. 当前等待线程超时
+     *
      * Waits until all {@linkplain #getParties parties} have invoked
      * {@code await} on this barrier, or the specified waiting time elapses.
      *
@@ -437,6 +500,8 @@ public class CyclicBarrier {
     }
 
     /**
+     * 返回当前的 Barrier 是否被破坏
+     *
      * Queries if this barrier is in a broken state.
      *
      * @return {@code true} if one or more parties broke out of this
@@ -467,7 +532,9 @@ public class CyclicBarrier {
         final ReentrantLock lock = this.lock;
         lock.lock();
         try {
+            // 先 break
             breakBarrier();   // break the current generation
+            // 在 start new Generation
             nextGeneration(); // start a new generation
         } finally {
             lock.unlock();
@@ -475,6 +542,8 @@ public class CyclicBarrier {
     }
 
     /**
+     * 返回当前在 barrier 等待的 party
+     *
      * Returns the number of parties currently waiting at the barrier.
      * This method is primarily useful for debugging and assertions.
      *
