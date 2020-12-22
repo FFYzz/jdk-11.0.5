@@ -135,8 +135,22 @@ package java.util;
  * @author Doug Lea
  * @param <E> the type of elements held in this queue
  */
+
+/**
+ * 继承自 Collection 接口
+ * 定义了两组接口，添加和移除
+ * 添加      移除
+ * add      remove
+ * offer    poll
+ * 定义了一组获取队头元素的两个方法
+ * peek
+ * element
+ */
 public interface Queue<E> extends Collection<E> {
     /**
+     * 当队列未满，则添加成功，返回 true
+     * 队列满，抛出 IllegalStateException 异常
+     *
      * Inserts the specified element into this queue if it is possible to do so
      * immediately without violating capacity restrictions, returning
      * {@code true} upon success and throwing an {@code IllegalStateException}
@@ -156,6 +170,10 @@ public interface Queue<E> extends Collection<E> {
     boolean add(E e);
 
     /**
+     * 当队列未满，则添加成功，返回 true
+     * 队列满，返回 false
+     * 队列为有界队列时，更推荐使用 add 方法将元素加入到队列中，因为队满情况 add 会抛异常
+     *
      * Inserts the specified element into this queue if it is possible to do
      * so immediately without violating capacity restrictions.
      * When using a capacity-restricted queue, this method is generally
@@ -175,6 +193,9 @@ public interface Queue<E> extends Collection<E> {
     boolean offer(E e);
 
     /**
+     * 队列未空，返回移出的元素
+     * 队列未空，则抛出 NoSuchElementException 异常
+     *
      * Retrieves and removes the head of this queue.  This method differs
      * from {@link #poll() poll()} only in that it throws an exception if
      * this queue is empty.
@@ -185,6 +206,9 @@ public interface Queue<E> extends Collection<E> {
     E remove();
 
     /**
+     * 队空返回 null
+     * 队不空返回出队的元素
+     *
      * Retrieves and removes the head of this queue,
      * or returns {@code null} if this queue is empty.
      *
@@ -193,6 +217,9 @@ public interface Queue<E> extends Collection<E> {
     E poll();
 
     /**
+     * 获取队头元素，不出队。
+     * 队空抛 NoSuchElementException 异常
+     *
      * Retrieves, but does not remove, the head of this queue.  This method
      * differs from {@link #peek peek} only in that it throws an exception
      * if this queue is empty.
@@ -203,6 +230,9 @@ public interface Queue<E> extends Collection<E> {
     E element();
 
     /**
+     * 获取队头元素，不出队。
+     * 队空返回 null
+     *
      * Retrieves, but does not remove, the head of this queue,
      * or returns {@code null} if this queue is empty.
      *
