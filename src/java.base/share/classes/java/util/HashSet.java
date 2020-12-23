@@ -88,8 +88,6 @@ import jdk.internal.misc.SharedSecrets;
 
 /**
  * 底层使用 HashMap 来实现
- *
- * @param <E>
  */
 public class HashSet<E>
     extends AbstractSet<E>

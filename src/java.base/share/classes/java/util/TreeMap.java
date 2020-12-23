@@ -136,9 +136,6 @@ import java.util.function.Consumer;
  * 为什么要给树节点染上颜色？
  * 1. 颜色的意义是为了构造树的平衡。
  * 2. 使用颜色可以较方便的满足平衡的条件，以及树的调整。
- *
- * @param <K>
- * @param <V>
  */
 public class TreeMap<K, V>
         extends AbstractMap<K, V>
@@ -341,8 +338,6 @@ public class TreeMap<K, V>
 
     /**
      * 返回当前 TreeMap 实例的 comparator 实例
-     *
-     * @return
      */
     public Comparator<? super K> comparator() {
         return comparator;

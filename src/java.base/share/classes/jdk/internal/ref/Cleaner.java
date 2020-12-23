@@ -25,6 +25,7 @@
 
 package jdk.internal.ref;
 
+import java.lang.ref.*;
 import java.security.AccessController;
 import java.security.PrivilegedAction;
 

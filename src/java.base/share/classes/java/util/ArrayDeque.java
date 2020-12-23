@@ -246,7 +246,7 @@ public class ArrayDeque<E> extends AbstractCollection<E>
     /**
      * 构造方法
      * 指定初始化数组的大小为 传入参数 + 1
-     * 如果 numElements < 1，则会初始化长度为 1
+     * 如果 numElements &lt; 1，则会初始化长度为 1
      * 如果 numElements 为 Integer.MAX_VALUE，则会初始化为 Integer.MAX_VALUE
      * 否则 初始化为 (numElements + 1)
      * <p>
@@ -502,8 +502,6 @@ public class ArrayDeque<E> extends AbstractCollection<E>
      * head 指针刚好指在元素的位置，所以先取元素，再移动指针
      * 无论队列是否为空，都会返回一个值
      * 该值可能是 null。
-     *
-     * @return
      */
     public E pollFirst() {
         final Object[] es;
@@ -526,8 +524,6 @@ public class ArrayDeque<E> extends AbstractCollection<E>
      * tail 指针指在队尾元素的下一个位置，所以在取元素的时候需要往前移动一位
      * 无论队列是否为空，都会返回一个值
      * 该值可能是 null。
-     *
-     * @return
      */
     public E pollLast() {
         final Object[] es;
@@ -568,8 +564,6 @@ public class ArrayDeque<E> extends AbstractCollection<E>
     /**
      * 获取队头元素
      * 若队列为空，返回 空，不抛异常
-     *
-     * @return
      */
     public E peekFirst() {
         return elementAt(elements, head);
@@ -578,8 +572,6 @@ public class ArrayDeque<E> extends AbstractCollection<E>
     /**
      * 获取队尾元素
      * 若队列为空，返回空，不抛异常
-     *
-     * @return
      */
     public E peekLast() {
         final Object[] es;

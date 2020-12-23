@@ -446,7 +446,7 @@ public abstract class Reference<T> {
 
     /**
      * 获取 Reference 实例持有的 referent 对象
-     * <p></>Returns this reference object's referent.  If this reference object has
+     * Returns this reference object's referent.  If this reference object has
      * been cleared, either by the program or by the garbage collector, then
      * this method returns <code>null</code>.
      *

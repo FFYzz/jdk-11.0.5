@@ -112,7 +112,7 @@ import jdk.internal.misc.SharedSecrets;
  * ArrayList 支持 fail-fast 机制，在多线程访问情况下，会出现在操作过程中 modCount 被修改的情况。
  * fail-fast 机制会抛出异常。
  *
- * 2. ArrayList 在循环的时候为什么要用 Iterator 中的 remove 而不是用 for (int i = 0; i < size; ++i) 这种形式 remove？
+ * 2. ArrayList 在循环的时候为什么要用 Iterator 中的 remove 而不是用 for (int i = 0; i &lt; size; ++i) 这种形式 remove？
  *
  * 因为在 for 循环中移除的话 ArrayList 中的元素的位序会发生变化，删除可能不是我们预期得到的结果。
  * Iterator 中有 lastRet 和 cursor，在 remove 的时候会记录 lastRet 和 cursor 的变化，
@@ -172,7 +172,7 @@ public class ArrayList<E> extends AbstractList<E>
     /**
      * 有参构造方法，指定初始的 elemenData 数组大小
      *
-     * @param 初始大小
+     * @param initialCapacity 初始大小
      * @throws IllegalArgumentException 如果指定的初始容量小于 0 ，则抛出异常
      */
     public ArrayList(int initialCapacity) {
@@ -537,9 +537,6 @@ public class ArrayList<E> extends AbstractList<E>
 
     /**
      * 将元素 e 添加到 ArrayList 中
-     *
-     * @param e
-     * @return {@code true}
      */
     public boolean add(E e) {
         modCount++;
@@ -607,7 +604,6 @@ public class ArrayList<E> extends AbstractList<E>
         boolean equal = (o.getClass() == ArrayList.class)
             ? equalsArrayList((ArrayList<?>) o)
             : equalsRange((List<?>) o, 0, size);
-                : equalsRange((List<?>) o, 0, size);
         // 主要是避免在多线程环境下，多个线程操作同一个 ArrayList，比较过程中发生改变
         // modCount 的作用体现在这
         // 如果修改次数发生改变，则抛出 ConcurrentModificationException 异常

@@ -428,8 +428,6 @@ public class PriorityQueue<E> extends AbstractQueue<E>
 
     /**
      * 返回优先队列队首的元素
-     *
-     * @return
      */
     public E peek() {
         return (E) queue[0];
@@ -686,8 +684,6 @@ public class PriorityQueue<E> extends AbstractQueue<E>
     /**
      * 将队头元素弹出
      * 也就是将最小元素出队
-     *
-     * @return
      */
     public E poll() {
         // 指向数组的指针

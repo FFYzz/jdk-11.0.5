@@ -134,9 +134,6 @@ import java.util.function.Consumer;
 
 /**
  * 解决冲突的方式只有链地址法，没有使用红黑树
- *
- * @param <K>
- * @param <V>
  */
 public class WeakHashMap<K, V>
         extends AbstractMap<K, V>

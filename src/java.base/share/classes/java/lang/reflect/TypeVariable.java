@@ -53,7 +53,7 @@ package java.lang.reflect;
 public interface TypeVariable<D extends GenericDeclaration> extends Type, AnnotatedElement {
     /**
      * 返回当前类型的上边界，如果没有指定上边界，则默认为Object。
-     * <K extends Number, T>
+     * &lt;K extends Number, T&gt;
      * K 有上边界 为 NUmber 类
      * T 没有上边界，默认为 Object
      * <p>

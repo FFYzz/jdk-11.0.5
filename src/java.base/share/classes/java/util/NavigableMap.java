@@ -98,9 +98,6 @@ package java.util;
 /**
  * 继承了 SortedMap 接口
  * 是对 SortedMap 的增强
- *
- * @param <K>
- * @param <V>
  */
 public interface NavigableMap<K, V> extends SortedMap<K, V> {
     /**

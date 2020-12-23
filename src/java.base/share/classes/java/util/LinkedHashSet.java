@@ -119,8 +119,6 @@ package java.util;
  * 底层使用的是 LinkedHashMap 对象实现的
  * 有序的，支持以插入顺序的方式访问元素
  * 不支持按访问顺序访问元素
- *
- * @param <E>
  */
 public class LinkedHashSet<E>
         extends HashSet<E>
