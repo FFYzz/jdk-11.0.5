@@ -46,6 +46,8 @@ import java.util.function.Consumer;
 import java.util.function.Predicate;
 
 /**
+ * 内部的所有操作都委托给了 CopyOnWriteArrayList
+ *
  * A {@link Set} that uses an internal {@link CopyOnWriteArrayList}
  * for all of its operations.  Thus, it shares the same basic properties:
  * <ul>
@@ -95,10 +97,19 @@ import java.util.function.Predicate;
  * @author Doug Lea
  * @param <E> the type of elements held in this set
  */
+
+/**
+ * 基于 CopyOnWriteArrayList 实现
+ * 所有的方法都委托给了 CopyOnWriteArrayList
+ * 如何保证元素不重复？调用了 CopyOnWriteArrayList#addIfAbsent 方法
+ */
 public class CopyOnWriteArraySet<E> extends AbstractSet<E>
         implements java.io.Serializable {
     private static final long serialVersionUID = 5457747651344034263L;
 
+    /**
+     * 内部持有一个 CopyOnWriteArrayList
+     */
     private final CopyOnWriteArrayList<E> al;
 
     /**
@@ -246,6 +257,8 @@ public class CopyOnWriteArraySet<E> extends AbstractSet<E>
     }
 
     /**
+     * 调用了 CopyOnWriteArrayList 的 addIfAbsent 方法
+     *
      * Adds the specified element to this set if it is not already present.
      * More formally, adds the specified element {@code e} to this set if
      * the set contains no element {@code e2} such that
@@ -287,6 +300,7 @@ public class CopyOnWriteArraySet<E> extends AbstractSet<E>
      * proper superset of the given set
      */
     private static int compareSets(Object[] snapshot, Set<?> set) {
+        // O(n^2) 的算法，只适合小集合
         // Uses O(n^2) algorithm, that is only appropriate for small
         // sets, which CopyOnWriteArraySets should be.
         //
