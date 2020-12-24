@@ -165,6 +165,8 @@ public class Semaphore implements java.io.Serializable {
     private final Sync sync;
 
     /**
+     * 继承 AbstractQueuedSynchronizer 实现了内部的同步器
+     *
      * Synchronization implementation for semaphore.  Uses AQS state
      * to represent permits. Subclassed into fair and nonfair
      * versions.
@@ -172,24 +174,43 @@ public class Semaphore implements java.io.Serializable {
     abstract static class Sync extends AbstractQueuedSynchronizer {
         private static final long serialVersionUID = 1192457210091910933L;
 
+        /**
+         * @param permits 允许获取的资源数
+         */
         Sync(int permits) {
             setState(permits);
         }
 
+        /**
+         * @return 返回当前 Semaphore 还可以获取的许可的数量
+         */
         final int getPermits() {
             return getState();
         }
 
+        /**
+         * 非公平的实现方式，允许抢占
+         *
+         * @param acquires 尝试获取的许可数
+         * @return 返回剩余可用的许可数
+         */
         final int nonfairTryAcquireShared(int acquires) {
             for (;;) {
                 int available = getState();
+                // 计算假设获取许可成功后剩余的的许可数
                 int remaining = available - acquires;
+                // 如果剩余的许可数 < 0，那么返回这个剩余的许可数， < 0 表示获取失败
+                // 如果 remaining >= 0，说明可以获取，通过 cas 尝试获取
                 if (remaining < 0 ||
                     compareAndSetState(available, remaining))
                     return remaining;
             }
         }
 
+        /**
+         * @param releases 释放的许可数
+         * @return 返回是否成功释放
+         */
         protected final boolean tryReleaseShared(int releases) {
             for (;;) {
                 int current = getState();
@@ -201,6 +222,11 @@ public class Semaphore implements java.io.Serializable {
             }
         }
 
+        /**
+         * 与获取许可类似
+         *
+         * @param reductions 减少许可
+         */
         final void reducePermits(int reductions) {
             for (;;) {
                 int current = getState();
@@ -212,6 +238,11 @@ public class Semaphore implements java.io.Serializable {
             }
         }
 
+        /**
+         * 抽干许可
+         *
+         * @return 返回 drain 了的许可数
+         */
         final int drainPermits() {
             for (;;) {
                 int current = getState();
@@ -222,6 +253,7 @@ public class Semaphore implements java.io.Serializable {
     }
 
     /**
+     * 非公平同步器
      * NonFair version
      */
     static final class NonfairSync extends Sync {
@@ -231,12 +263,16 @@ public class Semaphore implements java.io.Serializable {
             super(permits);
         }
 
+        /**
+         * 直接调用了 Sync 中定义的非公平获取方法 nonfairTryAcquireShared
+         */
         protected int tryAcquireShared(int acquires) {
             return nonfairTryAcquireShared(acquires);
         }
     }
 
     /**
+     * 公平的同步器
      * Fair version
      */
     static final class FairSync extends Sync {
@@ -246,9 +282,14 @@ public class Semaphore implements java.io.Serializable {
             super(permits);
         }
 
+        /**
+         * 先检查队列中是否有在等待的线程
+         */
         protected int tryAcquireShared(int acquires) {
             for (;;) {
+                // 先检查是否有等待的节点
                 if (hasQueuedPredecessors())
+                    // 如果有的话则直接返回 -1，也即失败
                     return -1;
                 int available = getState();
                 int remaining = available - acquires;
@@ -272,6 +313,8 @@ public class Semaphore implements java.io.Serializable {
     }
 
     /**
+     * 可控制创建的 Semaphore 是否支持抢占
+     *
      * Creates a {@code Semaphore} with the given number of
      * permits and the given fairness setting.
      *
@@ -287,6 +330,11 @@ public class Semaphore implements java.io.Serializable {
     }
 
     /**
+     * 不带参数，默认获取一个许可。
+     * 支持响应中断。从阻塞中唤醒有以下几种情况：
+     * 1. 其他线程释放了许可，当前线程获取到了
+     * 2. 当前线程被其他线程中断
+     *
      * Acquires a permit from this semaphore, blocking until one is
      * available, or the thread is {@linkplain Thread#interrupt interrupted}.
      *
@@ -319,6 +367,8 @@ public class Semaphore implements java.io.Serializable {
     }
 
     /**
+     * 不响应中断，那么只能等待直到获取到许可
+     *
      * Acquires a permit from this semaphore, blocking until one is
      * available.
      *
@@ -342,6 +392,8 @@ public class Semaphore implements java.io.Serializable {
     }
 
     /**
+     * 无论公平非公平，均可以调用该方法实现抢占
+     *
      * Acquires a permit from this semaphore, only if one is available at the
      * time of invocation.
      *
@@ -370,6 +422,8 @@ public class Semaphore implements java.io.Serializable {
     }
 
     /**
+     * 带超时的获取，先尝试一次直接抢占获取。如果获取失败，则调用超时获取。
+     *
      * Acquires a permit from this semaphore, if one becomes available
      * within the given waiting time and the current thread has not
      * been {@linkplain Thread#interrupt interrupted}.
@@ -416,6 +470,8 @@ public class Semaphore implements java.io.Serializable {
     }
 
     /**
+     * 释放一个许可
+     *
      * Releases a permit, returning it to the semaphore.
      *
      * <p>Releases a permit, increasing the number of available permits by
