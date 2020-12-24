@@ -45,6 +45,10 @@ package java.util.concurrent;
  * @since 1.5
  * @author Doug Lea
  */
+
+/**
+ * CyclicBarrier 中被 broken 会抛出该异常
+ */
 public class BrokenBarrierException extends Exception {
     private static final long serialVersionUID = 7117394618823254244L;
 
