@@ -93,6 +93,8 @@ public class FutureTask<V> implements RunnableFuture<V> {
      * // task 在执行过程中，则先置为 INTERRUPTING，待任务执行完毕之后，将状态置为 INTERRUPTED
      * NEW -> CANCELLED
      * NEW -> INTERRUPTING -> INTERRUPTED
+     * <p>
+     * 中间状态是一个很短暂的过程，一般而言，如果 state 不为 NEW，执行就有结果了。
      */
     private volatile int state;
     /**
@@ -107,6 +109,8 @@ public class FutureTask<V> implements RunnableFuture<V> {
     private static final int INTERRUPTED = 6;
 
     /**
+     * 要执行的任务本身，runnale 也会被封装成 callable
+     * <p></p>
      * The underlying callable; nulled out after running
      */
     private Callable<V> callable;
@@ -116,12 +120,16 @@ public class FutureTask<V> implements RunnableFuture<V> {
      */
     private Object outcome; // non-volatile, protected by state reads/writes
     /**
+     * 执行任务的线程
+     * <p>
      * The thread running the callable; CASed during run()
      */
     private volatile Thread runner;
     /**
      * 获取结果的等待线程的链表
+     * 头结点
      * 头插法
+     * <p>
      * Treiber stack of waiting threads
      */
     private volatile WaitNode waiters;
@@ -187,6 +195,9 @@ public class FutureTask<V> implements RunnableFuture<V> {
         return state != NEW;
     }
 
+    /**
+     * @param mayInterruptIfRunning 运行中的任务是否允许 cancel
+     */
     public boolean cancel(boolean mayInterruptIfRunning) {
         // 当前状态不为 NEW 或者 不能通过 cas 将 state 的状态由 NEW 改变为 INTERRUPTING 或者 CANCELLED
         // 则直接返回 false
@@ -194,8 +205,10 @@ public class FutureTask<V> implements RunnableFuture<V> {
         if (!(state == NEW && STATE.compareAndSet
                 (this, NEW, mayInterruptIfRunning ? INTERRUPTING : CANCELLED)))
             return false;
+        // 能走到这里说明 state 已经为 INTERRUPTING 或者 CANCELLED 了
         try {    // in case call to interrupt throws exception
             // 如果允许任务执行过程中被中断
+            // 也即当前 state == INTERRUPTING
             if (mayInterruptIfRunning) {
                 try {
                     Thread t = runner;
@@ -204,6 +217,7 @@ public class FutureTask<V> implements RunnableFuture<V> {
                         t.interrupt();
                 } finally { // final state
                     // 将 state 置为 INTERRUPTED
+                    // 最终态
                     STATE.setRelease(this, INTERRUPTED);
                 }
             }
@@ -215,7 +229,7 @@ public class FutureTask<V> implements RunnableFuture<V> {
 
     /**
      * 不带超时版本
-     *
+     *<p></p>
      * @throws CancellationException {@inheritDoc}
      */
     public V get() throws InterruptedException, ExecutionException {
@@ -223,6 +237,7 @@ public class FutureTask<V> implements RunnableFuture<V> {
         // 如果状态还处于 NEW 状态或者 处于 COMPLETING 状态
         // 说明任务还在执行过程中
         if (s <= COMPLETING)
+            // 会阻塞
             s = awaitDone(false, 0L);
         // await 之后则返回
         return report(s);
@@ -230,7 +245,7 @@ public class FutureTask<V> implements RunnableFuture<V> {
 
     /**
      * 带超时版本
-     *
+     * <p></p>
      * @throws CancellationException {@inheritDoc}
      */
     public V get(long timeout, TimeUnit unit)
@@ -268,6 +283,7 @@ public class FutureTask<V> implements RunnableFuture<V> {
      */
     protected void set(V v) {
         // 先将 state 更新为 COMPLETING
+        // 短暂的一个过程
         if (STATE.compareAndSet(this, NEW, COMPLETING)) {
             // 保存结果
             outcome = v;
@@ -290,6 +306,7 @@ public class FutureTask<V> implements RunnableFuture<V> {
     protected void setException(Throwable t) {
         // 异常处理
         // 先将 state 置为 COMPLETING
+        // 一个短暂的中间过程
         if (STATE.compareAndSet(this, NEW, COMPLETING)) {
             outcome = t;
             // 将 state 设置成 EXCEPTIONAL
@@ -405,7 +422,10 @@ public class FutureTask<V> implements RunnableFuture<V> {
     }
 
     /**
-     * 一个单链表
+     * 表示在等待结果的线程
+     * 是一个 Treiber Stack 无锁的栈
+     * cas 出入栈
+     * <p>
      * Simple linked list nodes to record waiting threads in a Treiber
      * stack.  See other classes such as Phaser and SynchronousQueue
      * for more detailed explanation.
@@ -468,16 +488,16 @@ public class FutureTask<V> implements RunnableFuture<V> {
         long startTime = 0L;    // Special value 0L means not yet parked
         WaitNode q = null;
         boolean queued = false;
-        // 死循环
+        // 自旋
         for (; ; ) {
             int s = state;
-            // task 已经有执行结果
+            // task 已经执行完毕
             if (s > COMPLETING) {
                 if (q != null)
                     q.thread = null;
-                // 返回结果
+                // 返回状态
                 return s;
-                // 还处于 COMPLETING 状态
+                // 还处于 COMPLETING 状态，马上就要执行完了
             } else if (s == COMPLETING)
                 // We may have already promised (via isDone) that we are done
                 // so never return empty-handed or throw InterruptedException
@@ -488,7 +508,10 @@ public class FutureTask<V> implements RunnableFuture<V> {
                 // 检查中断
             else if (Thread.interrupted()) {
                 // 如果被中断了，则取消获取(get)
+                // 有两种中断情况：1.还未初始化就被中断。2.node 初始化之后被中断
+                // 分别对应 q 是否为 null
                 removeWaiter(q);
+                // 如果被中断，则抛出异常
                 throw new InterruptedException();
             } else if (q == null) {
                 // 如果超时，则返回
@@ -496,10 +519,11 @@ public class FutureTask<V> implements RunnableFuture<V> {
                     return s;
                 // 初始化 WaitNode 节点
                 q = new WaitNode();
-                // 如果没有入队，这里的队列指的是 WaitNode 构成的单链表
+                // 如果没有入栈
             } else if (!queued)
-                // 入队操作
+                // 入栈操作
                 // 头插法
+                // cas 保证同时只有一个线程可以入栈
                 queued = WAITERS.weakCompareAndSet(this, q.next = waiters, q);
                 // 如果设置了超时时间
             else if (timed) {
