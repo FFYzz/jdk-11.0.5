@@ -162,6 +162,10 @@ package java.util.concurrent;
  * @since 1.7
  * @author Doug Lea
  */
+
+/**
+ * 不带返回值的 ForkJoinTask
+ */
 public abstract class RecursiveAction extends ForkJoinTask<Void> {
     private static final long serialVersionUID = 5232453952276485070L;
 
@@ -171,6 +175,8 @@ public abstract class RecursiveAction extends ForkJoinTask<Void> {
     protected abstract void compute();
 
     /**
+     * 不返回结果，因此该方法永远返回 null
+     * <p>
      * Always returns {@code null}.
      *
      * @return {@code null} always
@@ -178,6 +184,8 @@ public abstract class RecursiveAction extends ForkJoinTask<Void> {
     public final Void getRawResult() { return null; }
 
     /**
+     * 同样也不会设置 result
+     * <p>
      * Requires null completion value.
      */
     protected final void setRawResult(Void mustBeNull) { }
@@ -186,6 +194,7 @@ public abstract class RecursiveAction extends ForkJoinTask<Void> {
      * Implements execution conventions for RecursiveActions.
      */
     protected final boolean exec() {
+        // 调用到子类实现的 compute 方法
         compute();
         return true;
     }

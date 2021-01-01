@@ -65,6 +65,10 @@ package java.util.concurrent;
  * @since 1.7
  * @author Doug Lea
  */
+
+/**
+ * 带有返回值的 ForkJoinTask
+ */
 public abstract class RecursiveTask<V> extends ForkJoinTask<V> {
     private static final long serialVersionUID = 5232453952276485270L;
 
@@ -79,10 +83,16 @@ public abstract class RecursiveTask<V> extends ForkJoinTask<V> {
      */
     protected abstract V compute();
 
+    /**
+     * 返回结果
+     */
     public final V getRawResult() {
         return result;
     }
 
+    /**
+     * 设置结果
+     */
     protected final void setRawResult(V value) {
         result = value;
     }
@@ -91,6 +101,7 @@ public abstract class RecursiveTask<V> extends ForkJoinTask<V> {
      * Implements execution conventions for RecursiveTask.
      */
     protected final boolean exec() {
+        // 调用子类实现的 compute 方法
         result = compute();
         return true;
     }
