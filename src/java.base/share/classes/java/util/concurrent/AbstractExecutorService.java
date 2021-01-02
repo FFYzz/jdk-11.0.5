@@ -165,7 +165,7 @@ public abstract class AbstractExecutorService implements ExecutorService {
     }
 
     /**
-     * 主要逻辑就是每次启动一个，如果都没有获取到，则继续启动知道所有任务都被启动。
+     * 主要逻辑就是每次启动一个，如果都没有获取到，则继续启动直到所有任务都被启动。
      * <p>
      * the main mechanics of invokeAny.
      */
@@ -202,7 +202,7 @@ public abstract class AbstractExecutorService implements ExecutorService {
             Iterator<? extends Callable<T>> it = tasks.iterator();
 
             // Start one task for sure; the rest incrementally
-            // 提交一个任务
+            // 提交第一个任务
             futures.add(ecs.submit(it.next()));
             // 任务数--
             --ntasks;
@@ -237,13 +237,17 @@ public abstract class AbstractExecutorService implements ExecutorService {
                         nanos = deadline - System.nanoTime();
                     } else
                         // 尝试获取，获取不到则一直阻塞
+                        // 会阻塞在这里
+                        // 前提是所有任务都启动了
+                        // 并且还没有任何一个任务完成的
                         f = ecs.take();
                 }
                 // 有任务已经完成
                 if (f != null) {
                     --active;
                     try {
-                        // 直接返回
+                        // 直接返回，这里不会阻塞了
+                        // 因为队列中已经有元素了，说明已经执行完成了
                         return f.get();
                     } catch (ExecutionException eex) {
                         ee = eex;
@@ -277,7 +281,7 @@ public abstract class AbstractExecutorService implements ExecutorService {
     }
 
     /**
-     * 任意一个任务完成即返回，不带超时时间
+     * 任意一个任务完成即返回，带超时时间
      */
     public <T> T invokeAny(Collection<? extends Callable<T>> tasks,
                            long timeout, TimeUnit unit)
@@ -327,8 +331,8 @@ public abstract class AbstractExecutorService implements ExecutorService {
     }
 
     /**
-     * 所有的任务都需要返回
-     * 不带超时时间
+     * 带超时时间
+     * 返回超时前完成的 Future
      */
     public <T> List<Future<T>> invokeAll(Collection<? extends Callable<T>> tasks,
                                          long timeout, TimeUnit unit)
