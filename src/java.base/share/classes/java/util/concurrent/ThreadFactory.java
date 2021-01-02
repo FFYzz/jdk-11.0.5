@@ -36,6 +36,8 @@
 package java.util.concurrent;
 
 /**
+ * 该工厂按需创建线程。
+ * <p>
  * An object that creates new threads on demand.  Using thread factories
  * removes hardwiring of calls to {@link Thread#Thread(Runnable) new Thread},
  * enabling applications to use special thread subclasses, priorities, etc.
@@ -55,10 +57,15 @@ package java.util.concurrent;
  * @since 1.5
  * @author Doug Lea
  */
+
+/**
+ * 创建线程的工厂
+ */
 public interface ThreadFactory {
 
     /**
-     * Constructs a new {@code Thread}.  Implementations may also initialize
+     * 返回一个线程
+     * <p>Constructs a new {@code Thread}.  Implementations may also initialize
      * priority, name, daemon status, {@code ThreadGroup}, etc.
      *
      * @param r a runnable to be executed by new thread instance
