@@ -229,7 +229,7 @@ public class FutureTask<V> implements RunnableFuture<V> {
 
     /**
      * 不带超时版本
-     *<p></p>
+     *<p>
      * @throws CancellationException {@inheritDoc}
      */
     public V get() throws InterruptedException, ExecutionException {
@@ -245,7 +245,7 @@ public class FutureTask<V> implements RunnableFuture<V> {
 
     /**
      * 带超时版本
-     * <p></p>
+     * <p>
      * @throws CancellationException {@inheritDoc}
      */
     public V get(long timeout, TimeUnit unit)
@@ -261,6 +261,11 @@ public class FutureTask<V> implements RunnableFuture<V> {
     }
 
     /**
+     * 给子类设置的一个 hook
+     * 在任务正常执行完成之后可以做的事情
+     * 比如在 ExecutorCompletionService 中重写了 done
+     * 方法，将执行成功后的 future 存入到 BlockingQueue 中
+     * <p>
      * Protected method invoked when this task transitions to state
      * {@code isDone} (whether normally or via cancellation). The
      * default implementation does nothing.  Subclasses may override
