@@ -41,9 +41,15 @@ package java.util.concurrent;
  * @since 1.5
  * @author Doug Lea
  */
+
+/**
+ * 线程池拒绝任务时的 handler
+ */
 public interface RejectedExecutionHandler {
 
     /**
+     * 该方法在出现拒绝任务提交时会被调用，用于处理该情况
+     * <p>
      * Method that may be invoked by a {@link ThreadPoolExecutor} when
      * {@link ThreadPoolExecutor#execute execute} cannot accept a
      * task.  This may occur when no more threads or queue slots are
