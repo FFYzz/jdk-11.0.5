@@ -56,6 +56,11 @@ import java.security.ProtectionDomain;
  * @since 1.7
  * @author Doug Lea
  */
+
+/**
+ * 该类完全继承自 Thread 类，没有修改 Thread 类的任何行为
+ * 在 Thread 的基础上进行了扩展
+ */
 public class ForkJoinWorkerThread extends Thread {
     /*
      * ForkJoinWorkerThreads are managed by ForkJoinPools and perform
@@ -75,7 +80,13 @@ public class ForkJoinWorkerThread extends Thread {
      * access and set Thread fields.
      */
 
+    /**
+     * 所在的 pool
+     */
     final ForkJoinPool pool;                // the pool this thread works in
+    /**
+     * 所在的 workQueue
+     */
     final ForkJoinPool.WorkQueue workQueue; // work-stealing mechanics
 
     /** An AccessControlContext supporting no privileges */
