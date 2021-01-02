@@ -158,10 +158,10 @@ public interface Future<V> {
     V get() throws InterruptedException, ExecutionException;
 
     /**
-     * 如果任务还没有准备好，则最久阻塞等待 timeout 时间
+     * 如果任务还没有准备好，则直接阻塞等待 timeout 时间
      * 如果在规定时间内完成，则返回值
-     * 若在规定时间内未完成，则
-     *
+     * 若在规定时间内未完成，则抛出 TimeoutException 异常
+     * <p>
      * Waits if necessary for at most the given time for the computation
      * to complete, and then retrieves its result, if available.
      *
