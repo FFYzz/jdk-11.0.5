@@ -42,6 +42,11 @@ package java.util.concurrent;
  * @since 1.5
  * @author Doug Lea
  */
+
+/**
+ * 拒绝执行异常
+ * 继承自 RuntimeException
+ */
 public class RejectedExecutionException extends RuntimeException {
     private static final long serialVersionUID = -375805702767069545L;
 
