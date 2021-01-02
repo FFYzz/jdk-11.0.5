@@ -102,23 +102,29 @@ package java.util.concurrent;
  *
  * @since 1.5
  */
+
+/**
+ * 内部维护了一个 BlockingQueue 用于保存已经完成的 task
+ */
 public class ExecutorCompletionService<V> implements CompletionService<V> {
     /**
-     * 线程池
+     * 持有一个线程池
      */
     private final Executor executor;
     /**
-     *
+     * executor 的抽象实现
+     * 仅用于将 task 封装成 FutureTask
      */
     private final AbstractExecutorService aes;
     /**
      * 队列
-     * 用于存放已经 normal 完成的任务
+     * 用于存放已经正常完成的任务
      */
     private final BlockingQueue<Future<V>> completionQueue;
 
     /**
      * 私有静态内部类，继承自 FutureTask。
+     * 内部维护了一个 BlockingQueue
      * <p>
      * FutureTask extension to enqueue upon completion.
      */
@@ -144,9 +150,6 @@ public class ExecutorCompletionService<V> implements CompletionService<V> {
 
     /**
      * 任务封装，将 Callable 任务封装成 RunnableFuture
-     *
-     * @param task
-     * @return
      */
     private RunnableFuture<V> newTaskFor(Callable<V> task) {
         if (aes == null)
