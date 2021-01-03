@@ -263,12 +263,15 @@ bool ObjectSynchronizer::quick_enter(oop obj, Thread * Self,
 
 void ObjectSynchronizer::fast_enter(Handle obj, BasicLock* lock,
                                     bool attempt_rebias, TRAPS) {
+  // 先走偏向锁的逻辑
   if (UseBiasedLocking) {
+  // 不在安全点上
     if (!SafepointSynchronize::is_at_safepoint()) {
       BiasedLocking::Condition cond = BiasedLocking::revoke_and_rebias(obj, attempt_rebias, THREAD);
       if (cond == BiasedLocking::BIAS_REVOKED_AND_REBIASED) {
         return;
       }
+      // 在安全点上
     } else {
       assert(!attempt_rebias, "can not rebias toward VM thread");
       BiasedLocking::revoke_at_safepoint(obj);

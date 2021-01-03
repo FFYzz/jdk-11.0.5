@@ -2029,10 +2029,13 @@ JRT_BLOCK_ENTRY(void, SharedRuntime::complete_monitor_locking_C(oopDesc* _obj, B
     Atomic::inc(BiasedLocking::slow_path_entry_count_addr());
   }
   Handle h_obj(THREAD, obj);
+  // 检查是否在 JVM 中开启使用偏向锁的参数
   if (UseBiasedLocking) {
     // Retry fast entry if bias is revoked to avoid unnecessary inflation
+    // 使用偏向锁
     ObjectSynchronizer::fast_enter(h_obj, lock, true, CHECK);
   } else {
+  // 不使用偏向锁，直接进入轻量级锁
     ObjectSynchronizer::slow_enter(h_obj, lock, CHECK);
   }
   assert(!HAS_PENDING_EXCEPTION, "Should have no exception here");
