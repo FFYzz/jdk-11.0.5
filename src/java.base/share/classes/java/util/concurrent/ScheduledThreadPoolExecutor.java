@@ -856,7 +856,7 @@ public class ScheduledThreadPoolExecutor
 
     /**
      * 设置 continueExistingPeriodicTasksAfterShutdown
-     * <p></p>
+     * <p>
      * Sets the policy on whether to continue executing existing
      * periodic tasks even when this executor has been {@code shutdown}.
      * In this case, executions will continue until {@code shutdownNow}
