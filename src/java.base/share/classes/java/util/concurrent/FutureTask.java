@@ -366,6 +366,9 @@ public class FutureTask<V> implements RunnableFuture<V> {
     }
 
     /**
+     * 执行任务并且执行后重置 future 状态, 该方法应用于不只执行一次的任务。
+     * 该方法不改变 state 的状态
+     * <p>
      * Executes the computation without setting its result, and then
      * resets this future to initial state, failing to do so if the
      * computation encounters an exception or is cancelled.  This is
@@ -375,16 +378,22 @@ public class FutureTask<V> implements RunnableFuture<V> {
      * @return {@code true} if successfully run and reset
      */
     protected boolean runAndReset() {
+        // 如果当前的状态不为 NEW
         if (state != NEW ||
+                // 或者执行任务的线程不能设置为当前线程
                 !RUNNER.compareAndSet(this, null, Thread.currentThread()))
+            // 返回 false，执行失败
             return false;
+        // 初始先标记为 false
         boolean ran = false;
         int s = state;
         try {
             Callable<V> c = callable;
             if (c != null && s == NEW) {
                 try {
+                    // 执行任务
                     c.call(); // don't set result
+                    // 标志为执行完成
                     ran = true;
                 } catch (Throwable ex) {
                     setException(ex);
@@ -397,9 +406,12 @@ public class FutureTask<V> implements RunnableFuture<V> {
             // state must be re-read after nulling runner to prevent
             // leaked interrupts
             s = state;
+            // 说明被中断了
             if (s >= INTERRUPTING)
+                // 处理可能的取消中断操作
                 handlePossibleCancellationInterrupt(s);
         }
+        // 返回是否执行成功且状态为 NEW
         return ran && s == NEW;
     }
 
