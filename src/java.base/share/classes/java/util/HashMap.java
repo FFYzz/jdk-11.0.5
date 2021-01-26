@@ -153,6 +153,13 @@ import jdk.internal.misc.SharedSecrets;
  * 7. TreeNode 形态下，TreeNode 的 root 不一定等于链表的首节点，但是 root 节点一定是 tab 在相应位置的第一个元素
  * 8. Map.Entry 与 Node 的关系？
  *  Node 实现了 Map.Entry 接口
+ * 9. 链表转红黑树会在说明情况下进行?
+ *  1. table 长度至少为 64
+ *  2. 同一位置上的节点个数达到 9 个
+ * 10. 寻址位置是怎样?
+ * 11. 扩容是如何进行的?(链表的扩容以及红黑树的扩容)
+ * 12. 第一次扩容之后才会根据 loadfactory 计算 threshold. 构造函数创建时 threshold 为传入的大小，或者默认的大小。
+ * 13. MAXIMUM_CAPACITY 为限制 table size 的大小。table size
  */
 public class HashMap<K,V> extends AbstractMap<K,V>
     implements Map<K,V>, Cloneable, Serializable {
