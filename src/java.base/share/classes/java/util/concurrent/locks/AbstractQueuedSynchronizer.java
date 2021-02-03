@@ -425,6 +425,7 @@ public abstract class AbstractQueuedSynchronizer
         /**
          * 在释放共享锁的情况下要能够往后面传播
          * 仅在共享模式下使用
+         * 这个状态没什么用
          *
          * waitStatus value to indicate the next acquireShared should
          * unconditionally propagate.
@@ -676,6 +677,7 @@ public abstract class AbstractQueuedSynchronizer
 
     /**
      * 自旋的最长时间为 1000 nanoseconds
+     * 剩余短于 SPIN_FOR_TIMEOUT_THRESHOLD 则自旋，不仅如此阻塞
      *
      * The number of nanoseconds for which it is faster to spin
      * rather than to use timed park. A rough estimate suffices
@@ -941,6 +943,7 @@ public abstract class AbstractQueuedSynchronizer
                 // 获取当前删除节点的后继节点
                 Node next = node.next;
                 // node 的 next 存在且未被 cancel
+                // 如果 node 的 next 也为 cancelled 节点，那么不处理，仅在最后更新 node 的 next 指向自己
                 if (next != null && next.waitStatus <= 0)
                     // pred 的 next 指向 next
                     pred.compareAndSetNext(predNext, next);
