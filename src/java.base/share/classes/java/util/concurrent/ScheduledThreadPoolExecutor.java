@@ -686,7 +686,7 @@ public class ScheduledThreadPoolExecutor
         if (callable == null || unit == null)
             throw new NullPointerException();
         RunnableScheduledFuture<V> t = decorateTask(callable,
-            // 主要根绝 callable 封装了一个 ScheduledFutureTask
+            // 主要根据 callable 封装了一个 ScheduledFutureTask
             new ScheduledFutureTask<V>(callable,
                                        triggerTime(delay, unit),
                                        sequencer.getAndIncrement()));
