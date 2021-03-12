@@ -159,7 +159,7 @@ public class LinkedBlockingQueue<E> extends AbstractQueue<E>
          * One of:
          * 存在一个真正的后继节点
          * - the real successor Node
-         * 指向自己，猴急节点是 head 的后继节点
+         * 指向自己，后继节点是 head 的后继节点
          * - this Node, meaning the successor is head.next
          * null，最后一个节点
          * - null, meaning there is no successor (this is the last node)
