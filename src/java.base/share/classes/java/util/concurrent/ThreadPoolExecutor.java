@@ -1610,7 +1610,7 @@ public class ThreadPoolExecutor extends AbstractExecutorService {
          * Proceed in 3 steps:
          *
          * 1. 如果当前活跃的线程数少于 corePoolSize，则启动新的线程来执行。
-         * 并将当前任务作为第一个任务。通过 addWorker 方法会原子地尽心检查 runstate
+         * 并将当前任务作为第一个任务。通过 addWorker 方法会原子地进行检查 runstate
          * 以及 workerCount。
          * 1. If fewer than corePoolSize threads are running, try to
          * start a new thread with the given command as its first
