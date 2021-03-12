@@ -2226,7 +2226,7 @@ public abstract class AbstractQueuedSynchronizer
             // If lastWaiter is cancelled, clean out.
             // 检查一下 lastWaiter 是否是 canceled 的节点
             if (t != null && t.waitStatus != Node.CONDITION) {
-                // 清楚所有的被 canceled 的节点
+                // 清除所有的被 canceled 的节点
                 unlinkCancelledWaiters();
                 // 指向新的 lastWaiter
                 t = lastWaiter;
