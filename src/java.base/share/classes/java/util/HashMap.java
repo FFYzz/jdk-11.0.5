@@ -918,6 +918,7 @@ public class HashMap<K,V> extends AbstractMap<K,V>
                 // 将 Node 替换为 TreeNode
                 TreeNode<K,V> p = replacementTreeNode(e, null);
                 // 尾插法
+                // 保持原来链表的顺序
                 if (tl == null)
                     hd = p;
                 else {
