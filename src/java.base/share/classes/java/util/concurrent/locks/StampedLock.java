@@ -231,7 +231,7 @@ import jdk.internal.vm.annotation.ReservedStackAccess;
  * 可重入吗？
  * 不可重入
  * 低 7 为表示读锁的个数 + overFlow 的值
- * 高 24 位表示持有写锁的 stamp
+ * 高 56 位表示持有写锁的 stamp
  * 第 8 为表示是否持有写锁
  */
 public class StampedLock implements java.io.Serializable {
@@ -400,6 +400,7 @@ public class StampedLock implements java.io.Serializable {
     private static final long RUNIT = 1L;
     /**
      * 写锁的标记值，用于判断当前是否持有写锁
+     * 00000000 00000000 00000000 00000000 00000000 00000000 00000000 10000000
      */
     private static final long WBIT  = 1L << LG_READERS;
     /**
@@ -412,10 +413,12 @@ public class StampedLock implements java.io.Serializable {
     private static final long RFULL = RBITS - 1L;
     /**
      * 用于检测是否持有锁 读锁或者写锁
+     * 00000000 00000000 00000000 00000000 00000000 00000000 00000000 11111111
      */
     private static final long ABITS = RBITS | WBIT;
     /**
      * 读锁掩码的反码
+     * 11111111 11111111 11111111 11111111 11111111 11111111 11111111 10000000
      */
     private static final long SBITS = ~RBITS; // note overlap with ABITS
 
@@ -1605,7 +1608,7 @@ public class StampedLock implements java.io.Serializable {
     }
 
     /**
-     * 获取写锁
+     * 进队列获取写锁
      *
      * See above for explanation.
      *
@@ -1632,6 +1635,7 @@ public class StampedLock implements java.io.Serializable {
             // 检查自旋次数
             else if (spins < 0)
                 //  更新自旋的次数
+                // 当前持有一个写锁且后续没有其他的线程在尝试获取锁，则自旋
                 spins = (m == WBIT && wtail == whead) ? SPINS : 0;
             else if (spins > 0) {
                 --spins;
