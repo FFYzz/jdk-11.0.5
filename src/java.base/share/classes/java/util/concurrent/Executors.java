@@ -48,24 +48,35 @@ import java.util.concurrent.atomic.AtomicInteger;
 import sun.security.util.SecurityConstants;
 
 /**
+ * 类似于 Arrays, Collections, Executors 是线程池的工具类
+ * Executor 的工厂方法工具类。
+ * <p>
  * Factory and utility methods for {@link Executor}, {@link
  * ExecutorService}, {@link ScheduledExecutorService}, {@link
  * ThreadFactory}, and {@link Callable} classes defined in this
  * package. This class supports the following kinds of methods:
+ * <p>提供了以下方法:
  *
  * <ul>
  *   <li>Methods that create and return an {@link ExecutorService}
  *       set up with commonly useful configuration settings.
+ *   <li>创建并返回一个通用配置的 ExecutorService
  *   <li>Methods that create and return a {@link ScheduledExecutorService}
  *       set up with commonly useful configuration settings.
+ *   <li>创建并返回一个通用配置的 ScheduledExecutorService
  *   <li>Methods that create and return a "wrapped" ExecutorService, that
  *       disables reconfiguration by making implementation-specific methods
  *       inaccessible.
+ *   <li>创建并返回一个包装的 ExecutorService，
+ *   通过使特定方法不可访问使得该 ExecutorService 不能够重新配置
  *   <li>Methods that create and return a {@link ThreadFactory}
  *       that sets newly created threads to a known state.
+ *   <li>创建并返回一个 ThreadFactory，该 ThreadFactory
+ *   可以设置新创建的线程为指定的状态
  *   <li>Methods that create and return a {@link Callable}
  *       out of other closure-like forms, so they can be used
  *       in execution methods requiring {@code Callable}.
+ *   <li>创建并返回一个 Callable
  * </ul>
  *
  * @since 1.5
@@ -74,6 +85,11 @@ import sun.security.util.SecurityConstants;
 public class Executors {
 
     /**
+     * 创建一个固定数量线程的线程池。<p>
+     * 在任意时刻，最多只有 nThreads 个线程活跃能够处理任务。<p>
+     * 如果当线程池内的所有 nThreads 个线程都在活跃，有新的任务来时，将会入队。<p>
+     * 使用一个无界的队列 LinkedBlockingQueue，说该队列无界的原因是因为未指定其容量，所以默认为整型的最大值<p>
+     *
      * Creates a thread pool that reuses a fixed number of threads
      * operating off a shared unbounded queue.  At any point, at most
      * {@code nThreads} threads will be active processing tasks.
@@ -95,6 +111,8 @@ public class Executors {
     }
 
     /**
+     * TODO 创建了一个 ForkJoinPool，ForkJoinPool 的源码还没看明白....
+     * <p>
      * Creates a thread pool that maintains enough threads to support
      * the given parallelism level, and may use multiple queues to
      * reduce contention. The parallelism level corresponds to the
@@ -117,6 +135,8 @@ public class Executors {
     }
 
     /**
+     * TODO 创建了一个 ForkJoinPool，ForkJoinPool 的源码还没看明白....
+     * <p>
      * Creates a work-stealing thread pool using the number of
      * {@linkplain Runtime#availableProcessors available processors}
      * as its target parallelism level.
@@ -133,6 +153,9 @@ public class Executors {
     }
 
     /**
+     * 支持指定的 ThreadFactory。
+     * 与 {@link Executors#newFixedThreadPool(int)} 类似
+     *
      * Creates a thread pool that reuses a fixed number of threads
      * operating off a shared unbounded queue, using the provided
      * ThreadFactory to create new threads when needed.  At any point,
@@ -172,13 +195,19 @@ public class Executors {
      * @return the newly created single-threaded Executor
      */
     public static ExecutorService newSingleThreadExecutor() {
+        // 封装进了 FinalizableDelegatedExecutorService
         return new FinalizableDelegatedExecutorService
+                // 只有一个工作线程的线程池
             (new ThreadPoolExecutor(1, 1,
                                     0L, TimeUnit.MILLISECONDS,
+                                    // 使用无界的 LinkedBlockingQueue
                                     new LinkedBlockingQueue<Runnable>()));
     }
 
     /**
+     * 支持指定 ThreadFactory
+     * 与 {@link Executors#newSingleThreadExecutor()} 类似
+     * <p>
      * Creates an Executor that uses a single worker thread operating
      * off an unbounded queue, and uses the provided ThreadFactory to
      * create a new thread when needed. Unlike the otherwise
@@ -191,6 +220,7 @@ public class Executors {
      * @throws NullPointerException if threadFactory is null
      */
     public static ExecutorService newSingleThreadExecutor(ThreadFactory threadFactory) {
+        // 同样也是封装成 FinalizableDelegatedExecutorService
         return new FinalizableDelegatedExecutorService
             (new ThreadPoolExecutor(1, 1,
                                     0L, TimeUnit.MILLISECONDS,
@@ -199,6 +229,11 @@ public class Executors {
     }
 
     /**
+     * 按需创建线程的线程池。该种类型的线程池比较适合于执行 很多短生命周期的异步任务。
+     * CorePoolSize 为 0，当线程池中的 idle 线程超过 60 s 后，会被 terminate。
+     * 阻塞队列使用的是 SynchronousQueue 说明队列中不暂存任务，当任务来了则使用
+     * 还存活的 idle 线程或者创建新的线程来处理。
+     * <p>
      * Creates a thread pool that creates new threads as needed, but
      * will reuse previously constructed threads when they are
      * available.  These pools will typically improve the performance
@@ -221,6 +256,8 @@ public class Executors {
     }
 
     /**
+     * 指定了 ThreadFactory，与 {@link Executors#newCachedThreadPool()} 类似
+     * <p>
      * Creates a thread pool that creates new threads as needed, but
      * will reuse previously constructed threads when they are
      * available, and uses the provided
@@ -238,6 +275,9 @@ public class Executors {
     }
 
     /**
+     * 创建一个只有一个核心线程的线程池。可以在指定延时之后执行任务或者
+     * 周期性的执行任务。
+     * <p>
      * Creates a single-threaded executor that can schedule commands
      * to run after a given delay, or to execute periodically.
      * (Note however that if this single
@@ -252,11 +292,20 @@ public class Executors {
      * @return the newly created scheduled executor
      */
     public static ScheduledExecutorService newSingleThreadScheduledExecutor() {
+        // 封装成 DelegatedScheduledExecutorService
         return new DelegatedScheduledExecutorService
+                // 使用 DelayedWorkQueue
+                // corePoolSize = 1
+                // maxPoolSize = Integer.MAX_VALUE
+                // keepAliveTime = DEFAULT_KEEPALIVE_MILLIS
+                // TimeUnit = MILLISECONDS
             (new ScheduledThreadPoolExecutor(1));
     }
 
     /**
+     * 支持指定 ThreadFactory，
+     * 与 {@link Executors#newSingleThreadScheduledExecutor()} 类似
+     * <p>
      * Creates a single-threaded executor that can schedule commands
      * to run after a given delay, or to execute periodically.  (Note
      * however that if this single thread terminates due to a failure
@@ -278,6 +327,9 @@ public class Executors {
     }
 
     /**
+     * 支持指定 corePoolSize，
+     * 与 {@link Executors#newSingleThreadScheduledExecutor()} 类似
+     * <p>
      * Creates a thread pool that can schedule commands to run after a
      * given delay, or to execute periodically.
      * @param corePoolSize the number of threads to keep in the pool,
@@ -290,6 +342,9 @@ public class Executors {
     }
 
     /**
+     * 支持指定 corePoolSize 与 ThreadFactory，
+     * 与 {@link Executors#newScheduledThreadPool(int)} 类似
+     * <p>
      * Creates a thread pool that can schedule commands to run after a
      * given delay, or to execute periodically.
      * @param corePoolSize the number of threads to keep in the pool,
@@ -306,6 +361,8 @@ public class Executors {
     }
 
     /**
+     * 返回一个不可配置的 ExecutorService。封装成 DelegatedExecutorService
+     * <p>
      * Returns an object that delegates all defined {@link
      * ExecutorService} methods to the given executor, but not any
      * other methods that might otherwise be accessible using
@@ -322,6 +379,8 @@ public class Executors {
     }
 
     /**
+     * 返回一个不可配置的 ScheduledExecutorService。封装成 DelegatedScheduledExecutorService
+     * <p>
      * Returns an object that delegates all defined {@link
      * ScheduledExecutorService} methods to the given executor, but
      * not any other methods that might otherwise be accessible using
@@ -338,6 +397,11 @@ public class Executors {
     }
 
     /**
+     * 返回一个默认的线程创建工厂方法，该线程创建方法默认创建一个新的线程。
+     * 创建的所有线程都在同一个 ThreadGroup 中。
+     * 创建的线程都不是 daemon 线程并且线程的优先级均为 Thread.NORM_PRIORITY。
+     * 线程命名为 pool-N-thread-M。
+     * <p>
      * Returns a default thread factory used to create new threads.
      * This factory creates all new threads used by an Executor in the
      * same {@link ThreadGroup}. If there is a {@link
@@ -358,6 +422,10 @@ public class Executors {
     }
 
     /**
+     * 创建一个与当前线程由相同权限的线程。继承自 DefaultThreadFactory，因此
+     * 线程的属性设置与 DefaultThreadFactory 相同。
+     * TODO: 既然封装成了 Callable，那么为什么还需要传入一个 T ?
+     * <p>
      * Returns a thread factory used to create new threads that
      * have the same permissions as the current thread.
      * This factory creates threads with the same settings as {@link
@@ -395,6 +463,8 @@ public class Executors {
     }
 
     /**
+     * 将 Runnable 封装成 Callable
+     * <p>
      * Returns a {@link Callable} object that, when
      * called, runs the given task and returns the given result.  This
      * can be useful when applying methods requiring a
@@ -412,6 +482,8 @@ public class Executors {
     }
 
     /**
+     * 将 Runnable 封装成 Callable
+     * <p>
      * Returns a {@link Callable} object that, when
      * called, runs the given task and returns {@code null}.
      * @param task the task to run
@@ -502,17 +574,29 @@ public class Executors {
     // Non-public classes supporting the public methods
 
     /**
+     * Runnable 的适配器，将 Runnable 封装成 Callable
      * A callable that runs given task and returns given result.
      */
     private static final class RunnableAdapter<T> implements Callable<T> {
+        /**
+         * 传入的 Runnable
+         */
         private final Runnable task;
+        /**
+         * 线程执行的结果
+         */
         private final T result;
         RunnableAdapter(Runnable task, T result) {
             this.task = task;
             this.result = result;
         }
+
+        /**
+         * 线程执行入口
+         */
         public T call() {
             task.run();
+            // 返回结果
             return result;
         }
         public String toString() {
@@ -524,7 +608,13 @@ public class Executors {
      * A callable that runs under established access control settings.
      */
     private static final class PrivilegedCallable<T> implements Callable<T> {
+        /**
+         * 封装的 Callable
+         */
         final Callable<T> task;
+        /**
+         * 访问控制上下文
+         */
         final AccessControlContext acc;
 
         PrivilegedCallable(Callable<T> task) {
@@ -532,6 +622,9 @@ public class Executors {
             this.acc = AccessController.getContext();
         }
 
+        /**
+         * 调用运行方法
+         */
         public T call() throws Exception {
             try {
                 return AccessController.doPrivileged(
@@ -551,6 +644,8 @@ public class Executors {
     }
 
     /**
+     * 封装了 Callable，使用当前的类加载器
+     *
      * A callable that runs under established access control settings and
      * current ClassLoader.
      */
@@ -574,6 +669,7 @@ public class Executors {
             }
             this.task = task;
             this.acc = AccessController.getContext();
+            // 设置为当前线程的上下文类加载器
             this.ccl = Thread.currentThread().getContextClassLoader();
         }
 
@@ -607,29 +703,55 @@ public class Executors {
     }
 
     /**
-     * The default thread factory.
+     * 默认的线程创建工厂
+     * <p>The default thread factory.
      */
     private static class DefaultThreadFactory implements ThreadFactory {
+        /**
+         * 线程池的计数
+         */
         private static final AtomicInteger poolNumber = new AtomicInteger(1);
+        /**
+         * 线程组
+         * 与 thread 绑定，如果在创建 thread 时没有指定 thread，那么 group 可以为 null
+         */
         private final ThreadGroup group;
+        /**
+         * 线程计数
+         */
         private final AtomicInteger threadNumber = new AtomicInteger(1);
+        /**
+         * 线程名字的前缀
+         */
         private final String namePrefix;
 
+        /**
+         * 构造方法
+         */
         DefaultThreadFactory() {
             SecurityManager s = System.getSecurityManager();
+            //  初始化 group
             group = (s != null) ? s.getThreadGroup() :
                                   Thread.currentThread().getThreadGroup();
+            // 初始化线程池的名字
             namePrefix = "pool-" +
                           poolNumber.getAndIncrement() +
                          "-thread-";
         }
 
+        /**
+         * 返回一个 thread
+         */
         public Thread newThread(Runnable r) {
+            // 直接通过 new Thread 的方法创建一个 thread
             Thread t = new Thread(group, r,
+                                  // 线程名为线程池的名字+线程技计数
                                   namePrefix + threadNumber.getAndIncrement(),
                                   0);
+            // 设置为非 daemon 线程
             if (t.isDaemon())
                 t.setDaemon(false);
+            // 设置线程的优先级为 NORM_PRIORITY
             if (t.getPriority() != Thread.NORM_PRIORITY)
                 t.setPriority(Thread.NORM_PRIORITY);
             return t;
@@ -656,14 +778,20 @@ public class Executors {
                 sm.checkPermission(new RuntimePermission("setContextClassLoader"));
             }
             this.acc = AccessController.getContext();
+            // 获取当前的线程上下文
             this.ccl = Thread.currentThread().getContextClassLoader();
         }
 
+        /**
+         * 返回一个线程
+         */
         public Thread newThread(final Runnable r) {
+            // 调用 DefaultThreadFactory 的 newThread 方法
             return super.newThread(new Runnable() {
                 public void run() {
                     AccessController.doPrivileged(new PrivilegedAction<>() {
                         public Void run() {
+                            // 设置线程的类加载器为 ccl
                             Thread.currentThread().setContextClassLoader(ccl);
                             r.run();
                             return null;
@@ -675,11 +803,19 @@ public class Executors {
     }
 
     /**
+     * delegated 线程池，基本上都是委托给内部持有的 ExecutorService 执行。
+     * 在 finally 块中调用 reachabilityFence 方法。
+     * reachabilityFence 方法: 确保当前 DelegatedExecutorService 是强
+     * 可达的，不会被 GC 回收。
+     * <p>
      * A wrapper class that exposes only the ExecutorService methods
      * of an ExecutorService implementation.
      */
     private static class DelegatedExecutorService
             implements ExecutorService {
+        /**
+         * 封装了一个 ExecutorService
+         */
         private final ExecutorService e;
         DelegatedExecutorService(ExecutorService executor) { e = executor; }
         public void execute(Runnable command) {
@@ -752,6 +888,10 @@ public class Executors {
         }
     }
 
+    /**
+     * 继承自 DelegatedExecutorService ，重写了 finalize 方法，
+     * 在该线程池实例被回收时会触发关闭线程池的操作。
+     */
     private static class FinalizableDelegatedExecutorService
             extends DelegatedExecutorService {
         FinalizableDelegatedExecutorService(ExecutorService executor) {
@@ -764,12 +904,18 @@ public class Executors {
     }
 
     /**
+     * 继承自 DelegatedExecutorService，方法一般都委托给内部的 ScheduledExecutorService
+     * 来执行
+     * <p>
      * A wrapper class that exposes only the ScheduledExecutorService
      * methods of a ScheduledExecutorService implementation.
      */
     private static class DelegatedScheduledExecutorService
             extends DelegatedExecutorService
             implements ScheduledExecutorService {
+        /**
+         * 内部持有一个 ScheduledExecutorService
+         */
         private final ScheduledExecutorService e;
         DelegatedScheduledExecutorService(ScheduledExecutorService executor) {
             super(executor);
@@ -790,5 +936,8 @@ public class Executors {
     }
 
     /** Cannot instantiate. */
+    /**
+     * 私有构造函数，不能通过常规方法实例化
+     */
     private Executors() {}
 }
