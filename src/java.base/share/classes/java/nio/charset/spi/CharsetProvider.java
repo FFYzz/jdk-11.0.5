@@ -30,6 +30,8 @@ import java.util.Iterator;
 
 
 /**
+ * SPI 机制， CharsetProvider，表明使用哪个标准
+ * <p>
  * Charset service-provider class.
  *
  * <p> A charset provider is a concrete subclass of this class that has a
@@ -90,6 +92,8 @@ public abstract class CharsetProvider {
     }
 
     /**
+     * 返回一个 Provider 中支持的 Charset 迭代器
+     * <p>
      * Creates an iterator that iterates over the charsets supported by this
      * provider.  This method is used in the implementation of the {@link
      * java.nio.charset.Charset#availableCharsets Charset.availableCharsets}
@@ -100,6 +104,8 @@ public abstract class CharsetProvider {
     public abstract Iterator<Charset> charsets();
 
     /**
+     * 根据 String 类型的名字获取 Charset
+     * <p>
      * Retrieves a charset for the given charset name.
      *
      * @param  charsetName

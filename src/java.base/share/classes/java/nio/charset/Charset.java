@@ -282,6 +282,8 @@ public abstract class Charset
     /* -- Static methods -- */
 
     /**
+     * 检查给定的 charset 名字是否合法
+     * <p>
      * Checks that the given string is a legal charset name. </p>
      *
      * @param  s
@@ -292,18 +294,25 @@ public abstract class Charset
      */
     private static void checkName(String s) {
         int n = s.length();
+        // 长度为 0 不合法
         if (n == 0) {
             throw new IllegalCharsetNameException(s);
         }
         for (int i = 0; i < n; i++) {
             char c = s.charAt(i);
+            // 检查规则
             if (c >= 'A' && c <= 'Z') continue;
             if (c >= 'a' && c <= 'z') continue;
             if (c >= '0' && c <= '9') continue;
+            // 首字符不能为 -
             if (c == '-' && i != 0) continue;
+            // 首字符不能为 +
             if (c == '+' && i != 0) continue;
+            // 首字符不能为 :
             if (c == ':' && i != 0) continue;
+            // 首字符不能为 _
             if (c == '_' && i != 0) continue;
+            // 首字符不能为 .
             if (c == '.' && i != 0) continue;
             throw new IllegalCharsetNameException(s);
         }
@@ -318,11 +327,15 @@ public abstract class Charset
     // Cache of the most-recently-returned charsets,
     // along with the names that were used to find them
     //
+    // 一级缓存
     private static volatile Object[] cache1; // "Level 1" cache
+    // 二级缓存
     private static volatile Object[] cache2; // "Level 2" cache
 
     private static void cache(String charsetName, Charset cs) {
+        // 把一级缓存保存到二级缓存中
         cache2 = cache1;
+        // 将新的值保存到一级缓存
         cache1 = new Object[] { charsetName, cs };
     }
 
@@ -333,11 +346,15 @@ public abstract class Charset
     private static Iterator<CharsetProvider> providers() {
         return new Iterator<>() {
                 ClassLoader cl = ClassLoader.getSystemClassLoader();
+                // 获取一个 serviceLoader 查找指定目录下配置的所有的 CharsetProvider
                 ServiceLoader<CharsetProvider> sl =
                     ServiceLoader.load(CharsetProvider.class, cl);
                 Iterator<CharsetProvider> i = sl.iterator();
                 CharsetProvider next = null;
 
+                /**
+                 * 返回是否有下一个 CharsetProvider
+                 */
                 private boolean getNext() {
                     while (next == null) {
                         try {
@@ -355,10 +372,16 @@ public abstract class Charset
                     return true;
                 }
 
+                /**
+                 * 返回是否有下一个 CharsetProvider
+                 */
                 public boolean hasNext() {
                     return getNext();
                 }
 
+                /**
+                 * 获取下一个 CharsetProvider
+                 */
                 public CharsetProvider next() {
                     if (!getNext())
                         throw new NoSuchElementException();
@@ -367,6 +390,9 @@ public abstract class Charset
                     return n;
                 }
 
+                /**
+                 * 不支持 remove
+                 */
                 public void remove() {
                     throw new UnsupportedOperationException();
                 }
@@ -400,13 +426,16 @@ public abstract class Charset
             return AccessController.doPrivileged(
                 new PrivilegedAction<>() {
                     public Charset run() {
+                        // 返回所有的 CharsetProvider.class
                         for (Iterator<CharsetProvider> i = providers();
                              i.hasNext();) {
                             CharsetProvider cp = i.next();
+                            // 根据名字，使用当前的 CharsetProvider 获取 Charset
                             Charset cs = cp.charsetForName(charsetName);
                             if (cs != null)
                                 return cs;
                         }
+                        // 如果遍历完了都找不到，返回 null
                         return null;
                     }
                 });
@@ -418,6 +447,7 @@ public abstract class Charset
 
     /* The extended set of charsets */
     private static class ExtendedProviderHolder {
+        // 保存所有的 CharsetProvider 的数组
         static final CharsetProvider[] extendedProviders = extendedProviders();
         // returns ExtendedProvider, if installed
         private static CharsetProvider[] extendedProviders() {
@@ -425,14 +455,19 @@ public abstract class Charset
                     public CharsetProvider[] run() {
                         CharsetProvider[] cps = new CharsetProvider[1];
                         int n = 0;
+                        // 获取配置的所有的 CharsetProvider
                         ServiceLoader<CharsetProvider> sl =
                             ServiceLoader.loadInstalled(CharsetProvider.class);
+                        // 遍历 CharsetProvider
                         for (CharsetProvider cp : sl) {
+                            // 扩容数组
                             if (n + 1 > cps.length) {
+                                // 扩两倍 double
                                 cps = Arrays.copyOf(cps, cps.length << 1);
                             }
                             cps[n++] = cp;
                         }
+                        // 返回存放 CharsetProvider 的数组，数组长度等于 CharsetProvider 的个数
                         return n == cps.length ? cps : Arrays.copyOf(cps, n);
                     }});
         }
@@ -441,49 +476,73 @@ public abstract class Charset
     private static Charset lookupExtendedCharset(String charsetName) {
         if (!VM.isBooted())  // see lookupViaProviders()
             return null;
+        // 获取所有的 CharsetProvider
         CharsetProvider[] ecps = ExtendedProviderHolder.extendedProviders;
         for (CharsetProvider cp : ecps) {
+            // 遍历根据名字查找
             Charset cs = cp.charsetForName(charsetName);
+            // 找到就返回
             if (cs != null)
                 return cs;
         }
         return null;
     }
 
+    /**
+     * 根据 name 查找
+     */
     private static Charset lookup(String charsetName) {
+        // name 不能为空
         if (charsetName == null)
             throw new IllegalArgumentException("Null charset name");
         Object[] a;
+        // 先查询缓存
         if ((a = cache1) != null && charsetName.equals(a[0]))
+            // 在缓存中找到了就返回
             return (Charset)a[1];
         // We expect most programs to use one Charset repeatedly.
         // We convey a hint to this effect to the VM by putting the
         // level 1 cache miss code in a separate method.
+        // 在 cache 1 中找不到则继续找
         return lookup2(charsetName);
     }
 
     private static Charset lookup2(String charsetName) {
         Object[] a;
+        // 在 cache2 中查找
         if ((a = cache2) != null && charsetName.equals(a[0])) {
+            // 把当前的 cache1 存到 cache2
             cache2 = cache1;
+            // 当前查找的存到 cache1
             cache1 = a;
+            // 找到则返回
             return (Charset)a[1];
         }
+        // cache2 中也找不到
         Charset cs;
+        // 现在标准的 CharsetProvider 中找
         if ((cs = standardProvider.charsetForName(charsetName)) != null ||
+                // 再在 extended 中找
             (cs = lookupExtendedCharset(charsetName))           != null ||
+                // 在全局的 ServiceLoader 找
             (cs = lookupViaProviders(charsetName))              != null)
         {
+            // 找打了则进行缓存
             cache(charsetName, cs);
             return cs;
         }
 
         /* Only need to check the name if we didn't find a charset for it */
+        // 检查是否名字有问题，名字有问题的话抛异常
         checkName(charsetName);
+        // 最终返回 null
         return null;
     }
 
     /**
+     * 返回是否支持当前 Charset ，其实就是走一遍查找流程、
+     * <p>
+     *
      * Tells whether the named charset is supported.
      *
      * @param  charsetName
@@ -504,6 +563,8 @@ public abstract class Charset
     }
 
     /**
+     *
+     *
      * Returns a charset object for the named charset.
      *
      * @param  charsetName
@@ -523,15 +584,21 @@ public abstract class Charset
      *          in this instance of the Java virtual machine
      */
     public static Charset forName(String charsetName) {
+        // 也是走一遍查找流程
         Charset cs = lookup(charsetName);
         if (cs != null)
             return cs;
+        // 返回当前 CharsetProvider 不支持该 charsetName 则抛异常
         throw new UnsupportedCharsetException(charsetName);
     }
 
     // Fold charsets from the given iterator into the given map, ignoring
     // charsets whose names already have entries in the map.
     //
+
+    /**
+     * 把 Charset 放入到 Map 中，根据 name
+     */
     private static void put(Iterator<Charset> i, Map<String,Charset> m) {
         while (i.hasNext()) {
             Charset cs = i.next();
@@ -541,6 +608,8 @@ public abstract class Charset
     }
 
     /**
+     * 该 Map 适用于用户自定义的字符集，自己设置 String 类型的 name，指向一个特定的 Charset
+     * <p>
      * Constructs a sorted map from canonical charset names to charset objects.
      *
      * <p> The map returned by this method will have one entry for each charset
@@ -570,26 +639,35 @@ public abstract class Charset
         return AccessController.doPrivileged(
             new PrivilegedAction<>() {
                 public SortedMap<String,Charset> run() {
+                    // 是一个 TreeMap
                     TreeMap<String,Charset> m =
                         new TreeMap<>(
                             String.CASE_INSENSITIVE_ORDER);
                     put(standardProvider.charsets(), m);
+                    // 把 extendedProviders 中的所有的 name-Charset 对放入到 Map 中
                     CharsetProvider[] ecps = ExtendedProviderHolder.extendedProviders;
                     for (CharsetProvider ecp :ecps) {
                         put(ecp.charsets(), m);
                     }
+                    // 把 providers 中的所有的 name-Charset 对放入到 Map 中
                     for (Iterator<CharsetProvider> i = providers(); i.hasNext();) {
                         CharsetProvider cp = i.next();
                         put(cp.charsets(), m);
                     }
+                    // 返回一个不可修改的 Map
                     return Collections.unmodifiableSortedMap(m);
                 }
             });
     }
 
+    /**
+     * 默认的 Charset
+     */
     private static volatile Charset defaultCharset;
 
     /**
+     * 设置默认的 defaultCharset
+     * <p>
      * Returns the default charset of this Java virtual machine.
      *
      * <p> The default charset is determined during virtual-machine startup and
@@ -603,12 +681,15 @@ public abstract class Charset
     public static Charset defaultCharset() {
         if (defaultCharset == null) {
             synchronized (Charset.class) {
+                // 获取系统环境
                 String csn = GetPropertyAction
                         .privilegedGetProperty("file.encoding");
+                // 查询 Charset
                 Charset cs = lookup(csn);
                 if (cs != null)
                     defaultCharset = cs;
                 else
+                    // 如果查不到，默认使用 sun.nio.cs.UTF_8.INSTANCE
                     defaultCharset = sun.nio.cs.UTF_8.INSTANCE;
             }
         }
@@ -618,7 +699,13 @@ public abstract class Charset
 
     /* -- Instance fields and methods -- */
 
+    /**
+     * 保存一个 name
+     */
     private final String name;          // tickles a bug in oldjavac
+    /**
+     * 以及 name 的 alias
+     */
     private final String[] aliases;     // tickles a bug in oldjavac
     private Set<String> aliasSet = null;
 
@@ -653,6 +740,8 @@ public abstract class Charset
     }
 
     /**
+     * 返回当前 Charset 的 name
+     * <p>
      * Returns this charset's canonical name.
      *
      * @return  The canonical name of this charset
@@ -662,6 +751,8 @@ public abstract class Charset
     }
 
     /**
+     * 返回当前 Charset 的 alias 集合
+     * <p>
      * Returns a set containing this charset's aliases.
      *
      * @return  An immutable set of this charset's aliases
@@ -691,6 +782,8 @@ public abstract class Charset
     }
 
     /**
+     * 检查Charset 是否为 IANA Charset Registry 中注册的 Charset
+     * <p>
      * Tells whether or not this charset is registered in the <a
      * href="http://www.iana.org/assignments/character-sets">IANA Charset
      * Registry</a>.
@@ -703,6 +796,8 @@ public abstract class Charset
     }
 
     /**
+     * 默认返回 name，可通过重写该方法返回基于地区的 name
+     * <p>
      * Returns this charset's human-readable name for the given locale.
      *
      * <p> The default implementation of this method simply returns this
@@ -719,6 +814,8 @@ public abstract class Charset
     }
 
     /**
+     * Charset 是否包含另一个 Charset
+     * <p>
      * Tells whether or not this charset contains the given charset.
      *
      * <p> A charset <i>C</i> is said to <i>contain</i> a charset <i>D</i> if,
@@ -748,6 +845,8 @@ public abstract class Charset
     public abstract boolean contains(Charset cs);
 
     /**
+     * 返回一个 解码器
+     * <p>
      * Constructs a new decoder for this charset.
      *
      * @return  A new decoder for this charset
@@ -755,6 +854,8 @@ public abstract class Charset
     public abstract CharsetDecoder newDecoder();
 
     /**
+     * 返回一个 编码器
+     * <p>
      * Constructs a new encoder for this charset.
      *
      * @return  A new encoder for this charset
@@ -765,6 +866,8 @@ public abstract class Charset
     public abstract CharsetEncoder newEncoder();
 
     /**
+     * 返回当前 Charset 是否支持编解码
+     * <p>
      * Tells whether or not this charset supports encoding.
      *
      * <p> Nearly all charsets support encoding.  The primary exceptions are
