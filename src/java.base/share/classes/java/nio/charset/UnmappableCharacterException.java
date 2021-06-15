@@ -27,6 +27,9 @@ package java.nio.charset;
 
 
 /**
+ * 当输入的 byte/char sequence 是有效的，但是不能够转成 char/byte sequence 时
+ * 抛出的异常。
+ * <p>
  * Checked exception thrown when an input character (or byte) sequence
  * is valid but cannot be mapped to an output byte (or character)
  * sequence.
@@ -40,6 +43,9 @@ public class UnmappableCharacterException
 
     private static final long serialVersionUID = -7026962371537706123L;
 
+    /**
+     * 输入的 byte/char 的长度
+     */
     private int inputLength;
 
     /**

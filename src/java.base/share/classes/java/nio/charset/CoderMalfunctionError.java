@@ -27,6 +27,8 @@ package java.nio.charset;
 
 
 /**
+ * 调用 Charset 编解码时抛出异常的 Error 类
+ * <p>
  * Error thrown when the {@link CharsetDecoder#decodeLoop decodeLoop} method of
  * a {@link CharsetDecoder}, or the {@link CharsetEncoder#encodeLoop
  * encodeLoop} method of a {@link CharsetEncoder}, throws an unexpected

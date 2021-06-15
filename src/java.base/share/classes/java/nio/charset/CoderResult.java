@@ -32,12 +32,16 @@ import java.util.Map;
 
 /**
  * A description of the result state of a coder.
- *
+ * <p>
+ *     描述编码状态的结果
  * <p> A charset coder, that is, either a decoder or an encoder, consumes bytes
  * (or characters) from an input buffer, translates them, and writes the
  * resulting characters (or bytes) to an output buffer.  A coding process
  * terminates for one of four categories of reasons, which are described by
  * instances of this class:
+ * <p>
+ *     charset coder 也被称为编码器或者解码器。其将输入的 characters/byte 转成
+ *     byte/characters 并输出。有以下四种情况会终止编解码过程：
  *
  * <ul>
  *
@@ -45,19 +49,36 @@ import java.util.Map;
  *   processed, or there is insufficient input and additional input is
  *   required.  This condition is represented by the unique result object
  *   {@link #UNDERFLOW}, whose {@link #isUnderflow() isUnderflow} method
- *   returns {@code true}.  </p></li>
+ *   returns {@code true}.  </p>
+ *   <p>
+ *      Underflow: 处理过程中需要更多的输入，但是输入已经没有的情况称为 Underflow。
+ *      使用 UNDERFLOW 对象来表示。该对象的 isUnderflow 方法返回 true。
+ *   </p>
+ *   </li>
  *
  *   <li><p> <i>Overflow</i> is reported when there is insufficient room
  *   remaining in the output buffer.  This condition is represented by the
  *   unique result object {@link #OVERFLOW}, whose {@link #isOverflow()
- *   isOverflow} method returns {@code true}.  </p></li>
+ *   isOverflow} method returns {@code true}.
+ *   <p>
+ *       Overflow: 输出流满了，则会溢出。用 OVERFLOW 对象来表示。该对象的 isOverflow
+ *       方法返回 true。
+ *   </p>
+ *   </p>
+ *   </li>
  *
  *   <li><p> A <i>malformed-input error</i> is reported when a sequence of
  *   input units is not well-formed.  Such errors are described by instances of
  *   this class whose {@link #isMalformed() isMalformed} method returns
  *   {@code true} and whose {@link #length() length} method returns the length
  *   of the malformed sequence.  There is one unique instance of this class for
- *   all malformed-input errors of a given length.  </p></li>
+ *   all malformed-input errors of a given length.
+ *   <p>
+ *       malformed-input error: 当输入数据格式没有按规则组织好的时候会出现这种编解码结果。
+ *       isMalformed 方法返回 true。length 方法会返回当前不正确的数据的长度。
+ *   </p>
+ *   </p>
+ *   </li>
  *
  *   <li><p> An <i>unmappable-character error</i> is reported when a sequence
  *   of input units denotes a character that cannot be represented in the
@@ -66,7 +87,12 @@ import java.util.Map;
  *   whose {@link #length() length} method returns the length of the input
  *   sequence denoting the unmappable character.  There is one unique instance
  *   of this class for all unmappable-character errors of a given length.
- *   </p></li>
+ *   <p>
+ *       unmappable-character error: 一个输入单元无法正确映射到一个输出单元的时候，会报该错误。
+ *   </p>
+ *
+ *   </p>
+ *   </li>
  *
  * </ul>
  *
@@ -74,6 +100,10 @@ import java.util.Map;
  * for result objects that describe malformed-input and unmappable-character
  * errors but {@code false} for those that describe underflow or overflow
  * conditions.  </p>
+ * <p>
+ *    isError 方法在遇到 malformed-input 和 unmappable-character 的时候会返回 true。
+ *    遇到 underflow 和 overflow 的时候返回 false。
+ * </p>
  *
  *
  * @author Mark Reinhold
@@ -82,6 +112,8 @@ import java.util.Map;
  */
 
 public class CoderResult {
+
+    // 代表错误的常量
 
     private static final int CR_UNDERFLOW  = 0;
     private static final int CR_OVERFLOW   = 1;
@@ -92,7 +124,13 @@ public class CoderResult {
     private static final String[] names
         = { "UNDERFLOW", "OVERFLOW", "MALFORMED", "UNMAPPABLE" };
 
+    /**
+     * 当前 CoderResult 的类型
+     */
     private final int type;
+    /**
+     * CR_UNDERFLOW 和 CR_OVERFLOW 的长度为 0
+     */
     private final int length;
 
     private CoderResult(int type, int length) {
@@ -172,6 +210,7 @@ public class CoderResult {
     public int length() {
         if (!isError())
             throw new UnsupportedOperationException();
+        // 只有出现 Error 的时候才有 length
         return length;
     }
 
@@ -194,10 +233,19 @@ public class CoderResult {
         static final Cache INSTANCE = new Cache();
         private Cache() {}
 
+        /**
+         * 表示 unmappable 的coderesult
+         */
         final Map<Integer, CoderResult> unmappable = new ConcurrentHashMap<>();
+        /**
+         * 表示 malformed 的coderesult
+         */
         final Map<Integer, CoderResult> malformed  = new ConcurrentHashMap<>();
     }
 
+    /**
+     * malformed 结果的四种结果
+     */
     private static final CoderResult[] malformed4 = new CoderResult[] {
         new CoderResult(CR_MALFORMED, 1),
         new CoderResult(CR_MALFORMED, 2),
@@ -268,13 +316,17 @@ public class CoderResult {
     public void throwException()
         throws CharacterCodingException
     {
+        // 针对不同的情况抛出不同的异常
+        // BufferUnderflowException 和 BufferOverflowException 继承 RuntimeException
         switch (type) {
-        case CR_UNDERFLOW:   throw new BufferUnderflowException();
-        case CR_OVERFLOW:    throw new BufferOverflowException();
-        case CR_MALFORMED:   throw new MalformedInputException(length);
-        case CR_UNMAPPABLE:  throw new UnmappableCharacterException(length);
-        default:
-            assert false;
+            // BufferUnderflowException 编译后生成
+            case CR_UNDERFLOW:   throw new BufferUnderflowException();
+            // BufferOverflowException 编译后生成
+            case CR_OVERFLOW:    throw new BufferOverflowException();
+            case CR_MALFORMED:   throw new MalformedInputException(length);
+            case CR_UNMAPPABLE:  throw new UnmappableCharacterException(length);
+            default:
+                assert false;
         }
     }
 

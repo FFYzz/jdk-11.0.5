@@ -42,6 +42,9 @@ package java.nio.charset;
 
 public class CodingErrorAction {
 
+    /**
+     * 当前 CodingErrorAction 实例的名字
+     */
     private String name;
 
     private CodingErrorAction(String name) {

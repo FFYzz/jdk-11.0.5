@@ -27,6 +27,9 @@ package java.nio.charset;
 
 
 /**
+ * 当输入的 byte sequence 不合法或者输入的 character sequence 不为合法的 16bit unicode
+ * sequence 的时候会抛出的异常。
+ * <p>
  * Checked exception thrown when an input byte sequence is not legal for given
  * charset, or an input character sequence is not a legal sixteen-bit Unicode
  * sequence.
@@ -40,6 +43,9 @@ public class MalformedInputException
 
     private static final long serialVersionUID = -3438823399834806194L;
 
+    /**
+     * 输入的 byte 或者 char 的长度
+     */
     private int inputLength;
 
     /**
