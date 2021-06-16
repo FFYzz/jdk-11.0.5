@@ -35,6 +35,8 @@ import java.util.function.Consumer;
 
 /**
  * A multiplexor of {@link SelectableChannel} objects.
+ * <p>
+ *     SelectableChannel 对象的多路复用器
  *
  * <p> A selector may be created by invoking the {@link #open open} method of
  * this class, which will use the system's default {@link
@@ -43,45 +45,76 @@ import java.util.function.Consumer;
  * {@link java.nio.channels.spi.SelectorProvider#openSelector openSelector}
  * method of a custom selector provider.  A selector remains open until it is
  * closed via its {@link #close close} method.
+ * <p>
+ *     通过调用 open 方法会返回一个 selector 对象。会使用默认的 java.nio.channels.spi.
+ *     SelectorProvider#openSelector 创建 selector。也可以通过调用 SelectorProvider#openSelector
+ *     创建一个 selector。 调用 selector#close 方法之后，selector 才会关闭。
  *
  * <a id="ks"></a>
  *
  * <p> A selectable channel's registration with a selector is represented by a
  * {@link SelectionKey} object.  A selector maintains three sets of selection
  * keys:
+ * <p>
+ *     Selector 维护了以下三个 set
  *
  * <ul>
  *
  *   <li><p> The <i>key set</i> contains the keys representing the current
  *   channel registrations of this selector.  This set is returned by the
- *   {@link #keys() keys} method. </p></li>
+ *   {@link #keys() keys} method.
+ *   <p>
+ *       key set: 返回当前 selector 上注册的 SelectionKey
+ *   </p>
+ *
+ *   </p></li>
  *
  *   <li><p> The <i>selected-key set</i> is the set of keys such that each
  *   key's channel was detected to be ready for at least one of the operations
  *   identified in the key's interest set during a prior selection operation
  *   that adds keys or updates keys in the set.
  *   This set is returned by the {@link #selectedKeys() selectedKeys} method.
- *   The selected-key set is always a subset of the key set. </p></li>
+ *   The selected-key set is always a subset of the key set.
+ *   <p>
+ *       selected-key set: 是 key set 的子集。这个集合中的 key 关联的 channel 的事件
+ *       已经 ready，可以进行非阻塞操作。
+ *   </p>
+ *   </p></li>
  *
  *   <li><p> The <i>cancelled-key</i> set is the set of keys that have been
  *   cancelled but whose channels have not yet been deregistered.  This set is
  *   not directly accessible.  The cancelled-key set is always a subset of the
- *   key set. </p></li>
+ *   key set.
+ *   <p>
+ *       cancelled-key: key 已经取消，但是还没有反注册。该集合不能直接访问。
+ *   </p>
+ *   </p></li>
  *
  * </ul>
  *
  * <p> All three sets are empty in a newly-created selector.
+ * <p>
+ *     刚创建的 selector 的三个 set 都为 empty
  *
  * <p> A key is added to a selector's key set as a side effect of registering a
  * channel via the channel's {@link SelectableChannel#register(Selector,int)
  * register} method.  Cancelled keys are removed from the key set during
  * selection operations.  The key set itself is not directly modifiable.
  *
+ * <p>
+ *     通过 SelectableChannel#register 注册 channel 的时候会顺带将 key 注册到 key set 中
+ *     cancelled key 在 selection operation 的时候会被删除。
+ *     key set 不被直接修改，而是通过其他操作，附带修改 key set。
+ *
  * <p> A key is added to its selector's cancelled-key set when it is cancelled,
  * whether by closing its channel or by invoking its {@link SelectionKey#cancel
  * cancel} method.  Cancelling a key will cause its channel to be deregistered
  * during the next selection operation, at which time the key will be removed
  * from all of the selector's key sets.
+ * <p>
+ *     调用 SelectionKey#cancel 方法或者关闭 channel 导致 key 被取消的时候，
+ *     key 会被加入到 cancelled-key set 中。被取消的 key 所绑定的 channel 会在进行下一次
+ *     selection operation 的时候 被反注册，key 也会从 key set 中移除。
  *
  * <a id="sks"></a><p> Keys are added to the selected-key set by selection
  * operations.  A key may be removed directly from the selected-key set by
@@ -91,6 +124,11 @@ import java.util.function.Consumer;
  * All keys may be removed from the selected-key set by invoking the set's
  * {@link java.util.Set#clear() clear} method.  Keys may not be added directly
  * to the selected-key set. </p>
+ * <p>
+ *     通过 selection operation，key 会被加入到 selected-key set 中。通过调用 Set#remove
+ *     方法，可以直接将 key 从 selected-key set 中移除。或者通过调用 Iterator#remove 方法
+ *     进行移除。key 不能够直接加入到 selected-key set 中。可以通过 Set#clear 方法清除 selected-key set
+ *     中的所有元素
  *
  * <a id="selop"></a>
  * <h2>Selection</h2>
@@ -99,18 +137,32 @@ import java.util.function.Consumer;
  * update as to the readiness of each registered channel to perform any of the
  * operations identified by its key's interest set.  There are two forms of
  * selection operation:
+ * <p>
+ *     selection operation 会去查询底层操作系统，检查每个注册的 channel 的可读性的更新。
+ *     以决定继续执行 key 所感兴趣的事件。有以下两种 selection operation:
  *
  * <ol>
  *
  *   <li><p> The {@link #select()}, {@link #select(long)}, and {@link #selectNow()}
  *   methods add the keys of channels ready to perform an operation to the
  *   selected-key set, or update the ready-operation set of keys already in the
- *   selected-key set. </p></li>
+ *   selected-key set.
+ *   <p>
+ *       select()/select(long)/selectNow() 方法: 将 key 添加到 selected-key set 中，
+ *       或者更新 selected-key set 中的 key。
+ *   </p>
+ *   </p></li>
  *
  *   <li><p> The {@link #select(Consumer)}, {@link #select(Consumer, long)}, and
  *   {@link #selectNow(Consumer)} methods perform an <i>action</i> on the key
  *   of each channel that is ready to perform an operation.  These methods do
- *   not add to the selected-key set. </p></li>
+ *   not add to the selected-key set.
+ *   <p>
+ *       select(Consumer)/select(Consumer, long)/selectNow(Consumer) 方法: 当
+ *       channel 已经 ready 之后，会去执行一个 action。以上方法不会将 key 添加到
+ *       selected-key set 中。
+ *   </p>
+ *   </p></li>
  *
  * </ol>
  *

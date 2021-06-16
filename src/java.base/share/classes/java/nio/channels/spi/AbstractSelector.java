@@ -36,6 +36,8 @@ import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
  * Base implementation class for selectors.
+ * <p>
+ * Selector 的基准实现
  *
  * <p> This class encapsulates the low-level machinery required to implement
  * the interruption of selection operations.  A concrete selector class must
@@ -44,6 +46,9 @@ import java.util.concurrent.atomic.AtomicBoolean;
  * indefinitely.  In order to ensure that the {@link #end end} method is always
  * invoked, these methods should be used within a
  * {@code try}&nbsp;...&nbsp;{@code finally} block:
+ * <p>
+ *     该类封装了中断 selection 操作的低层 API。使用 selector，需要调用 begin 和 end
+ *     方法。并且为了确保 end 方法总能被调用，需要在 finally 块中调用 end 方法。
  *
  * <blockquote><pre id="be">
  * try {
@@ -59,6 +64,8 @@ import java.util.concurrent.atomic.AtomicBoolean;
  * declares the abstract {@link #register register} method that is invoked by a
  * selectable channel's {@link AbstractSelectableChannel#register register}
  * method in order to perform the actual work of registering a channel.  </p>
+ * <p>
+ *     当前类定义了一些方法。这些方法用于维护 selector 的 cancelled-key set。
  *
  *
  * @author Mark Reinhold
@@ -70,9 +77,15 @@ public abstract class AbstractSelector
     extends Selector
 {
 
+    /**
+     * 标志当前 Selector 是否打开
+     */
     private final AtomicBoolean selectorOpen = new AtomicBoolean(true);
 
     // The provider that created this selector
+    /**
+     * 创建 Selector 的 SelectorProvider
+     */
     private final SelectorProvider provider;
 
     /**
@@ -85,8 +98,15 @@ public abstract class AbstractSelector
         this.provider = provider;
     }
 
+    /**
+     * TODO cancel key 是什么？
+     * 取消的 key 的集合
+     */
     private final Set<SelectionKey> cancelledKeys = new HashSet<SelectionKey>();
 
+    /**
+     * 取消 key 之后保存到 set 中
+     */
     void cancel(SelectionKey k) {                       // package-private
         synchronized (cancelledKeys) {
             cancelledKeys.add(k);
@@ -95,6 +115,8 @@ public abstract class AbstractSelector
 
     /**
      * Closes this selector.
+     * <p>
+     *     关闭 selector
      *
      * <p> If the selector has already been closed then this method returns
      * immediately.  Otherwise it marks the selector as closed and then invokes
@@ -105,9 +127,13 @@ public abstract class AbstractSelector
      *          If an I/O error occurs
      */
     public final void close() throws IOException {
+        // 返回之前的状态，设置为 false
         boolean open = selectorOpen.getAndSet(false);
+        // 如果之前已经 close
         if (!open)
+            // 直接返回
             return;
+        // 走正常 close 逻辑，有子类实现
         implCloseSelector();
     }
 
@@ -154,6 +180,8 @@ public abstract class AbstractSelector
     }
 
     /**
+     *
+     *
      * Registers the given channel with this selector.
      *
      * <p> This method is invoked by a channel's {@link
