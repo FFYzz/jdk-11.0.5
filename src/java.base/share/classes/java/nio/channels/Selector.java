@@ -174,17 +174,31 @@ import java.util.function.Consumer;
  * #select(long)}, and {@link #selectNow()} methods, and involves three steps:
  * </p>
  *
+ * <p>
+ *     在执行 selection operation 的时候，key 可能被加入到 selected-key set 中，也可能被移出
+ *     selected-key set。也可能从 cancelled set 中移除 key。selection 的调用有以下三步:
+ * </p>
+ *
  * <ol>
  *
  *   <li><p> Each key in the cancelled-key set is removed from each key set of
  *   which it is a member, and its channel is deregistered.  This step leaves
- *   the cancelled-key set empty. </p></li>
+ *   the cancelled-key set empty.
+ *   <p>
+ *       在 cancelled-key set 中的 key 将被移除，并且相关的 channel 会被反注册。
+ *       该操作之后 cancelled-key set 中将不存在元素。
+ *   </p>
+ *   </p></li>
  *
  *   <li><p> The underlying operating system is queried for an update as to the
  *   readiness of each remaining channel to perform any of the operations
  *   identified by its key's interest set as of the moment that the selection
  *   operation began.  For a channel that is ready for at least one such
- *   operation, one of the following two actions is performed: </p>
+ *   operation, one of the following two actions is performed:
+ *   <p>
+ *       底层操作系统会去查询是否有已经可以操作的 channel。
+ *   </p>
+ *   </p>
  *
  *   <ol>
  *
@@ -192,7 +206,13 @@ import java.util.function.Consumer;
  *     it is added to that set and its ready-operation set is modified to
  *     identify exactly those operations for which the channel is now reported
  *     to be ready.  Any readiness information previously recorded in the ready
- *     set is discarded.  </p></li>
+ *     set is discarded.
+ *     <p>
+ *         如果 channel 关联的 key 之前不在 selected-key set 中，那么会被加入到 selected-key
+ *         set 中。ready-operation set 中会加入已经被确认为 ready 的 key。并且之前在 ready-operation set
+ *         中的可读的 key 将会被丢弃。
+ *     </p>
+ *     </p></li>
  *
  *     <li><p> Otherwise the channel's key is already in the selected-key set,
  *     so its ready-operation set is modified to identify any new operations
@@ -216,6 +236,11 @@ import java.util.function.Consumer;
  * channels to become ready, and if so for how long, is the only essential
  * difference between the three selection methods. </p>
  *
+ * <p>
+ *     if so for how long: 如果是这样，那又会持续多久
+ *     无论 selection operation 是阻塞在等待一个或者多个 channel 变成 ready，
+ *     等待过程需要多久是三种 selection 方法的唯一重要的区别。
+ * </p>
  *
  * <h3>Selection operations that perform an action on selected keys</h3>
  *
@@ -260,6 +285,9 @@ import java.util.function.Consumer;
  *
  * <p> A Selector and its key set are safe for use by multiple concurrent
  * threads.  Its selected-key set and cancelled-key set, however, are not.
+ * <p>
+ *     Selector 和 key set 是线程安全的，但是 selected-key set 和 cancelled-key set
+ *     不是线程安全的
  *
  * <p> The selection operations synchronize on the selector itself, on the
  * selected-key set, in that order.  They also synchronize on the cancelled-key
@@ -274,22 +302,38 @@ import java.util.function.Consumer;
  * that the key is valid or that its channel is open. Application code should
  * be careful to synchronize and check these conditions as necessary if there
  * is any possibility that another thread will cancel a key or close a channel.
+ * <p>
+ *     key 可能随时会被取消，channel 也可能随时关闭。因此，key 出现在 selector 的任意 key
+ *     set 中并不代表 key 是有效的或者 channal 是开启的。
+ *     多线程环境下要注意这种情况。
  *
  * <p> A thread blocked in a selection operation may be interrupted by some
  * other thread in one of three ways:
+ * <p>
+ *     一个线程阻塞在 selection operation 中可能被以下三种情况中断:
  *
  * <ul>
  *
  *   <li><p> By invoking the selector's {@link #wakeup wakeup} method,
+ *   <p>
+ *       调用了 selector 的 wakeup 方法
+ *   </p>
  *   </p></li>
  *
  *   <li><p> By invoking the selector's {@link #close close} method, or
+ *   <p>
+ *       调用了 selector 的 close 方法
+ *   </p>
  *   </p></li>
  *
  *   <li><p> By invoking the blocked thread's {@link
  *   java.lang.Thread#interrupt() interrupt} method, in which case its
  *   interrupt status will be set and the selector's {@link #wakeup wakeup}
- *   method will be invoked. </p></li>
+ *   method will be invoked.
+ *   <p>
+ *       调用了阻塞线程的 interrupt 方法。当前线程的中断状态会被设置， selector 的 wakeup
+ *       方法会被调用。
+ *   </p></p></li>
  *
  * </ul>
  *
@@ -304,6 +348,10 @@ import java.util.function.Consumer;
  * spliterators return elements reflecting the state of the set at some point at
  * or since the creation of the iterator/spliterator.  They do not throw
  * {@link java.util.ConcurrentModificationException ConcurrentModificationException}.
+ * <p>
+ *     selector 的 key set 是线程安全的。key set 的获取操作一般不被 block，所以获取操作可能与 add
+ *     /cancel 操作出现并发的情况。Iterators 和 spliterators (两者都是迭代器) 会返回一些 state 来表示，
+ *     并不会抛出 ConcurrentModificationException 异常。
  *
  * <a id="sksc"></a>
  * <p> A selector's selected-key set is not, in general, safe for use by
@@ -314,6 +362,10 @@ import java.util.function.Consumer;
  * created, in any way except by invoking the iterator's own {@link
  * java.util.Iterator#remove() remove} method, then a {@link
  * java.util.ConcurrentModificationException} will be thrown. </p>
+ * <p>
+ *     selector 的 selected-key 不是线程安全的。如果一个线程要修改 selected-key set，
+ *     那么需要加上同步器。迭代器支持 fail-fast，会抛出 ConcurrentModificationException 异常。
+ *
  *
  * @author Mark Reinhold
  * @author JSR-51 Expert Group
@@ -326,11 +378,15 @@ import java.util.function.Consumer;
 public abstract class Selector implements Closeable {
 
     /**
+     * 初始化一个 Selector 实例
+     * <p>
      * Initializes a new instance of this class.
      */
     protected Selector() { }
 
     /**
+     * 通过调用 SelectorProvider#openSelector 方法开启一个 Selector
+     * <p>
      * Opens a selector.
      *
      * <p> The new selector is created by invoking the {@link
@@ -348,6 +404,8 @@ public abstract class Selector implements Closeable {
     }
 
     /**
+     * 返回当前 Selector 是否开启
+     * <p>
      * Tells whether or not this selector is open.
      *
      * @return {@code true} if, and only if, this selector is open
@@ -355,6 +413,8 @@ public abstract class Selector implements Closeable {
     public abstract boolean isOpen();
 
     /**
+     * 返回创建该 Selector 的 SelectorProvider
+     * <p>
      * Returns the provider that created this channel.
      *
      * @return  The provider that created this channel
@@ -362,8 +422,13 @@ public abstract class Selector implements Closeable {
     public abstract SelectorProvider provider();
 
     /**
+     * Selector 的 key set
+     * <p>
      * Returns this selector's key set.
      *
+     * <p>
+     *     key set 不被直接修改，从 key set 中移除 key 当且仅当 key 被 cancel 且 channel 被反注册的
+     *     情况下才会发生。任意尝试修改 key set 的操作都会抛出 UnsupportedOperationException 异常
      * <p> The key set is not directly modifiable.  A key is removed only after
      * it has been cancelled and its channel has been deregistered.  Any
      * attempt to modify the key set will cause an {@link
@@ -380,8 +445,13 @@ public abstract class Selector implements Closeable {
     public abstract Set<SelectionKey> keys();
 
     /**
+     * 返回 Selector 的 selected-key set
+     * <p>
      * Returns this selector's selected-key set.
-     *
+     * <p>
+     *     key 可能被直接从 selected-key set 中移除，但是不能够直接加入大
+     *     selected-key set 中。任何尝试直接加入到 selected-key set 的操作
+     *     都会抛出 UnsupportedOperationException 异常。
      * <p> Keys may be removed from, but not directly added to, the
      * selected-key set.  Any attempt to add an object to the key set will
      * cause an {@link UnsupportedOperationException} to be thrown.
@@ -398,13 +468,20 @@ public abstract class Selector implements Closeable {
     /**
      * Selects a set of keys whose corresponding channels are ready for I/O
      * operations.
+     * <p>
+     *     selection operation。select 那些已经 ready 的 channel。
      *
      * <p> This method performs a non-blocking <a href="#selop">selection
      * operation</a>.  If no channels have become selectable since the previous
      * selection operation then this method immediately returns zero.
+     * <p>
+     *     该方法时非阻塞方法，如果没有 channel 是 ready 的，直接返回 0
      *
      * <p> Invoking this method clears the effect of any previous invocations
      * of the {@link #wakeup wakeup} method.  </p>
+     * <p>
+     *     调用该方法可以清理之前调用 wakeup 方法造成的影响。
+     *     比如清理 cancel 的 key。
      *
      * @return  The number of keys, possibly zero, whose ready-operation sets
      *          were updated by the selection operation
@@ -420,15 +497,25 @@ public abstract class Selector implements Closeable {
     /**
      * Selects a set of keys whose corresponding channels are ready for I/O
      * operations.
+     * <p>
+     *     selection operation。select 那些已经 ready 的 channel。
      *
      * <p> This method performs a blocking <a href="#selop">selection
      * operation</a>.  It returns only after at least one channel is selected,
      * this selector's {@link #wakeup wakeup} method is invoked, the current
      * thread is interrupted, or the given timeout period expires, whichever
      * comes first.
+     * <p>
+     *     阻塞的 selection operation 操作。该方法的返回前提是
+     *     1. 至少有一个 channel 已经 ready。
+     *     2. 调用了 Selector 的 wakeup 方法。
+     *     3. 阻塞线程被中断。
+     *     4. 指定时间超时。
      *
      * <p> This method does not offer real-time guarantees: It schedules the
      * timeout as if by invoking the {@link Object#wait(long)} method. </p>
+     * <p>
+     *     该方法不提供实时的保障。
      *
      * @param  timeout  If positive, block for up to {@code timeout}
      *                  milliseconds, more or less, while waiting for a
@@ -457,6 +544,11 @@ public abstract class Selector implements Closeable {
      * operation</a>.  It returns only after at least one channel is selected,
      * this selector's {@link #wakeup wakeup} method is invoked, or the current
      * thread is interrupted, whichever comes first.  </p>
+     * <p>
+     *     block 的 selection operation。有三种情况会在阻塞中被唤醒：
+     *     1. 至少有一个 channal 已经 ready。
+     *     2. 调用了 selector 的 wakeup 方法。
+     *     3. 当前线程被中断。
      *
      * @return  The number of keys, possibly zero,
      *          whose ready-operation sets were updated
@@ -478,6 +570,12 @@ public abstract class Selector implements Closeable {
      * at least one channel is selected, this selector's {@link #wakeup wakeup}
      * method is invoked, the current thread is interrupted, or the given
      * timeout period expires, whichever comes first.
+     * <p>
+     *     blocking selection operation。从阻塞中醒过来有以下几种情况:
+     *     1. 至少有一个 channel 已经 ready。
+     *     2. 调用了 selector 的 wakeup 方法。
+     *     3. 当前线程被中断。
+     *     4. 指定时间超时。
      *
      * <p> The specified <i>action</i>'s {@link Consumer#accept(Object) accept}
      * method is invoked with the key for each channel that is ready to perform
@@ -500,6 +598,9 @@ public abstract class Selector implements Closeable {
      * then it is implementation specific as to whether the <i>action</i> is
      * invoked (it may be invoked with an {@link SelectionKey#isValid() invalid}
      * key).  Exceptions thrown by the action are relayed to the caller.
+     * <p>
+     *     当 channel ready 的时候，会调用 Consumer 的 action。同一个 key 的 accept 方法
+     *     可能会调用多次，
      *
      * <p> This method does not offer real-time guarantees: It schedules the
      * timeout as if by invoking the {@link Object#wait(long)} method.
@@ -588,6 +689,8 @@ public abstract class Selector implements Closeable {
      * default implementation does not detect the action performing a reentrant
      * selection operation.  The selected-key set may or may not be empty on
      * completion of the default implementation.
+     * <p>
+     *     进入 selected-key set 的 key 会执行 accept 方法
      *
      * @param  action   The action to perform
      *
@@ -611,29 +714,39 @@ public abstract class Selector implements Closeable {
     private int doSelect(Consumer<SelectionKey> action, long timeout)
         throws IOException
     {
+        // 加锁锁住
         synchronized (this) {
+            // 获取当前的 selected keys
             Set<SelectionKey> selectedKeys = selectedKeys();
+            // 加锁
             synchronized (selectedKeys) {
+                // 全部清理掉
                 selectedKeys.clear();
                 int numKeySelected;
+                // 没有设置超时等待
                 if (timeout < 0) {
+                    // 直接调用 selectNow，马上返回
                     numKeySelected = selectNow();
                 } else {
+                    // 带超时的 select
                     numKeySelected = select(timeout);
                 }
 
                 // copy selected-key set as action may remove keys
                 Set<SelectionKey> keysToConsume = Set.copyOf(selectedKeys);
+                // 检查是不是有并发修改的情况
                 assert keysToConsume.size() == numKeySelected;
                 selectedKeys.clear();
 
                 // invoke action for each selected key
                 keysToConsume.forEach(k -> {
+                    // 执行 accept 方法
                     action.accept(k);
                     if (!isOpen())
                         throw new ClosedSelectorException();
                 });
 
+                // 返回 ready 的个数
                 return numKeySelected;
             }
         }
@@ -643,6 +756,8 @@ public abstract class Selector implements Closeable {
     /**
      * Causes the first selection operation that has not yet returned to return
      * immediately.
+     * <p>
+     *     唤醒第一个阻塞在 select 上的线程
      *
      * <p> If another thread is currently blocked in a selection operation then
      * that invocation will return immediately.  If no selection operation is
@@ -652,31 +767,51 @@ public abstract class Selector implements Closeable {
      * returned by that invocation may be non-zero.  Subsequent selection
      * operations will block as usual unless this method is invoked again in the
      * meantime.
+     * <p>
+     *     若当前有阻塞的 select 线程，那么直接唤醒第一个阻塞在 select 上的线程。
+     *     如果当前没有阻塞在 select 上的线程，那么下一个调用 select 的线程，即使没有 ready，
+     *     也会立即返回。
      *
      * <p> Invoking this method more than once between two successive selection
      * operations has the same effect as invoking it just once.  </p>
+     * <p>
+     *     没有阻塞在 select 的线程的情况下，多次调用 wakeup相当于只调用了一次 wakeup。
+     *     类似于 LockSupport 的 unpark 方法。
      *
      * @return  This selector
      */
     public abstract Selector wakeup();
 
     /**
+     * 关闭当前的 Selector
+     * <p>
      * Closes this selector.
      *
      * <p> If a thread is currently blocked in one of this selector's selection
      * methods then it is interrupted as if by invoking the selector's {@link
      * #wakeup wakeup} method.
+     * <p>
+     *     如果线程当前阻塞在 selector 的 select 方法上，那么 selector 会被中断。与调用
+     *     wakeup 方法造成的影响是一致的。
      *
      * <p> Any uncancelled keys still associated with this selector are
      * invalidated, their channels are deregistered, and any other resources
      * associated with this selector are released.
+     * <p>
+     *     所有在该 selector 上的，没有被 cancel 的 key 都会失效，key 关联的 channel 也会被
+     *     反注册，所有与之关联的资源也会被释放。
      *
      * <p> If this selector is already closed then invoking this method has no
      * effect.
+     * <p>
+     *     多次调用该方法没有任何效果。
      *
      * <p> After a selector is closed, any further attempt to use it, except by
      * invoking this method or the {@link #wakeup wakeup} method, will cause a
      * {@link ClosedSelectorException} to be thrown. </p>
+     * <p>
+     *     当 selector close 之后，除了调用 wakeup 和 close 方法之外的其他方法都会抛出
+     *     ClosedSelectorException 异常。
      *
      * @throws  IOException
      *          If an I/O error occurs
