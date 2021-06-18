@@ -30,6 +30,8 @@ import java.util.concurrent.atomic.AtomicReferenceFieldUpdater;
 /**
  * A token representing the registration of a {@link SelectableChannel} with a
  * {@link Selector}.
+ * <p>
+ *     SelectionKey 是一个 token，代表 channel 注册在 Selector 上。
  *
  * <p> A selection key is created each time a channel is registered with a
  * selector.  A key remains valid until it is <i>cancelled</i> by invoking its
@@ -39,12 +41,19 @@ import java.util.concurrent.atomic.AtomicReferenceFieldUpdater;
  * href="Selector.html#ks"><i>cancelled-key set</i></a> for removal during the
  * next selection operation.  The validity of a key may be tested by invoking
  * its {@link #isValid isValid} method.
+ * <p>
+ *     当 channel 注册到 selector 上的时候，会创建一个 selectionKey。 selectionKey 一直生效，
+ *     直到 channel 被关闭导致 selectionKey 被 cancel，或者 selector 关闭。当 key 被取消的时候，
+ *     key 并不会马上从 selector 中被移除。在下次执行 selection operation 的时候才会被移除。
+ *     可以通过调用 isValid 方法来检测 key 的有效性。
  *
  * <a id="opsets"></a>
  *
  * <p> A selection key contains two <i>operation sets</i> represented as
  * integer values.  Each bit of an operation set denotes a category of
  * selectable operations that are supported by the key's channel.
+ * <p>
+ *     selection key 包含两个 operation set。operation set 中的值是 integer。
  *
  * <ul>
  *
@@ -52,13 +61,24 @@ import java.util.concurrent.atomic.AtomicReferenceFieldUpdater;
  *   be tested for readiness the next time one of the selector's selection
  *   methods is invoked.  The interest set is initialized with the value given
  *   when the key is created; it may later be changed via the {@link
- *   #interestOps(int)} method. </p></li>
+ *   #interestOps(int)} method.
+ *   <p>
+ *       interest set:当下一个 selector 的任意 select 方法被调用的时候，可以确认哪个操作类别
+ *       将会被同来测试可读性。???? TODO 这里看不大明白
+ *   </p>
+ *   </p></li>
  *
  *   <li><p> The <i>ready set</i> identifies the operation categories for which
  *   the key's channel has been detected to be ready by the key's selector.
  *   The ready set is initialized to zero when the key is created; it may later
  *   be updated by the selector during a selection operation, but it cannot be
- *   updated directly. </p></li>
+ *   updated directly.
+ *   <p>
+ *       ready set: 标识了当前 selector 下的 channel 已经 ready。 当 key 被创建的时候，
+ *       ready set 为 0。 ready set 不能够直接更新，而是得等到 selector 执行 selection
+ *       operation 的时候才会更新。
+ *   </p>
+ *   </p></li>
  *
  * </ul>
  *
@@ -69,6 +89,11 @@ import java.util.concurrent.atomic.AtomicReferenceFieldUpdater;
  * completion of a selection operation.  It is likely to be made inaccurate by
  * external events and by I/O operations that are invoked upon the
  * corresponding channel.
+ * <p>
+ *     selection key 的 ready set 表明关联的 channel 已经可以可以执行某个操作了（但是
+ *     也仅仅是一个 hint，并不能确保一定可以执行了）。也就是说，channel 上的关联操作在执行的
+ *     时候可能不会被阻塞。ready set 只有当 selection operation 真正地执行完之后才是
+ *     准确的。
  *
  * <p> This class defines all known operation-set bits, but precisely which
  * bits are supported by a given channel depends upon the type of the channel.
@@ -77,6 +102,9 @@ import java.util.concurrent.atomic.AtomicReferenceFieldUpdater;
  * identifying just those operations that are supported by the channel.  An
  * attempt to set or test an operation-set bit that is not supported by a key's
  * channel will result in an appropriate run-time exception.
+ * <p>
+ *     该类定义了所有的已知的 operation ，以常量的形式表示。支持哪种操作具体由相关的 channel 决定。
+ *     每个 SelectableChannel 的子类都定义了 validOps 方法，返回当前 channel 支持的 operation。
  *
  * <p> It is often necessary to associate some application-specific data with a
  * selection key, for example an object that represents the state of a
@@ -85,10 +113,19 @@ import java.util.concurrent.atomic.AtomicReferenceFieldUpdater;
  * <i>attachment</i> of a single arbitrary object to a key.  An object can be
  * attached via the {@link #attach attach} method and then later retrieved via
  * the {@link #attachment() attachment} method.
+ * <p>
+ *     关联特定的数据与 selection key 的关系是有必要的。举个例子，一个对象代表了高层协议的
+ *     状态，为了实现该协议，对象还要处理准备就绪的通知。因此， selection key 支持附上一个任意的对象。
+ *     对象可以通过 selectionKey 的 attach 方法与 selectionKey 关联，可以通过 attachment
+ *     方法获取 selectionKey 关联的 object。
  *
  * <p> Selection keys are safe for use by multiple concurrent threads.  A
  * selection operation will always use the interest-set value that was current
  * at the moment that the operation began.  </p>
+ * <p>
+ *     selection key 在多线程环境侠士安全的。selection operation 在访问 interest-set 中的
+ *     值的时候， 能保证 interest-set 中的值是 operation 开始的时候的状态。
+ * </p>
  *
  *
  * @author Mark Reinhold
@@ -110,6 +147,9 @@ public abstract class SelectionKey {
     // -- Channel and selector operations --
 
     /**
+     * 返回创建该 SelectionKey 的 Channel，即使 key 被取消了，
+     * 还是能够返回相关联的 channel。
+     * <p>
      * Returns the channel for which this key was created.  This method will
      * continue to return the channel even after the key is cancelled.
      *
@@ -118,6 +158,8 @@ public abstract class SelectionKey {
     public abstract SelectableChannel channel();
 
     /**
+     * 返回创建该 key 的 selector。key 被取消了，也还是会返回 Selector
+     * <p>
      * Returns the selector for which this key was created.  This method will
      * continue to return the selector even after the key is cancelled.
      *
@@ -126,6 +168,11 @@ public abstract class SelectionKey {
     public abstract Selector selector();
 
     /**
+     * 返回 key 是否有效。有三种情况 key 会失效。
+     * 1. key 被 cancel。
+     * 2. channel 被 close。
+     * 3. selector 被 close。
+     * <p>
      * Tells whether or not this key is valid.
      *
      * <p> A key is valid upon creation and remains so until it is cancelled,
@@ -136,10 +183,16 @@ public abstract class SelectionKey {
     public abstract boolean isValid();
 
     /**
+     * 取消 channel 与 selector 的注册关系。selection key 会被 cancel，并且 key 会被放入到
+     * cancelled-key set 中。在下一个 selection operation 的时候，被 cancelled 的 key 会从
+     *  cancelled-key set 中移除。
+     * <p>
      * Requests that the registration of this key's channel with its selector
      * be cancelled.  Upon return the key will be invalid and will have been
      * added to its selector's cancelled-key set.  The key will be removed from
      * all of the selector's key sets during the next selection operation.
+     *
+     * <p> 多次调用该方法无副作用（无效）</p>
      *
      * <p> If this key has already been cancelled then invoking this method has
      * no effect.  Once cancelled, a key remains forever invalid. </p>
@@ -155,6 +208,8 @@ public abstract class SelectionKey {
     // -- Operation-set accessors --
 
     /**
+     * 获取 key 的 interest set
+     * <p>
      * Retrieves this key's interest set.
      *
      * <p> It is guaranteed that the returned set will only contain operation
@@ -169,11 +224,16 @@ public abstract class SelectionKey {
 
     /**
      * Sets this key's interest set to the given value.
+     * <p>
+     *     设置当前 key 的 interest set 为指定的值
      *
      * <p> This method may be invoked at any time.  If this method is invoked
      * while a selection operation is in progress then it has no effect upon
      * that operation; the change to the key's interest set will be seen by the
      * next selection operation.
+     *
+     * <p>
+     *     key 的 interest set 的变动将会在下一个 selection operation 的时候被看到。
      *
      * @param  ops  The new interest set
      *
@@ -190,6 +250,8 @@ public abstract class SelectionKey {
     public abstract SelectionKey interestOps(int ops);
 
     /**
+     * 加锁操作，interest set 或上指定的 opsration
+     * <p>
      * Atomically sets this key's interest set to the bitwise union ("or") of
      * the existing interest set and the given value. This method is guaranteed
      * to be atomic with respect to other concurrent calls to this method or to
@@ -227,6 +289,8 @@ public abstract class SelectionKey {
     }
 
     /**
+     * 加锁操作，interest set 与上指定的 opsration
+     * <p>
      * Atomically sets this key's interest set to the bitwise intersection ("and")
      * of the existing interest set and the given value. This method is guaranteed
      * to be atomic with respect to other concurrent calls to this method or to
@@ -267,6 +331,8 @@ public abstract class SelectionKey {
     }
 
     /**
+     * 返回当前 key 的 ready-operation set
+     * <p>
      * Retrieves this key's ready-operation set.
      *
      * <p> It is guaranteed that the returned set will only contain operation
@@ -283,6 +349,8 @@ public abstract class SelectionKey {
     // -- Operation bits and bit-testing convenience methods --
 
     /**
+     * 读操作常量
+     * <p>
      * Operation-set bit for read operations.
      *
      * <p> Suppose that a selection key's interest set contains
@@ -296,6 +364,9 @@ public abstract class SelectionKey {
     public static final int OP_READ = 1 << 0;
 
     /**
+     * 写操作常量
+     * <p>
+     *
      * Operation-set bit for write operations.
      *
      * <p> Suppose that a selection key's interest set contains
@@ -308,6 +379,9 @@ public abstract class SelectionKey {
     public static final int OP_WRITE = 1 << 2;
 
     /**
+     * 连接操作常量
+     * <p>
+     *
      * Operation-set bit for socket-connect operations.
      *
      * <p> Suppose that a selection key's interest set contains
@@ -320,6 +394,9 @@ public abstract class SelectionKey {
     public static final int OP_CONNECT = 1 << 3;
 
     /**
+     * accept 操作常量
+     * <p>
+     *
      * Operation-set bit for socket-accept operations.
      *
      * <p> Suppose that a selection key's interest set contains
@@ -332,6 +409,8 @@ public abstract class SelectionKey {
     public static final int OP_ACCEPT = 1 << 4;
 
     /**
+     * 返回当前的 key 绑定的 channel 是否已经可读
+     * <p>
      * Tests whether this key's channel is ready for reading.
      *
      * <p> An invocation of this method of the form {@code k.isReadable()}
@@ -355,6 +434,9 @@ public abstract class SelectionKey {
     }
 
     /**
+     * 返回当前的 key 绑定的 channel 是否已经可写
+     * <p>
+     *
      * Tests whether this key's channel is ready for writing.
      *
      * <p> An invocation of this method of the form {@code k.isWritable()}
@@ -378,6 +460,9 @@ public abstract class SelectionKey {
     }
 
     /**
+     * 返回当前的 key 绑定的 channel 是否已经可连接
+     * <p>
+     *
      * Tests whether this key's channel has either finished, or failed to
      * finish, its socket-connection operation.
      *
@@ -402,6 +487,9 @@ public abstract class SelectionKey {
     }
 
     /**
+     * 返回当前的 key 绑定的 channel 是否已经可 accept
+     * <p>
+     *
      * Tests whether this key's channel is ready to accept a new socket
      * connection.
      *
@@ -436,6 +524,9 @@ public abstract class SelectionKey {
         );
 
     /**
+     * 为当前 SelectionKey 附上一个 Object，同时只能 attach 一个对象。
+     * 通过 attach 一个 null 对象来丢弃目前 attach 的对象。
+     * <p>
      * Attaches the given object to this key.
      *
      * <p> An attached object may later be retrieved via the {@link #attachment()
@@ -450,10 +541,13 @@ public abstract class SelectionKey {
      *          otherwise {@code null}
      */
     public final Object attach(Object ob) {
+        // 原子操作
         return attachmentUpdater.getAndSet(this, ob);
     }
 
     /**
+     * 获取 attach 的对象
+     * <p>
      * Retrieves the current attachment.
      *
      * @return  The object currently attached to this key,
