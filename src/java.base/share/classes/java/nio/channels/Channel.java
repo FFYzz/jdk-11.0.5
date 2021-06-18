@@ -36,6 +36,7 @@ import java.io.Closeable;
  * device, a file, a network socket, or a program component that is capable of
  * performing one or more distinct I/O operations, for example reading or
  * writing.
+ * <p> 一个 channel 代表了一个打开的，与一个实体的连接。实体可能是硬件设备，文件，网络 socket 等等
  *
  * <p> A channel is either open or closed.  A channel is open upon creation,
  * and once closed it remains closed.  Once a channel is closed, any attempt to
@@ -43,9 +44,14 @@ import java.io.Closeable;
  * to be thrown.  Whether or not a channel is open may be tested by invoking
  * its {@link #isOpen isOpen} method.
  *
+ * <p> 一个 channel 要么处理打开状态，要么处于关闭状态。channel 在创建的时候打开，在关闭之后，channel
+ *     并没有马上消失，而是以 关闭 的状态保留。对一个关闭了的 channel 进行任何操作都会抛出
+ *     ClosedChannelException 异常。可以通过调用 isOpen 方法来探测 channel 是否处理打开状态。
+ *
  * <p> Channels are, in general, intended to be safe for multithreaded access
  * as described in the specifications of the interfaces and classes that extend
  * and implement this interface.
+ * <p> 一般来说，channel 是线程安全的。
  *
  *
  * @author Mark Reinhold
@@ -56,6 +62,8 @@ import java.io.Closeable;
 public interface Channel extends Closeable {
 
     /**
+     * 返回当前 channel 是否还开启
+     * <p>
      * Tells whether or not this channel is open.
      *
      * @return {@code true} if, and only if, this channel is open
@@ -63,6 +71,8 @@ public interface Channel extends Closeable {
     public boolean isOpen();
 
     /**
+     * 关闭 channel
+     * <p>
      * Closes this channel.
      *
      * <p> After a channel is closed, any further attempt to invoke I/O
