@@ -35,6 +35,7 @@ import java.nio.channels.spi.SelectorProvider;
 
 /**
  * A selectable channel for stream-oriented connecting sockets.
+ * <p> 基于 stream 的 socket channel
  *
  * <p> A socket channel is created by invoking one of the {@link #open open}
  * methods of this class.  It is not possible to create a channel for an arbitrary,
@@ -45,6 +46,8 @@ import java.nio.channels.spi.SelectorProvider;
  * method; once connected, a socket channel remains connected until it is
  * closed.  Whether or not a socket channel is connected may be determined by
  * invoking its {@link #isConnected isConnected} method.
+ * <p> socket channel 通过调用该类的 open 方法创建。不能够通过已经存在的 socket 创建新的
+ * socket。 新创建的 scoket channel  处于 open 状态，但是没有 connected。
  *
  * <p> Socket channels support <i>non-blocking connection:</i>&nbsp;A socket
  * channel may be created and the process of establishing the link to the

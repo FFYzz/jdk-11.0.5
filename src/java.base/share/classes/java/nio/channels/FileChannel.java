@@ -38,6 +38,7 @@ import java.util.Collections;
 
 /**
  * A channel for reading, writing, mapping, and manipulating a file.
+ * <p> 文件读写、映射以及操作相关的 channel。
  *
  * <p> A file channel is a {@link SeekableByteChannel} that is connected to
  * a file. It has a current <i>position</i> within its file which can
@@ -50,6 +51,7 @@ import java.util.Collections;
  * file may also have some associated <i>metadata</i> such as access
  * permissions, content type, and last-modification time; this class does not
  * define methods for metadata access.
+ * <p>
  *
  * <p> In addition to the familiar read, write, and close operations of byte
  * channels, this class defines the following file-specific operations: </p>

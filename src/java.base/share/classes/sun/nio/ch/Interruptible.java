@@ -24,6 +24,8 @@
  */
 
 /**
+ * 代表中断其他线程的对象
+ *
  * An object that interrupts a thread blocked in an I/O operation.
  */
 
