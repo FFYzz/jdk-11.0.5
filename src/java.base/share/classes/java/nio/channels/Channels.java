@@ -47,10 +47,13 @@ import sun.nio.cs.StreamEncoder;
 
 /**
  * Utility methods for channels and streams.
+ * <p> channel 工具类
  *
  * <p> This class defines static methods that support the interoperation of the
  * stream classes of the {@link java.io} package with the channel classes
- * of this package.  </p>
+ * of this package.
+ * <p> 该类定义了一些静态方法，支持 java.io 中的类与 channel 的交互
+ * </p>
  *
  *
  * @author Mark Reinhold
@@ -64,6 +67,9 @@ public final class Channels {
     private Channels() { throw new Error("no instances"); }
 
     /**
+     * 将 Buffer 中的数据都写入到 channel 中去。如果 channel 是 selectable 的，
+     * 那么 channel 一定会要是 blocking 的。
+     * <p>
      * Write all remaining bytes in buffer to the given channel.
      * If the channel is selectable then it must be configured blocking.
      */
@@ -72,12 +78,15 @@ public final class Channels {
     {
         while (bb.remaining() > 0) {
             int n = ch.write(bb);
+            // 并发写会抛出异常，就是针对上面说的 blocking 模式
             if (n <= 0)
                 throw new RuntimeException("no bytes written");
         }
     }
 
     /**
+     * 将所有 buffer 中的数据写到 channel 中去
+     * <p>
      * Write all remaining bytes in buffer to the given channel.
      *
      * @throws  IllegalBlockingModeException
@@ -86,9 +95,11 @@ public final class Channels {
     private static void writeFully(WritableByteChannel ch, ByteBuffer bb)
         throws IOException
     {
+        // 如果 channel 是 SelectableChannel
         if (ch instanceof SelectableChannel) {
             SelectableChannel sc = (SelectableChannel) ch;
             synchronized (sc.blockingLock()) {
+                // 非 blocking 模式会抛出异常
                 if (!sc.isBlocking())
                     throw new IllegalBlockingModeException();
                 writeFullyImpl(ch, bb);
@@ -102,6 +113,8 @@ public final class Channels {
 
     /**
      * Constructs a stream that reads bytes from the given channel.
+     * <p>
+     * 构造一个 InputStream，将 channel 中的数据都读到 InputStream 中去
      *
      * <p> The {@code read} methods of the resulting stream will throw an
      * {@link IllegalBlockingModeException} if invoked while the underlying
@@ -109,7 +122,9 @@ public final class Channels {
      * it will not support the {@link InputStream#mark mark} or {@link
      * InputStream#reset reset} methods.  The stream will be safe for access by
      * multiple concurrent threads.  Closing the stream will in turn cause the
-     * channel to be closed.  </p>
+     * channel to be closed.
+     * 如果 channel 处于非阻塞模式下，调用
+     * </p>
      *
      * @param  ch
      *         The channel from which bytes will be read
@@ -123,12 +138,15 @@ public final class Channels {
 
     /**
      * Constructs a stream that writes bytes to the given channel.
+     * <p> 构建一个 stream，将 byte 写到 channel 中去
      *
      * <p> The {@code write} methods of the resulting stream will throw an
      * {@link IllegalBlockingModeException} if invoked while the underlying
      * channel is in non-blocking mode.  The stream will not be buffered.  The
      * stream will be safe for access by multiple concurrent threads.  Closing
-     * the stream will in turn cause the channel to be closed.  </p>
+     * the stream will in turn cause the channel to be closed.
+     *
+     * </p>
      *
      * @param  ch
      *         The channel to which bytes will be written
@@ -182,6 +200,8 @@ public final class Channels {
 
     /**
      * Constructs a stream that reads bytes from the given channel.
+     * <p>
+     *     创建一个 stream，将 channel 中的数据读到 stream 中去
      *
      * <p> The stream will not be buffered, and it will not support the {@link
      * InputStream#mark mark} or {@link InputStream#reset reset} methods.  The
@@ -258,6 +278,8 @@ public final class Channels {
 
     /**
      * Constructs a stream that writes bytes to the given channel.
+     * <p>
+     *     创建一个 stream，将 stream 中的数据写到给定的 channel 中去。
      *
      * <p> The stream will not be buffered. The stream will be safe for access
      * by multiple concurrent threads.  Closing the stream will in turn cause
@@ -333,6 +355,9 @@ public final class Channels {
 
     /**
      * Constructs a channel that reads bytes from the given stream.
+     *
+     * <p>
+     *     构造一个 channel，读取 stream 中的数据到 cahnnel 中
      *
      * <p> The resulting channel will not be buffered; it will simply redirect
      * its I/O operations to the given stream.  Closing the channel will in
@@ -411,6 +436,8 @@ public final class Channels {
 
     /**
      * Constructs a channel that writes bytes to the given stream.
+     * <p>
+     *     构造一个 channel，将数据写到 stream 中去
      *
      * <p> The resulting channel will not be buffered; it will simply redirect
      * its I/O operations to the given stream.  Closing the channel will in
@@ -483,6 +510,8 @@ public final class Channels {
     /**
      * Constructs a reader that decodes bytes from the given channel using the
      * given decoder.
+     * <p>
+     *     构造一个 reader，将 channel 中的数据解码后保存到 reader 中去，使用指定的解码器。
      *
      * <p> The resulting stream will contain an internal input buffer of at
      * least {@code minBufferCap} bytes.  The stream's {@code read} methods
@@ -517,6 +546,7 @@ public final class Channels {
     /**
      * Constructs a reader that decodes bytes from the given channel according
      * to the named charset.
+     * <p> 构造一个 reader，根据指定的 charset 对 channel 中的数据进行解码
      *
      * <p> An invocation of this method of the form
      *
