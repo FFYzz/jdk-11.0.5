@@ -32,6 +32,7 @@ import java.io.IOException;
 
 /**
  * A channel to a network socket.
+ * <p> 针对 network socket 的 channel
  *
  * <p> A channel that implements this interface is a channel to a network
  * socket. The {@link #bind(SocketAddress) bind} method is used to bind the
@@ -41,6 +42,9 @@ import java.io.IOException;
  * #getOption(SocketOption) getOption} methods are used to set and query socket
  * options.  An implementation of this interface should specify the socket options
  * that it supports.
+ * <p> 实现了该接口的 channel 是一个 network socket。bind 方法用于将一个 socket 绑定到
+ * 一个本地的 SocketAddress。getLocalAddress 方法返回当前 channel 绑定的地址。setOption 和
+ * getOption 方法用于设置和查询 socket option。
  *
  * <p> The {@link #bind bind} and {@link #setOption setOption} methods that do
  * not otherwise have a value to return are specified to return the network
@@ -56,12 +60,15 @@ public interface NetworkChannel
 {
     /**
      * Binds the channel's socket to a local address.
+     * <p> 绑定当前 channel 关联的 socket 到一个 local address
      *
      * <p> This method is used to establish an association between the socket and
      * a local address. Once an association is established then the socket remains
      * bound until the channel is closed. If the {@code local} parameter has the
      * value {@code null} then the socket will be bound to an address that is
      * assigned automatically.
+     * <p> 该方法建立一个 socket 与 local address 的关系。这个关系一直会有效，直到 channel 被
+     * 关闭。如果参数为 null，那么 socket 绑定到一个随机的地址上。
      *
      * @param   local
      *          The address to bind the socket, or {@code null} to bind the socket
@@ -88,6 +95,7 @@ public interface NetworkChannel
 
     /**
      * Returns the socket address that this channel's socket is bound to.
+     * <p> 获取当前 channel 关联的 socket 绑定的地址
      *
      * <p> Where the channel is {@link #bind bound} to an Internet Protocol
      * socket address then the return value from this method is of type {@link
@@ -105,6 +113,7 @@ public interface NetworkChannel
 
     /**
      * Sets the value of a socket option.
+     * <p> 设置当前 socket 的 option 选项
      *
      * @param   <T>
      *          The type of the socket option value
@@ -131,6 +140,7 @@ public interface NetworkChannel
 
     /**
      * Returns the value of a socket option.
+     * <p> 获取当前 socket 的 option 选项
      *
      * @param   <T>
      *          The type of the socket option value
@@ -153,6 +163,7 @@ public interface NetworkChannel
 
     /**
      * Returns a set of the socket options supported by this channel.
+     * <p> 返回当前 channel 支持的 socket option
      *
      * <p> This method will continue to return the set of options even after the
      * channel has been closed.

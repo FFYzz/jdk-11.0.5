@@ -31,13 +31,16 @@ import java.nio.ByteBuffer;
 
 /**
  * A channel that can write bytes.
+ * <p> 可读取 byte 数据的 channel
  *
  * <p> Only one write operation upon a writable channel may be in progress at
  * any given time.  If one thread initiates a write operation upon a channel
  * then any other thread that attempts to initiate another write operation will
  * block until the first operation is complete.  Whether or not other kinds of
  * I/O operations may proceed concurrently with a write operation depends upon
- * the type of the channel. </p>
+ * the type of the channel.
+ * <p> 一个 writable channel 上同时只有一个 write operation 能够执行。
+ * </p>
  *
  *
  * @author Mark Reinhold
@@ -51,10 +54,13 @@ public interface WritableByteChannel
 
     /**
      * Writes a sequence of bytes to this channel from the given buffer.
+     * <p> 将数据从 buffer 中写到 channel 中去
      *
      * <p> An attempt is made to write up to <i>r</i> bytes to the channel,
      * where <i>r</i> is the number of bytes remaining in the buffer, that is,
      * {@code src.remaining()}, at the moment this method is invoked.
+     * <p> 一次尝试写 r byte 数据到 channel 中，r 是 buffer 中的数据的长度，该值可以通过
+     * remaining 方法获取到
      *
      * <p> Suppose that a byte sequence of length <i>n</i> is written, where
      * {@code 0}&nbsp;{@code <=}&nbsp;<i>n</i>&nbsp;{@code <=}&nbsp;<i>r</i>.
@@ -79,7 +85,7 @@ public interface WritableByteChannel
      * @param  src
      *         The buffer from which bytes are to be retrieved
      *
-     * @return The number of bytes written, possibly zero
+     * @return The number of bytes written, possibly zero 实际写到 channel 中的数据的长度
      *
      * @throws  NonWritableChannelException
      *          If this channel was not opened for writing

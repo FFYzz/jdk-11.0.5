@@ -30,7 +30,10 @@ import java.nio.ByteBuffer;
 
 
 /**
+ * 继承自 ReadableByteChannel
+ * <p>
  * A channel that can read bytes into a sequence of buffers.
+ * <p>
  *
  * <p> A <i>scattering</i> read operation reads, in a single invocation, a
  * sequence of bytes into one or more of a given sequence of buffers.
@@ -38,7 +41,10 @@ import java.nio.ByteBuffer;
  * file formats that, for example, group data into segments consisting of one
  * or more fixed-length headers followed by a variable-length body.  Similar
  * <i>gathering</i> write operations are defined in the {@link
- * GatheringByteChannel} interface.  </p>
+ * GatheringByteChannel} interface.
+ * <p> 单次调用 scattering read 操作能够将 channel 中的数据读到一个或者多个 buffer 里去。
+ * 所有的 buffer 中的数据组合起来构成从 channel 中读出来的所有的数据。
+ * </p>
  *
  *
  * @author Mark Reinhold
@@ -53,10 +59,13 @@ public interface ScatteringByteChannel
     /**
      * Reads a sequence of bytes from this channel into a subsequence of the
      * given buffers.
+     * <p> channel 中的数据读取到给定的 buffer 的子集中去。
      *
      * <p> An invocation of this method attempts to read up to <i>r</i> bytes
      * from this channel, where <i>r</i> is the total number of bytes remaining
      * the specified subsequence of the given buffer array, that is,
+     * <p> 一次调用将尝试读取 r byte 的数据。r 的值为传入的 buffers 的 remain 空间的总和。
+     * 如果 channel 中的数据有限，那么将只读取那一部分数据到部分的 buffers 中。
      *
      * <blockquote><pre>
      * dsts[offset].remaining()
@@ -79,7 +88,10 @@ public interface ScatteringByteChannel
      * <p> This method may be invoked at any time.  If another thread has
      * already initiated a read operation upon this channel, however, then an
      * invocation of this method will block until the first operation is
-     * complete. </p>
+     * complete.
+     * <p> 如果存在一个线程已经在该 channel 上初始化了一个 read operation。那么当前线程再次调用
+     * read operation 会被阻塞。
+     * </p>
      *
      * @param  dsts
      *         The buffers into which bytes are to be transferred
@@ -124,6 +136,8 @@ public interface ScatteringByteChannel
         throws IOException;
 
     /**
+     * 与上面的方法类似，只不过 offset equals 0， length equals dsts.length
+     * <p>
      * Reads a sequence of bytes from this channel into the given buffers.
      *
      * <p> An invocation of this method of the form {@code c.read(dsts)}

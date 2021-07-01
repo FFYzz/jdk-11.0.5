@@ -34,10 +34,13 @@ import java.net.StandardSocketOptions;      // javadoc
 
 /**
  * A network channel that supports Internet Protocol (IP) multicasting.
+ * <p> 一个支持 IP 多播的 network channel
  *
  * <p> IP multicasting is the transmission of IP datagrams to members of
  * a <em>group</em> that is zero or more hosts identified by a single destination
  * address.
+ * <p> IP 多播将 IP 数据包发送到一个多播组中。一个多播组中有多个参与者。多播组是是一个（只需一个）
+ * 目的地址。
  *
  * <p> In the case of a channel to an {@link StandardProtocolFamily#INET IPv4} socket,
  * the underlying operating system optionally supports
@@ -60,6 +63,8 @@ import java.net.StandardSocketOptions;      // javadoc
  * underlying platform supports source filtering then the {@link MembershipKey#block
  * block} and {@link MembershipKey#unblock unblock} methods can be used to block or
  * unblock multicast datagrams from particular source addresses.
+ * <p> join 用于加入一个组，并且可以接受所有发送到改组的多播数据报。一个 channel 可以加入多个多播组，
+ * 也可以加入一个组的不同的 NetworkInterface 中去（这里专业知识太强了）。
  *
  * <p> The {@link #join(InetAddress,NetworkInterface,InetAddress)} method
  * is used to begin receiving datagrams sent to a group whose source address matches
@@ -77,6 +82,7 @@ import java.net.StandardSocketOptions;      // javadoc
  * The multicast implementation is intended to map directly to the native
  * multicasting facility. Consequently, the following items should be considered
  * when developing an application that receives IP multicast datagrams:
+ * <p>开发的时候需要考虑以下几点:
  *
  * <ol>
  *
@@ -87,7 +93,10 @@ import java.net.StandardSocketOptions;      // javadoc
  * multicast group corresponds to another protocol family. For example, it is
  * implementation specific if a channel to an {@link StandardProtocolFamily#INET6 IPv6}
  * socket can join an {@link StandardProtocolFamily#INET IPv4} multicast group and receive
- * multicast datagrams sent to the group. </p></li>
+ * multicast datagrams sent to the group.
+ * <p> channel 的创建需要指定要加入的多播组的 ProtocolFamily 的地址类型。对应不上不保证能受到多播组内
+ * 的数据报。
+ * </p></li>
  *
  * <li><p> The channel's socket should be bound to the {@link
  * InetAddress#isAnyLocalAddress wildcard} address. If the socket is bound to
@@ -97,7 +106,9 @@ import java.net.StandardSocketOptions;      // javadoc
  * <li><p> The {@link StandardSocketOptions#SO_REUSEADDR SO_REUSEADDR} option should be
  * enabled prior to {@link NetworkChannel#bind binding} the socket. This is
  * required to allow multiple members of the group to bind to the same
- * address. </p></li>
+ * address.
+ * <p> 在绑定 socket 之前，需要开启 StandardSocketOptions#SO_REUSEADDR SO_REUSEADDR 选项。
+ * </p></li>
  *
  * </ol>
  *
@@ -125,11 +136,14 @@ public interface MulticastChannel
 {
     /**
      * Closes this channel.
+     * <p> 关闭 channel
      *
      * <p> If the channel is a member of a multicast group then the membership
      * is {@link MembershipKey#drop dropped}. Upon return, the {@link
      * MembershipKey membership-key} will be {@link MembershipKey#isValid
      * invalid}.
+     * <p> 如果 channel 在多播组内，那么会调用 MembershipKey#drop 丢弃该 channel。
+     * MembershipKey#isValid 方法会返回 invalid
      *
      * <p> This method otherwise behaves exactly as specified by the {@link
      * Channel} interface.
@@ -142,16 +156,22 @@ public interface MulticastChannel
     /**
      * Joins a multicast group to begin receiving all datagrams sent to the group,
      * returning a membership key.
+     * <p> 加入一个多播组并开始接受所有的之前发送到该多播组的数据报，返回一个 membership key。
      *
      * <p> If this channel is currently a member of the group on the given
      * interface to receive all datagrams then the membership key, representing
      * that membership, is returned. Otherwise this channel joins the group and
      * the resulting new membership key is returned. The resulting membership key
      * is not {@link MembershipKey#sourceAddress source-specific}.
+     * <p> 如果 channel 当前是给定 NetworkInterface 接口的一个 group 的 member 了，
+     * 那么会直接返回当前的 membership key。否则，会加入该多播组，并返回一个新的 membership
+     * key。
      *
      * <p> A multicast channel may join several multicast groups, including
      * the same group on more than one interface. An implementation may impose a
      * limit on the number of groups that may be joined at the same time.
+     * <p> 一个 multicast channel 可以加入多个 多播组，包括一个组中的不同 NetworkInterface。
+     * 该方法的实现可以限制 multicast channel 加入的多播组的个数。
      *
      * @param   group
      *          The multicast address to join
@@ -185,6 +205,7 @@ public interface MulticastChannel
     /**
      * Joins a multicast group to begin receiving datagrams sent to the group
      * from a given source address.
+     * <p> 加入多播组。
      *
      * <p> If this channel is currently a member of the group on the given
      * interface to receive datagrams from the given source address then the
@@ -192,6 +213,7 @@ public interface MulticastChannel
      * channel joins the group and the resulting new membership key is returned.
      * The resulting membership key is {@link MembershipKey#sourceAddress
      * source-specific}.
+     * <p>
      *
      * <p> Membership is <em>cumulative</em> and this method may be invoked
      * again with the same group and interface to allow receiving datagrams sent

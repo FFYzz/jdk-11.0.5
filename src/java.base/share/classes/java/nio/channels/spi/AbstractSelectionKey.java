@@ -30,8 +30,10 @@ import java.nio.channels.*;
 
 /**
  * Base implementation class for selection keys.
+ * <p> selection keys 的基本实现。
  *
  * <p> This class tracks the validity of the key and implements cancellation.
+ * <p> 该类可以跟踪 selection key 的有效性并且实现了 cancel 的方法
  *
  * @author Mark Reinhold
  * @author JSR-51 Expert Group
@@ -47,21 +49,30 @@ public abstract class AbstractSelectionKey
      */
     protected AbstractSelectionKey() { }
 
+    /**
+     * 表示当前 SelectionKey 是否有效
+     */
     private volatile boolean valid = true;
 
     public final boolean isValid() {
         return valid;
     }
 
+    /**
+     * 使 SelectionKey 失效，直接置为 false
+     */
     void invalidate() {                                 // package-private
         valid = false;
     }
 
     /**
      * Cancels this key.
+     * <p> 取消 SelectionKey
      *
      * <p> If this key has not yet been cancelled then it is added to its
-     * selector's cancelled-key set while synchronized on that set.  </p>
+     * selector's cancelled-key set while synchronized on that set.
+     * 如果当前 key 没有被取消，那么会被加入到 Selector 的 cancelled-key set 中。
+     * </p>
      */
     public final void cancel() {
         // Synchronizing "this" to prevent this key from getting canceled
@@ -70,6 +81,7 @@ public abstract class AbstractSelectionKey
         synchronized (this) {
             if (valid) {
                 valid = false;
+                // 调用 AbstractSelector 的 cancel 方法
                 ((AbstractSelector)selector()).cancel(this);
             }
         }

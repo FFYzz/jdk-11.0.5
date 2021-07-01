@@ -31,13 +31,18 @@ import java.nio.ByteBuffer;
 
 /**
  * A channel that can read bytes.
+ * <p> 支持读 byte 的channel
  *
  * <p> Only one read operation upon a readable channel may be in progress at
  * any given time.  If one thread initiates a read operation upon a channel
  * then any other thread that attempts to initiate another read operation will
  * block until the first operation is complete.  Whether or not other kinds of
  * I/O operations may proceed concurrently with a read operation depends upon
- * the type of the channel. </p>
+ * the type of the channel.
+ * <p> 该接口仅提供了一个 read 方法。如果一个线程初始化了一个 read 操作，那么其他线程想要初始化
+ * 一个 read 操作都会阻塞，直到第一个线程的 read 操作完成，read 操作是否支持并发取决于 channel
+ * 的类型
+ * </p>
  *
  *
  * @author Mark Reinhold
@@ -49,10 +54,13 @@ public interface ReadableByteChannel extends Channel {
 
     /**
      * Reads a sequence of bytes from this channel into the given buffer.
+     * <p> 读取 byte 数据到给定的 buffer
      *
      * <p> An attempt is made to read up to <i>r</i> bytes from the channel,
      * where <i>r</i> is the number of bytes remaining in the buffer, that is,
      * {@code dst.remaining()}, at the moment this method is invoked.
+     * <p> 尝试从 cahnnel 中读取 r byte 的数据，r 是 buffer 中剩余的容量。调用
+     * buffer 的 remaining 方法可以返回 r 的值。
      *
      * <p> Suppose that a byte sequence of length <i>n</i> is read, where
      * {@code 0}&nbsp;{@code <=}&nbsp;<i>n</i>&nbsp;{@code <=}&nbsp;<i>r</i>.
@@ -83,6 +91,7 @@ public interface ReadableByteChannel extends Channel {
      *
      * @return  The number of bytes read, possibly zero, or {@code -1} if the
      *          channel has reached end-of-stream
+     *          返回读取到的数据的字节数
      *
      * @throws  NonReadableChannelException
      *          If this channel was not opened for reading

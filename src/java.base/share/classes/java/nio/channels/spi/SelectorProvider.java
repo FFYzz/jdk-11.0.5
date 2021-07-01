@@ -46,6 +46,10 @@ import sun.security.action.GetPropertyAction;
  * #provider() provider} method.  The first invocation of that method will locate
  * the default provider as specified below.
  *
+ * <p>
+ *     selector provider 是当前类的实现类。实现了该类中的抽象方法。
+ * </p>
+ *
  * <p> The system-wide default provider is used by the static {@code open}
  * methods of the {@link java.nio.channels.DatagramChannel#open
  * DatagramChannel}, {@link java.nio.channels.Pipe#open Pipe}, {@link
@@ -56,6 +60,10 @@ import sun.security.action.GetPropertyAction;
  * method. A program may make use of a provider other than the default provider
  * by instantiating that provider and then directly invoking the {@code open}
  * methods defined in this class.
+ * <p>
+ *  系统范围内默认的 provider 被 DatagramChannel#open, Pipe#pipe, Selector#open
+ *  , ServerSocketChannel#open, SocketChannel#open, System#inheritedChannel 方法调用。
+ *  也可以通过自定义的 Provider，调用其 open 方法老创建相应的对象。
  *
  * <p> All of the methods in this class are safe for use by multiple concurrent
  * threads.  </p>
@@ -69,11 +77,18 @@ import sun.security.action.GetPropertyAction;
 public abstract class SelectorProvider {
 
     private static final Object lock = new Object();
+    /**
+     * 当前 SelectorProvider
+     */
     private static SelectorProvider provider = null;
 
+    /**
+     * 检查 permission
+     */
     private static Void checkPermission() {
         SecurityManager sm = System.getSecurityManager();
         if (sm != null)
+            // 是一个 RuntimePermission，RuntimePermission 的名字是 selectorProvider
             sm.checkPermission(new RuntimePermission("selectorProvider"));
         return null;
     }
@@ -90,11 +105,17 @@ public abstract class SelectorProvider {
         this(checkPermission());
     }
 
+    /**
+     * 根据系统属性加载
+     */
     private static boolean loadProviderFromProperty() {
+        // 根据系统属性加载
+        // 全路径类名
         String cn = System.getProperty("java.nio.channels.spi.SelectorProvider");
         if (cn == null)
             return false;
         try {
+            // 类加载
             @SuppressWarnings("deprecation")
             Object tmp = Class.forName(cn, true,
                                        ClassLoader.getSystemClassLoader()).newInstance();
@@ -111,6 +132,9 @@ public abstract class SelectorProvider {
         }
     }
 
+    /**
+     * 根据 spi 加载
+     */
     private static boolean loadProviderAsService() {
 
         ServiceLoader<SelectorProvider> sl =
@@ -121,6 +145,7 @@ public abstract class SelectorProvider {
             try {
                 if (!i.hasNext())
                     return false;
+                // 找到第一个 provider
                 provider = i.next();
                 return true;
             } catch (ServiceConfigurationError sce) {
@@ -136,9 +161,18 @@ public abstract class SelectorProvider {
     /**
      * Returns the system-wide default selector provider for this invocation of
      * the Java virtual machine.
+     * <p>
+     *     返回全局范围内的 selector provider。
      *
      * <p> The first invocation of this method locates the default provider
      * object as follows: </p>
+     *
+     * <p>
+     *     加载 selector provider 的顺序如下：
+     *     1. 首先尝试加载 system property 指定的全路径类名的 system property
+     *     2. 再次尝试使用 SPI 加载第一个 class
+     *     3. 使用系统默认的 system property
+     * </p>
      *
      * <ol>
      *
@@ -175,10 +209,13 @@ public abstract class SelectorProvider {
             return AccessController.doPrivileged(
                 new PrivilegedAction<>() {
                     public SelectorProvider run() {
+                        // system property 加载
                             if (loadProviderFromProperty())
                                 return provider;
+                            // SPI 加载
                             if (loadProviderAsService())
                                 return provider;
+                            // 系统默认的 selector provider
                             provider = sun.nio.ch.DefaultSelectorProvider.create();
                             return provider;
                         }
@@ -202,6 +239,7 @@ public abstract class SelectorProvider {
      *
      * @param   family
      *          The protocol family
+     *          指定协议族
      *
      * @return  A new datagram channel
      *

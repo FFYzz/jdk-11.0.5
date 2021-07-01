@@ -31,6 +31,7 @@ import java.io.IOException;
 /**
  * A byte channel that maintains a current <i>position</i> and allows the
  * position to be changed.
+ * <p> 维护了一个 position 并且允许改变 position 的 byte channel。
  *
  * <p> A seekable byte channel is connected to an entity, typically a file,
  * that contains a variable-length sequence of bytes that can be read and
@@ -39,6 +40,8 @@ import java.io.IOException;
  * the current <i>size</i> of the entity to which the channel is connected. The
  * size increases when bytes are written beyond its current size; the size
  * decreases when it is {@link #truncate <i>truncated</i>}.
+ * <p> seekable byte channel 会关联到一个 entity，通常是一个 File。当前的 position
+ * 可以通过调用 position 方法获得。
  *
  * <p> The {@link #position(long) position} and {@link #truncate truncate} methods
  * which do not otherwise have a value to return are specified to return the
@@ -55,17 +58,24 @@ public interface SeekableByteChannel
 {
     /**
      * Reads a sequence of bytes from this channel into the given buffer.
+     * <p>
+     *     将当前 channel 的数据读到给定的 buffer 中去
      *
      * <p> Bytes are read starting at this channel's current position, and
      * then the position is updated with the number of bytes actually read.
      * Otherwise this method behaves exactly as specified in the {@link
      * ReadableByteChannel} interface.
+     * <p>
+     *     读的同时会更新 position
+     *
      */
     @Override
     int read(ByteBuffer dst) throws IOException;
 
     /**
      * Writes a sequence of bytes to this channel from the given buffer.
+     * <p>
+     *     将 buffer 中的数据写到 channel 中去
      *
      * <p> Bytes are written starting at this channel's current position, unless
      * the channel is connected to an entity such as a file that is opened with
@@ -81,6 +91,8 @@ public interface SeekableByteChannel
 
     /**
      * Returns this channel's position.
+     * <p>
+     *     返回当前 channel 中数据的位置
      *
      * @return  This channel's position,
      *          a non-negative integer counting the number of bytes
@@ -95,6 +107,8 @@ public interface SeekableByteChannel
 
     /**
      * Sets this channel's position.
+     * <p>
+     *     设置当前 channel 的 position 的位置
      *
      * <p> Setting the position to a value that is greater than the current size
      * is legal but does not change the size of the entity.  A later attempt to
@@ -103,11 +117,16 @@ public interface SeekableByteChannel
      * the entity to grow to accommodate the new bytes; the values of any bytes
      * between the previous end-of-file and the newly-written bytes are
      * unspecified.
+     * <p>
+     *     将 position 的位置设置到大于当前 position 的值是合法的。
      *
      * <p> Setting the channel's position is not recommended when connected to
      * an entity, typically a file, that is opened with the {@link
      * java.nio.file.StandardOpenOption#APPEND APPEND} option. When opened for
      * append, the position is first advanced to the end before writing.
+     * <p>
+     *     当 channel 与一个 entity 关联的时候，并且以 append 的模式打开的时候，
+     *     不建议改变 position 的值。
      *
      * @param  newPosition
      *         The new position, a non-negative integer counting
@@ -126,6 +145,8 @@ public interface SeekableByteChannel
 
     /**
      * Returns the current size of entity to which this channel is connected.
+     * <p>
+     *     返回当前 channel 关联的 entity 的文件的大小
      *
      * @return  The current size, measured in bytes
      *
@@ -139,12 +160,17 @@ public interface SeekableByteChannel
     /**
      * Truncates the entity, to which this channel is connected, to the given
      * size.
+     * <p>
+     *     截断当前的 entity
      *
      * <p> If the given size is less than the current size then the entity is
      * truncated, discarding any bytes beyond the new end. If the given size is
      * greater than or equal to the current size then the entity is not modified.
      * In either case, if the current position is greater than the given size
      * then it is set to that size.
+     * <p>
+     *     如果给定的 size 比当前的 size 小，那么 entity 将会被截断。如果给定的 size 大于等于
+     *     entity 的 size，那么 entity 不会被修改。
      *
      * <p> An implementation of this interface may prohibit truncation when
      * connected to an entity, typically a file, opened with the {@link

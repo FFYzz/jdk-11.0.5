@@ -31,6 +31,9 @@ import java.nio.ByteBuffer;
 
 /**
  * A channel that can write bytes from a sequence of buffers.
+ * <p>
+ *     与 ScatteringByteChannel 正好相反。
+ * <p> 可以从多个 buffer 中写数据到 channel 中。
  *
  * <p> A <i>gathering</i> write operation writes, in a single invocation, a
  * sequence of bytes from one or more of a given sequence of buffers.

@@ -32,6 +32,8 @@ import java.io.IOException;
  * A channel that can read and write bytes.  This interface simply unifies
  * {@link ReadableByteChannel} and {@link WritableByteChannel}; it does not
  * specify any new operations.
+ * <p> 支持读写 byte 的 channel。 该接口只是整合了 ReadableByteChannel 接口和
+ * WritableByteChannel 接口，并没有新增新的其他操作。
  *
  * @author Mark Reinhold
  * @author JSR-51 Expert Group

@@ -180,13 +180,14 @@ public abstract class AbstractSelector
     }
 
     /**
-     *
-     *
      * Registers the given channel with this selector.
+     * <p> 将 channel 注册到 selector 上
      *
      * <p> This method is invoked by a channel's {@link
      * AbstractSelectableChannel#register register} method in order to perform
-     * the actual work of registering the channel with this selector.  </p>
+     * the actual work of registering the channel with this selector.
+     * <p> 该方法一般由 channel 的 register 调用，再调用到该方法。
+     * </p>
      *
      * @param  ch
      *         The channel to be registered
@@ -205,6 +206,7 @@ public abstract class AbstractSelector
 
     /**
      * Removes the given key from its channel's key set.
+     * <p> 反注册，将 selection key 从 channel 中移除
      *
      * <p> This method must be invoked by the selector for each channel that it
      * deregisters.  </p>
