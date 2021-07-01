@@ -31,17 +31,26 @@ import java.nio.channels.spi.*;
 
 /**
  * A pair of channels that implements a unidirectional pipe.
+ * <p>
+ *     实现了单向 pipe 的 channel 对
  *
  * <p> A pipe consists of a pair of channels: A writable {@link
  * Pipe.SinkChannel sink} channel and a readable {@link Pipe.SourceChannel source}
  * channel.  Once some bytes are written to the sink channel they can be read
  * from the source channel in exactly the order in which they were written.
+ * <p>
+ *     一个 pipe 由一对 channel 组成。一个可写的 channel(SinkChannel) 和一个可读的
+ *     channel(SourceChannel)。当有数据写入到 SinkChannel 之后，能够从 SourceChannel
+ *     中按顺序读取出来。
  *
  * <p> Whether or not a thread writing bytes to a pipe will block until another
  * thread reads those bytes, or some previously-written bytes, from the pipe is
  * system-dependent and therefore unspecified.  Many pipe implementations will
  * buffer up to a certain number of bytes between the sink and source channels,
- * but such buffering should not be assumed.  </p>
+ * but such buffering should not be assumed.
+ * <p>
+ *     向 Pipe 中写入数据的线程将会被阻塞，直到这些写入的数据被另一个线程读取。
+ * </p>
  *
  *
  * @author Mark Reinhold
@@ -53,6 +62,8 @@ public abstract class Pipe {
 
     /**
      * A channel representing the readable end of a {@link Pipe}.
+     * <p>
+     *     从 pipe 中读数据的 channel
      *
      * @since 1.4
      */
@@ -73,6 +84,8 @@ public abstract class Pipe {
         /**
          * Returns an operation set identifying this channel's supported
          * operations.
+         * <p>
+         *     仅支持读操作
          *
          * <p> Pipe-source channels only support reading, so this method
          * returns {@link SelectionKey#OP_READ}.  </p>
@@ -87,6 +100,8 @@ public abstract class Pipe {
 
     /**
      * A channel representing the writable end of a {@link Pipe}.
+     * <p>
+     *     向 pipe 中写入数据的 channel
      *
      * @since 1.4
      */
@@ -107,6 +122,8 @@ public abstract class Pipe {
         /**
          * Returns an operation set identifying this channel's supported
          * operations.
+         * <p>
+         *     仅支持写操作
          *
          * <p> Pipe-sink channels only support writing, so this method returns
          * {@link SelectionKey#OP_WRITE}.  </p>
@@ -121,6 +138,8 @@ public abstract class Pipe {
 
     /**
      * Initializes a new instance of this class.
+     * <p>
+     *     构造方法是 protected 的，只能被子类调用
      */
     protected Pipe() { }
 
@@ -140,6 +159,8 @@ public abstract class Pipe {
 
     /**
      * Opens a pipe.
+     * <p>
+     *     开启 pipe，调用了 SelectorProvider 的 openPipe 方法
      *
      * <p> The new pipe is created by invoking the {@link
      * java.nio.channels.spi.SelectorProvider#openPipe openPipe} method of the
