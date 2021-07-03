@@ -37,6 +37,8 @@ import java.util.concurrent.ConcurrentHashMap;
  * The BasicPermission class extends the Permission class, and
  * can be used as the base class for permissions that want to
  * follow the same naming convention as BasicPermission.
+ * <p>
+ *     继承自 Permission 类。
  * <P>
  * The name for a BasicPermission is the name of the given permission
  * (for example, "exit",
@@ -46,6 +48,8 @@ import java.util.concurrent.ConcurrentHashMap;
  * may appear at the end of the name, to signify a wildcard match.
  * For example, "*" and "java.*" signify a wildcard match, while "*java", "a*b",
  * and "java*" do not.
+ * <p>
+ *     BasicPermission 的名字代表了这个 BasicPermission 允许的行为。
  * <P>
  * The action string (inherited from Permission) is unused.
  * Thus, BasicPermission is commonly used as the base class for
@@ -71,30 +75,43 @@ public abstract class BasicPermission extends Permission
 
     private static final long serialVersionUID = 6279438298436773498L;
 
+    /**
+     * permission 名字的最后是否包含通配符
+     */
     // does this permission have a wildcard at the end?
     private transient boolean wildcard;
 
+    /**
+     * 去掉通配符的名字
+     */
     // the name without the wildcard on the end
     private transient String path;
 
+    /**
+     * 是否为 exitVM Permission
+     */
     // is this permission the old-style exitVM permission (pre JDK 1.6)?
     private transient boolean exitVM;
 
     /**
+     * 初始化 BasicPermission 对象，在构造方法/反序列化方法中调用
+     * <p>
      * initialize a BasicPermission object. Common to all constructors.
      */
     private void init(String name) {
+        // 名字不能为 null
         if (name == null)
             throw new NullPointerException("name can't be null");
-
+        // 名字不能为空串
         int len = name.length();
-
         if (len == 0) {
             throw new IllegalArgumentException("name can't be empty");
         }
 
+        // 获取最后一个字符
         char last = name.charAt(len - 1);
 
+        // 判断名字的最后是否为 *，也就是是否该名字为通配形式
         // Is wildcard or ends with ".*"?
         if (last == '*' && (len == 1 || name.charAt(len - 2) == '.')) {
             wildcard = true;
@@ -103,7 +120,9 @@ public abstract class BasicPermission extends Permission
             } else {
                 path = name.substring(0, len - 1);
             }
+            // 不带通配符的名字
         } else {
+            // 如果是低版本 JDK 的 exitVM Permission
             if (name.equals("exitVM")) {
                 wildcard = true;
                 path = "exitVM.";
@@ -115,6 +134,8 @@ public abstract class BasicPermission extends Permission
     }
 
     /**
+     * 创建一个 BasicPermission，指定名字
+     * <p>
      * Creates a new BasicPermission with the specified name.
      * Name is the symbolic name of the permission, such as
      * "setFactory",
@@ -132,6 +153,8 @@ public abstract class BasicPermission extends Permission
 
 
     /**
+     * actions 没有使用
+     * <p>
      * Creates a new BasicPermission object with the specified name.
      * The name is the symbolic name of the BasicPermission, and the
      * actions String is currently unused.
@@ -148,6 +171,11 @@ public abstract class BasicPermission extends Permission
     }
 
     /**
+     * 检查当前 Permission 是否覆盖传入的 Permission。
+     * 返回 true 的前提是：
+     * 1. Class 是相同的。
+     * 2. 当前 Permission 的 name 覆盖传入的 Permission 的 name。
+     * <p>
      * Checks if the specified permission is "implied" by
      * this object.
      * <P>
@@ -166,26 +194,36 @@ public abstract class BasicPermission extends Permission
      */
     @Override
     public boolean implies(Permission p) {
+        // 检查 Class 类型
         if ((p == null) || (p.getClass() != getClass()))
             return false;
 
+        // 转成 BasicPermission
         BasicPermission that = (BasicPermission) p;
 
+        // 当前 Permission 为 wildcard
         if (this.wildcard) {
+            // 传入的 Permission 也为 wildcard
             if (that.wildcard) {
                 // one wildcard can imply another
+                // this path 是否能够覆盖 that
                 return that.path.startsWith(path);
+                // 传入的 Permission 不是 wildcard
             } else {
                 // make sure ap.path is longer so a.b.* doesn't imply a.b
                 return (that.path.length() > this.path.length()) &&
                     that.path.startsWith(this.path);
             }
+            // 当前 Permission 不为 wildcard
         } else {
+            // 传入 Permission 为 wildcard
+            // 肯定不匹配
             if (that.wildcard) {
                 // a non-wildcard can't imply a wildcard
                 return false;
             }
             else {
+                // 检查 path 是否相等
                 return this.path.equals(that.path);
             }
         }
@@ -228,6 +266,8 @@ public abstract class BasicPermission extends Permission
     }
 
     /**
+     * BasicPermission 不存在 actions，所以返回空串
+     * <p>
      * Returns the canonical string representation of the actions,
      * which currently is the empty string "", since there are no actions for
      * a BasicPermission.
@@ -257,6 +297,9 @@ public abstract class BasicPermission extends Permission
     }
 
     /**
+     * 反序列化
+     * <p>
+     *
      * readObject is called to restore the state of the BasicPermission from
      * a stream.
      */

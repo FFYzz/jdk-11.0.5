@@ -26,6 +26,8 @@
 package java.security;
 
 /**
+ * 顶层接口，用于声明保护对象是否能够被访问。
+ * <p>
  * <p> This interface represents a guard, which is an object that is used
  * to protect access to another object.
  *
@@ -44,6 +46,9 @@ package java.security;
 public interface Guard {
 
     /**
+     * 确定能否访问被保护的对象 object。如果能够访问，则什么也不做，如果不能够访问，
+     * 则抛出 SecurityException 异常。
+     * <p>
      * Determines whether or not to allow access to the guarded object
      * {@code object}. Returns silently if access is allowed.
      * Otherwise, throws a SecurityException.

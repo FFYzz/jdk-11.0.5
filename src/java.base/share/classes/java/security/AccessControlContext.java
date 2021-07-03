@@ -36,6 +36,7 @@ import sun.security.util.SecurityConstants;
 /**
  * An AccessControlContext is used to make system resource access decisions
  * based on the context it encapsulates.
+ * <p>根据封装的上下文，AccessControlContext 用于控制对系统的资源的访问。
  *
  * <p>More specifically, it encapsulates a context and
  * has a single method, {@code checkPermission},
@@ -44,12 +45,16 @@ import sun.security.util.SecurityConstants;
  * {@code checkPermission} method makes access decisions based on the
  * context it encapsulates,
  * rather than that of the current execution thread.
+ * <p>更具体的说，AccessControlContext 封装了一个上下文，以及提供了一个 checkPermission 方法
+ * AccessControlContext 根据 AccessControlContext 实例封装的上下文来决定能否对资源进行访问，
+ * 而不是根据当前的调用线程来决定能都对资源访问。
  *
  * <p>Thus, the purpose of AccessControlContext is for those situations where
  * a security check that should be made within a given context
  * actually needs to be done from within a
  * <i>different</i> context (for example, from within a worker thread).
  *
+ * <p> 可以通过调用 AccessController#getContext 方法获取到一个 AccessControlContext
  * <p> An AccessControlContext is created by calling the
  * {@code AccessController.getContext} method.
  * The {@code getContext} method takes a "snapshot"
@@ -77,6 +82,10 @@ import sun.security.util.SecurityConstants;
  * @since 1.2
  */
 
+/**
+ * AccessControlContext 会根据当前的 Context 来决定对资源的访问，
+ * 而不是根据当前的执行线程来决定是否能够对资源进行访问。
+ */
 public final class AccessControlContext {
 
     private ProtectionDomain[] context;

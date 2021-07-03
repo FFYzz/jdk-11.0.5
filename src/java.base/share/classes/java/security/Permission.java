@@ -30,7 +30,9 @@ package java.security;
  * All permissions have a name (whose interpretation depends on the subclass),
  * as well as abstract functions for defining the semantics of the
  * particular Permission subclass.
- *
+ * <p>
+ *     大部分 Permission 对象都包含一系列的 actions，这些 actions 是受到 Permission 控制的。
+ *     RuntimePermission 不包含 actions。
  * <p>Most Permission objects also include an "actions" list that tells the actions
  * that are permitted for the object.  For example,
  * for a {@code java.io.FilePermission} object, the permission name is
@@ -41,14 +43,18 @@ package java.security;
  * {@code java.lang.RuntimePermission},
  * that don't need such a list; you either have the named permission (such
  * as "system.exit") or you don't.
- *
+ * <p>
+ *     每个子类都必须要实现 implies 方法。implies 方法用于比较 Permissions 的等级。
+ *     比如 permission p1 implies permission p2，说明当有 p1 permission 的时候，
+ *     那么自动就有了 p2 permission。
  * <p>An important method that must be implemented by each subclass is
  * the {@code implies} method to compare Permissions. Basically,
  * "permission p1 implies permission p2" means that
  * if one is granted permission p1, one is naturally granted permission p2.
  * Thus, this is not an equality test, but rather more of a
  * subset test.
- *
+ *<p>
+ *     Permission 对象是 immutable 的。
  * <P> Permission objects are similar to String objects in that they
  * are immutable once they have been created. Subclasses should not
  * provide methods that can change the state of a permission
@@ -70,9 +76,11 @@ public abstract class Permission implements Guard, java.io.Serializable {
     private String name;
 
     /**
+     * 创建一个 Permission
+     * <p>
      * Constructs a permission with the specified name.
      *
-     * @param name name of the Permission object being created.
+     * @param name name of the Permission object being created. 当前 Permission 的名字
      *
      */
 
@@ -81,6 +89,9 @@ public abstract class Permission implements Guard, java.io.Serializable {
     }
 
     /**
+     * 调用 SecurityManager#checkPermission 方法。
+     * 参数为要保护的对象，需要检查是否有权限对该对象进行范文以及相关的 action。
+     * <p>
      * Implements the guard interface for a permission. The
      * {@code SecurityManager.checkPermission} method is called,
      * passing this permission object as the permission to check.
@@ -104,6 +115,9 @@ public abstract class Permission implements Guard, java.io.Serializable {
     }
 
     /**
+     * 检查指定的 Permission 的 action 之间的关系。
+     * 子类必须得实现该方法。
+     *<p>
      * Checks if the specified permission's actions are "implied by"
      * this object's actions.
      * <P>
@@ -123,6 +137,8 @@ public abstract class Permission implements Guard, java.io.Serializable {
     public abstract boolean implies(Permission permission);
 
     /**
+     * 返回两个 Permission 是否相等。
+     * <p>
      * Checks two Permission objects for equality.
      * <P>
      * Do not use the {@code equals} method for making access control
@@ -136,6 +152,8 @@ public abstract class Permission implements Guard, java.io.Serializable {
     public abstract boolean equals(Object obj);
 
     /**
+     * 返回当前 Permission 的 hashcode
+     * <p>
      * Returns the hash code value for this Permission object.
      * <P>
      * The required {@code hashCode} behavior for Permission Objects is
@@ -159,6 +177,8 @@ public abstract class Permission implements Guard, java.io.Serializable {
     public abstract int hashCode();
 
     /**
+     * 返回当前 Permission 的名字。
+     * <p>
      * Returns the name of this Permission.
      * For example, in the case of a {@code java.io.FilePermission},
      * the name will be a pathname.
@@ -172,6 +192,8 @@ public abstract class Permission implements Guard, java.io.Serializable {
     }
 
     /**
+     * 返回 Permission 包含的 action
+     *<p>
      * Returns the actions as a String. This is abstract
      * so subclasses can defer creating a String representation until
      * one is needed. Subclasses should always return actions in what they
@@ -194,6 +216,8 @@ public abstract class Permission implements Guard, java.io.Serializable {
     public abstract String getActions();
 
     /**
+     * 返回一个空的 PermissionCollection，子类需要重写，否则返回一个 null。
+     * <p>
      * Returns an empty PermissionCollection for a given Permission object, or null if
      * one is not defined. Subclasses of class Permission should
      * override this if they need to store their permissions in a particular

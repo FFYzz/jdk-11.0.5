@@ -848,7 +848,10 @@ public final class AccessController {
      * is permitted, or throws an AccessControlException otherwise. The
      * getPermission method of the AccessControlException returns the
      * {@code perm} Permission object instance.
-     *
+     * <p>
+     *      基于当前的 AccessControlContext 以及 安全策略 ，确定指定
+     *      permission 的访问请求是否被允许。如果默认允许，该方法啥也不返回。
+     *      如果不允许，该方法抛出 AccessControlException 异常。
      * @param perm the requested permission.
      *
      * @exception AccessControlException if the specified permission
@@ -864,10 +867,12 @@ public final class AccessController {
         //System.err.println("checkPermission "+perm);
         //Thread.currentThread().dumpStack();
 
+        // Permission 不能为 null
         if (perm == null) {
             throw new NullPointerException("permission can't be null");
         }
 
+        // 获取当前的访问控制上下文 native 方法
         AccessControlContext stack = getStackAccessControlContext();
         // if context is null, we had privileged system code on the stack.
         if (stack == null) {

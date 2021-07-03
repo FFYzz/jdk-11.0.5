@@ -55,6 +55,10 @@ import jdk.internal.reflect.CallerSensitive;
 import sun.security.util.SecurityConstants;
 
 /**
+ *    security manager 允许应用实现安全策略。在执行可能的不安全或者敏感的操作之前
+ *    security manager 可以使得应用去确定当前的操作是什么操作以及该操作是否会在
+ *    security context 中执行。应用可以允许或者禁止上述的操作。
+ * <p>
  * The security manager is a class that allows
  * applications to implement a security policy. It allows an
  * application to determine, before performing a possibly unsafe or
@@ -62,6 +66,10 @@ import sun.security.util.SecurityConstants;
  * it is being attempted in a security context that allows the
  * operation to be performed. The
  * application can allow or disallow the operation.
+ * <p>
+ *
+ *     SecurityManager 类中有很多以 check 打头的方法。当潜在的某些敏感操作将被执行的时候，
+ *     这些方法在 Java 标准库中被调用，调用的方式一般如下:
  * <p>
  * The <code>SecurityManager</code> class contains many methods with
  * names that begin with the word <code>check</code>. These methods
@@ -75,16 +83,25 @@ import sun.security.util.SecurityConstants;
  *     }
  * </pre></blockquote>
  * <p>
+ *    security manager 有机会通过抛出异常的方式阻止目标方法的执行。如果后续不允许被继续
+ *    执行，则会抛出 SecurityException。
+ * <p>
  * The security manager is thereby given an opportunity to prevent
  * completion of the operation by throwing an exception. A security
  * manager routine simply returns if the operation is permitted, but
  * throws a <code>SecurityException</code> if the operation is not
  * permitted.
  * <p>
+ *    当前的 security manager 通过 System#setSecurityManager 方法设置。
+ *    当前的 setSecurityManager 通过 System#getSecurityManager 获取。
  * The current security manager is set by the
  * <code>setSecurityManager</code> method in class
  * <code>System</code>. The current security manager is obtained
  * by the <code>getSecurityManager</code> method.
+ * <p>
+ *
+ *    checkPermission 方法是一个特殊的方法。用来判断一个具有指定访问权限的请求时放行还是拒绝。
+ *    默认的实现是调用 AccessController#checkPermission 方法
  * <p>
  * The special method
  * {@link SecurityManager#checkPermission(java.security.Permission)}
@@ -97,15 +114,25 @@ import sun.security.util.SecurityConstants;
  * </pre>
  *
  * <p>
+ *    如果拒绝执行，则抛出 SecurityException 。
+ * <p>
  * If a requested access is allowed,
  * <code>checkPermission</code> returns quietly. If denied, a
  * <code>SecurityException</code> is thrown.
+ * <p>
+ *    每个 checkXXX 方法的默认实现最终都调用到了 checkPermission 方法来判断能否继续执行。
  * <p>
  * The default implementation of each of the other
  * <code>check</code> methods in <code>SecurityManager</code> is to
  * call the <code>SecurityManager checkPermission</code> method
  * to determine if the calling thread has permission to perform the requested
  * operation.
+ * <p>
+ *    带有单个参数的 checkPermission 方法总是在当前执行线程的上下文中进行安全检查。
+ *    有时候，安全检查需要在给定的上下文中进行，并不是当前线程上下文。
+ *    SecurityManager#getSecurityContext 方法和带有两个参数的 checkPermission 方法能用在
+ *    上述场景中。getSecurityContext 方法默认返回当前调用上下文的一个快照。（copy）
+ *    调用方式如下：
  * <p>
  * Note that the <code>checkPermission</code> method with
  * just a single permission argument always performs security checks
@@ -144,6 +171,17 @@ import sun.security.util.SecurityConstants;
  *   if (sm != null) sm.checkPermission(permission, context);
  * </pre>
  *
+ * Permissions 有以下几个具体的权限管理:
+ * FilePermission,
+ * SocketPermission,
+ * NetPermission,
+ * SecurityPermission,
+ * RuntimePermission,
+ * PropertyPermission,
+ * AWTPermission,
+ * ReflectPermission,
+ * SerializablePermission
+ * <p>
  * <p>Permissions fall into these categories: File, Socket, Net,
  * Security, Runtime, Property, AWT, Reflect, and Serializable.
  * The classes managing these various
@@ -156,7 +194,10 @@ import sun.security.util.SecurityConstants;
  * <code>java.awt.AWTPermission</code>,
  * <code>java.lang.reflect.ReflectPermission</code>, and
  * <code>java.io.SerializablePermission</code>.
- *
+ * <p>
+ *    除了 SocketPermission 和 FilePermission，其他都是 BasicPermission 的子类。
+ *    BasicPermission 是顶层类 Permission 的抽象子类。BasicPermission 定义了一些公有
+ *    的能力。
  * <p>All but the first two (FilePermission and SocketPermission) are
  * subclasses of <code>java.security.BasicPermission</code>, which itself
  * is an abstract subclass of the
@@ -169,7 +210,8 @@ import sun.security.util.SecurityConstants;
  * may appear at the end of the name, following a ".", or by itself, to
  * signify a wildcard match. For example: "a.*" or "*" is valid,
  * "*a" or "a*b" is not valid.
- *
+ * <p>
+ *     FilePermission 和 SocketPermission 是顶层抽象类 Permission 的子类。
  * <p>FilePermission and SocketPermission are subclasses of the
  * top-level class for permissions
  * (<code>java.security.Permission</code>). Classes like these
@@ -178,7 +220,9 @@ import sun.security.util.SecurityConstants;
  * BasicPermission. For example,
  * for a <code>java.io.FilePermission</code> object, the permission name is
  * the path name of a file (or directory).
- *
+ * <p>
+ *    一些 permission 类中有定义一些 actions 列表，表示当前对象允许执行的动作。
+ *    比如，FilePermission ，定义了一些读写等动作。
  * <p>Some of the permission classes have an "actions" list that tells
  * the actions that are permitted for the object.  For example,
  * for a <code>java.io.FilePermission</code> object, the actions list
@@ -188,7 +232,8 @@ import sun.security.util.SecurityConstants;
  * <p>Other permission classes are for "named" permissions -
  * ones that contain a name but no actions list; you either have the
  * named permission or you don't.
- *
+ * <p>
+ *     AllPermission 的存在就是为了方便 administrators 操作。
  * <p>Note: There is also a <code>java.security.AllPermission</code>
  * permission that implies all permissions. It exists to simplify the work
  * of system administrators who might need to perform multiple
@@ -253,7 +298,9 @@ public class SecurityManager {
      * @see java.lang.RuntimePermission
      */
     public SecurityManager() {
+        // 检查运行时许可
         synchronized(SecurityManager.class) {
+            // 获取 securityManager
             SecurityManager sm = System.getSecurityManager();
             if (sm != null) {
                 // ask the currently installed security manager if we
@@ -266,6 +313,8 @@ public class SecurityManager {
     }
 
     /**
+     * 返回当前的执行线程栈 protected
+     * <p>
      * Returns the current execution stack as an array of classes.
      * <p>
      * The length of the array is the number of methods on the execution
@@ -278,6 +327,10 @@ public class SecurityManager {
     protected native Class<?>[] getClassContext();
 
     /**
+     * 返回一个 Object，封装了当前的执行上下文环境。
+     * 该方法的返回结果在 checkConnect 的三参数方法中使用以及在 checkRead 的 两参数方法中使用。
+     * 默认返回的是 AccessControlContext 对象
+     * <p>
      * Creates an object that encapsulates the current execution
      * environment. The result of this method is used, for example, by the
      * three-argument <code>checkConnect</code> method and by the
@@ -304,6 +357,8 @@ public class SecurityManager {
     }
 
     /**
+     * 在给定的 permission 下，如果根据安全策略，不被允许执行，则抛出 SecurityException 异常
+     * <p>
      * Throws a <code>SecurityException</code> if the requested
      * access, specified by the given permission, is not permitted based
      * on the security policy currently in effect.
@@ -323,6 +378,11 @@ public class SecurityManager {
     }
 
     /**
+     * context 只能是 AccessControlContext，如果不是，则抛出 SecurityException。
+     * 如果是 AccessControlContext ，则会调用 AccessControlContext#checkPermission
+     * 方法，并根据传入的 Permission 来判断。
+     * 如果 security context 拒绝指定的 permission 进行访问，那么也会抛出 SecurityException
+     * <p>
      * Throws a <code>SecurityException</code> if the
      * specified security context is denied access to the resource
      * specified by the given permission.
