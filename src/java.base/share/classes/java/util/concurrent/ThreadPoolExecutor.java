@@ -1428,6 +1428,8 @@ public class ThreadPoolExecutor extends AbstractExecutorService {
     // Public constructors and methods
 
     /**
+     * 使用给定的初始化参数以及默认的 线程工厂 以及 拒绝执行处理器
+     * <p>
      * Creates a new {@code ThreadPoolExecutor} with the given initial
      * parameters, the default thread factory and the default rejected
      * execution handler.

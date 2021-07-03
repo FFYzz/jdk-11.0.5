@@ -457,13 +457,18 @@ public class FutureTask<V> implements RunnableFuture<V> {
     }
 
     /**
+     * 任务执行完之后会发送通知
+     *
      * Removes and signals all waiting threads, invokes done(), and
      * nulls out callable.
      */
     private void finishCompletion() {
         // assert state > COMPLETING;
         for (WaitNode q; (q = waiters) != null; ) {
+            // 疯狂 cas 尝试获取到 waiter 节点，并将其置为空
+            // 目的是将 等待栈中的所有的等待线程全部唤醒
             if (WAITERS.weakCompareAndSet(this, q, null)) {
+                // 唤醒所有线程
                 for (; ; ) {
                     Thread t = q.thread;
                     if (t != null) {
@@ -480,9 +485,8 @@ public class FutureTask<V> implements RunnableFuture<V> {
                 break;
             }
         }
-
+        // 留了一个 hook
         done();
-
         callable = null;        // to reduce footprint
     }
 
@@ -591,6 +595,7 @@ public class FutureTask<V> implements RunnableFuture<V> {
      */
     private void removeWaiter(WaitNode node) {
         if (node != null) {
+            // 前面通过将 node 的 thread 设为 null，后面在遍历的时候需要检查 thread 是否为 null
             node.thread = null;
             // 清理链表
             retry:

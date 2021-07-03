@@ -50,11 +50,19 @@ import java.util.function.Supplier;
  * supporting dependent functions and actions that trigger upon its
  * completion.
  *
+ * <p>多个线程尝试调用
+ * {@link #complete complete},
+ * {@link #completeExceptionally completeExceptionally}, or
+ * {@link #cancel cancel}
+ * 方法，只会有一个线程调用成功
+ *
  * <p>When two or more threads attempt to
  * {@link #complete complete},
  * {@link #completeExceptionally completeExceptionally}, or
  * {@link #cancel cancel}
  * a CompletableFuture, only one of them succeeds.
+ *
+ * <p>CompletableFuture 实现 CompletionStage 接口的时候遵循以下原则:
  *
  * <p>In addition to these and related methods for directly
  * manipulating status and results, CompletableFuture implements
@@ -65,6 +73,8 @@ import java.util.function.Supplier;
  * completes the current CompletableFuture, or by any other caller of
  * a completion method.
  *
+ * <li>所有的异步方法如果没有指定 Executor 参数，那么全部都使用
+ * {@link ForkJoinPool#commonPool()} 来执行。
  * <li>All <em>async</em> methods without an explicit Executor
  * argument are performed using the {@link ForkJoinPool#commonPool()}
  * (unless it does not support a parallelism level of at least two, in
@@ -140,16 +150,25 @@ import java.util.function.Supplier;
  * and {@code get} methods
  * @since 1.8
  */
+
+/**
+ * 在完成时可以触发其他的方法和操作的 Future
+ */
 public class CompletableFuture<T> implements Future<T>, CompletionStage<T> {
 
     /*
      * Overview:
      *
+     * CompletableFuture 存在相互依赖的任务，这些任务存储在一个 linked
+     * stack 中。
      * A CompletableFuture may have dependent completion actions,
      * collected in a linked stack. It atomically completes by CASing
      * a result field, and then pops off and runs those actions. This
      * applies across normal vs exceptional outcomes, sync vs async
      * actions, binary triggers, and various forms of completions.
+     *
+     * result 的值非 null 表示任务完成。
+     * AltResult 用于封装 null 的结果，以及错误的结果
      *
      * Non-nullness of volatile field "result" indicates done.  It may
      * be set directly if known to be thread-confined, else via CAS.
@@ -164,6 +183,7 @@ public class CompletableFuture<T> implements Future<T>, CompletionStage<T> {
      * are unchecked (see SuppressWarnings annotations), they are
      * placed to be appropriate even if checked.
      *
+     * stack 是一个 Treiber stacks。
      * Dependent actions are represented by Completion objects linked
      * as Treiber stacks headed by field "stack". There are Completion
      * classes for each kind of action, grouped into:
@@ -261,41 +281,77 @@ public class CompletableFuture<T> implements Future<T>, CompletionStage<T> {
      * publication.
      */
 
+    /**
+     * 保存结果
+     */
     volatile Object result;       // Either the result or boxed AltResult
+    /**
+     * 是一个 Treiber stack，保存栈顶的元素
+     */
     volatile Completion stack;    // Top of Treiber stack of dependent actions
 
+    /**
+     * 完成之后将 result 设置为非 null
+     * result 非 null 表示已经完成
+     */
     final boolean internalComplete(Object r) { // CAS from null to r
         return RESULT.compareAndSet(this, null, r);
     }
 
-    /** Returns true if successfully pushed c onto stack. */
+    /**
+     * 元素入栈
+     * <p>
+     * Returns true if successfully pushed c onto stack.
+     */
     final boolean tryPushStack(Completion c) {
+        // 获取栈顶元素
         Completion h = stack;
+        // 将 c 的 next 指向 h
         NEXT.set(c, h);         // CAS piggyback
+        // cas 更新 stack(新的 top)
         return STACK.compareAndSet(this, h, c);
     }
 
-    /** Unconditionally pushes c onto stack, retrying if necessary. */
+    /**
+     * 无条件的将 c push 到 stack 中，一直重试直到成功
+     * <p>
+     * Unconditionally pushes c onto stack, retrying if necessary.
+     */
     final void pushStack(Completion c) {
         do {} while (!tryPushStack(c));
     }
 
     /* ------------- Encoding and decoding outcomes -------------- */
 
+    /**
+     * 封装错误以及 null 的结果
+     */
     static final class AltResult { // See above
         final Throwable ex;        // null only for NIL
         AltResult(Throwable x) { this.ex = x; }
     }
 
-    /** The encoding of the null value. */
+    /**
+     * 封装空值
+     * <p>
+     * The encoding of the null value.
+     */
     static final AltResult NIL = new AltResult(null);
 
-    /** Completes with the null value, unless already completed. */
+    /**
+     * null -> NIL
+     * <p>
+     * Completes with the null value, unless already completed.
+     */
     final boolean completeNull() {
         return RESULT.compareAndSet(this, null, NIL);
     }
 
-    /** Returns the encoding of the given non-exceptional value. */
+    /**
+     * 将空值 null 编码成 NIL
+     * <p>
+     * Returns the encoding of the given non-exceptional value.
+     */
     final Object encodeValue(T t) {
         return (t == null) ? NIL : t;
     }
@@ -306,6 +362,8 @@ public class CompletableFuture<T> implements Future<T>, CompletionStage<T> {
     }
 
     /**
+     * 封装成一个异常的 AltResult
+     * <p>
      * Returns the encoding of the given (non-null) exception as a
      * wrapped CompletionException unless it is one already.
      */
@@ -417,6 +475,8 @@ public class CompletableFuture<T> implements Future<T>, CompletionStage<T> {
     /* ------------- Async task preliminaries -------------- */
 
     /**
+     * 异步 Completion 任务
+     *
      * A marker interface identifying asynchronous tasks produced by
      * {@code async} methods. This may be useful for monitoring,
      * debugging, and tracking asynchronous activities.
@@ -426,22 +486,37 @@ public class CompletableFuture<T> implements Future<T>, CompletionStage<T> {
     public static interface AsynchronousCompletionTask {
     }
 
+    /**
+     * 是否能使用 ForkJoinPool 的 common poll
+     */
     private static final boolean USE_COMMON_POOL =
         (ForkJoinPool.getCommonPoolParallelism() > 1);
 
     /**
+     * 使用的异步线程池
+     * 1. commonpoll
+     * 2. 每个任务一个线程
+     * <p>
+     *
      * Default executor -- ForkJoinPool.commonPool() unless it cannot
      * support parallelism.
      */
     private static final Executor ASYNC_POOL = USE_COMMON_POOL ?
         ForkJoinPool.commonPool() : new ThreadPerTaskExecutor();
 
-    /** Fallback if ForkJoinPool.commonPool() cannot support parallelism */
+    /**
+     * 如果不能使用 ForkJoinPool 的 commonpoll 的兜底方案
+     * 为每个任务创建一个线程
+     * <p>
+     * Fallback if ForkJoinPool.commonPool() cannot support parallelism
+     */
     static final class ThreadPerTaskExecutor implements Executor {
         public void execute(Runnable r) { new Thread(r).start(); }
     }
 
     /**
+     * 检查 Executor 是否为空
+     *
      * Null-checks user executor argument, and translates uses of
      * commonPool to ASYNC_POOL in case parallelism disabled.
      */
@@ -462,6 +537,7 @@ public class CompletableFuture<T> implements Future<T>, CompletionStage<T> {
     @SuppressWarnings("serial")
     abstract static class Completion extends ForkJoinTask<Void>
         implements Runnable, AsynchronousCompletionTask {
+        // treiber stack 的引用指针，指向下一个 Completion
         volatile Completion next;      // Treiber stack link
 
         /**
@@ -1803,6 +1879,8 @@ public class CompletableFuture<T> implements Future<T>, CompletionStage<T> {
     }
 
     /**
+     * 等待获取结果
+     *
      * Returns raw result after waiting, or null if interruptible and
      * interrupted.
      */
@@ -1982,6 +2060,8 @@ public class CompletableFuture<T> implements Future<T>, CompletionStage<T> {
     }
 
     /**
+     * 获取执行的结果
+     *
      * Waits if necessary for this future to complete, and then
      * returns its result.
      *

@@ -104,6 +104,7 @@ public class ForkJoinWorkerThread extends Thread {
         // Use a placeholder until a useful name can be set in registerWorker
         super("aForkJoinWorkerThread");
         this.pool = pool;
+        // 创建 ForkJoinWorkerThread 时需要注册进 pool 中
         this.workQueue = pool.registerWorker(this);
     }
 
@@ -117,6 +118,7 @@ public class ForkJoinWorkerThread extends Thread {
         super.setContextClassLoader(ccl);
         ThreadLocalRandom.setInheritedAccessControlContext(this, INNOCUOUS_ACC);
         this.pool = pool;
+        // 创建 ForkJoinWorkerThread 需要注册进 pool 中
         this.workQueue = pool.registerWorker(this);
     }
 
@@ -132,6 +134,7 @@ public class ForkJoinWorkerThread extends Thread {
         ThreadLocalRandom.setInheritedAccessControlContext(this, acc);
         ThreadLocalRandom.eraseThreadLocals(this); // clear before registering
         this.pool = pool;
+        // 注册到 pool 中
         this.workQueue = pool.registerWorker(this);
     }
 

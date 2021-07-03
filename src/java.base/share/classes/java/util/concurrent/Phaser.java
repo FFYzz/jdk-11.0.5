@@ -41,10 +41,15 @@ import java.util.concurrent.atomic.AtomicReference;
 import java.util.concurrent.locks.LockSupport;
 
 /**
+ * 一个可重用的同步 barrier，功能上与 CyclicBarrier 和 CountDownLatch
+ * 类似。但是使用上更加的灵活。
+ * <p>
  * A reusable synchronization barrier, similar in functionality to
  * {@link CyclicBarrier} and {@link CountDownLatch} but supporting
  * more flexible usage.
- *
+ * <p>
+ * 注册: Phaser 上参与方的数量可随着时间而发生变动。任务可以在任意时间注册。到达
+ * Barrier 之后可以进行取消注册。
  * <p><b>Registration.</b> Unlike the case for other barriers, the
  * number of parties <em>registered</em> to synchronize on a phaser
  * may vary over time.  Tasks may be registered at any time (using
@@ -262,6 +267,8 @@ public class Phaser {
      */
 
     /**
+     * 用于表示当前 phaser 的状态
+     *
      * Primary state representation, holding four bit-fields:
      *
      * unarrived  -- the number of parties yet to hit barrier (bits  0-15)
@@ -290,13 +297,31 @@ public class Phaser {
      */
     private volatile long state;
 
+    /**
+     * 最多的参与者
+     */
     private static final int  MAX_PARTIES     = 0xffff;
+    /**
+     * 最大的 phaser
+     */
     private static final int  MAX_PHASE       = Integer.MAX_VALUE;
+    /**
+     * 获取参与数时的偏移量
+     */
     private static final int  PARTIES_SHIFT   = 16;
+    /**
+     * 获取 phaser 的偏移量
+     */
     private static final int  PHASE_SHIFT     = 32;
+    /**
+     * 计算未到达时的掩码
+     */
     private static final int  UNARRIVED_MASK  = 0xffff;      // to mask ints
     private static final long PARTIES_MASK    = 0xffff0000L; // to mask longs
     private static final long COUNTS_MASK     = 0xffffffffL;
+    /**
+     * 终止的掩码
+     */
     private static final long TERMINATION_BIT = 1L << 63;
 
     // some special values
@@ -307,19 +332,31 @@ public class Phaser {
 
     // The following unpacking methods are usually manually inlined
 
+    /**
+     * 返回未到达的 party 数
+     */
     private static int unarrivedOf(long s) {
         int counts = (int)s;
         return (counts == EMPTY) ? 0 : (counts & UNARRIVED_MASK);
     }
 
+    /**
+     * 返回 party 的个数
+     */
     private static int partiesOf(long s) {
         return (int)s >>> PARTIES_SHIFT;
     }
 
+    /**
+     * 返回 phaser 数
+     */
     private static int phaseOf(long s) {
         return (int)(s >>> PHASE_SHIFT);
     }
 
+    /**
+     *
+     */
     private static int arrivedOf(long s) {
         int counts = (int)s;
         return (counts == EMPTY) ? 0 :
@@ -327,6 +364,7 @@ public class Phaser {
     }
 
     /**
+     * 当前 phaser 的 parent phaser
      * The parent of this phaser, or null if none.
      */
     private final Phaser parent;
@@ -342,7 +380,13 @@ public class Phaser {
      * use two of them, alternating across even and odd phases.
      * Subphasers share queues with root to speed up releases.
      */
+    /**
+     * 偶数阶段使用的 stack
+     */
     private final AtomicReference<QNode> evenQ;
+    /**
+     * 奇数阶段使用的 stack
+     */
     private final AtomicReference<QNode> oddQ;
 
     /**
@@ -417,7 +461,9 @@ public class Phaser {
      */
     private int doRegister(int registrations) {
         // adjustment to state
+        // 未到达 以及 parties 统计
         long adjust = ((long)registrations << PARTIES_SHIFT) | registrations;
+        // 获取 parent phaser
         final Phaser parent = this.parent;
         int phase;
         for (;;) {
@@ -477,6 +523,7 @@ public class Phaser {
      * @return reconciled state
      */
     private long reconcileState() {
+        // 走到这里说明 parent 不为 null
         final Phaser root = this.root;
         long s = state;
         if (root != this) {
@@ -541,7 +588,9 @@ public class Phaser {
     public Phaser(Phaser parent, int parties) {
         if (parties >>> PARTIES_SHIFT != 0)
             throw new IllegalArgumentException("Illegal number of parties");
+        // 初始化 phase 为 0
         int phase = 0;
+        // 指定 parent
         this.parent = parent;
         if (parent != null) {
             final Phaser root = parent.root;
@@ -1074,17 +1123,47 @@ public class Phaser {
     }
 
     /**
+     * 等待的节点，实现了 ForkJoinPool.ManagedBlocker
+     * 用于管理并行
+     * <p></p>
      * Wait nodes for Treiber stack representing wait queue.
      */
     static final class QNode implements ForkJoinPool.ManagedBlocker {
+        /**
+         * 当前所在 Phaser
+         */
         final Phaser phaser;
+        /**
+         * 当前等待的阶段
+         */
         final int phase;
+        /**
+         * 是否可中断
+         */
         final boolean interruptible;
+        /**
+         * 是否需要超时等待
+         */
         final boolean timed;
+        /**
+         * 中断标志
+         */
         boolean wasInterrupted;
+        /**
+         * 超时时间
+         */
         long nanos;
+        /**
+         * 超时 ddl
+         */
         final long deadline;
+        /**
+         * 当前等待节点的线程
+         */
         volatile Thread thread; // nulled to cancel wait
+        /**
+         * 指向的下一个 QNode
+         */
         QNode next;
 
         QNode(Phaser phaser, int phase, boolean interruptible,
@@ -1098,6 +1177,9 @@ public class Phaser {
             thread = Thread.currentThread();
         }
 
+        /**
+         * 是否需要阻塞，不需要阻塞则返回 true
+         */
         public boolean isReleasable() {
             if (thread == null)
                 return true;
@@ -1119,6 +1201,9 @@ public class Phaser {
             return false;
         }
 
+        /**
+         * 返回是否需要阻塞
+         */
         public boolean block() {
             while (!isReleasable()) {
                 if (timed)
