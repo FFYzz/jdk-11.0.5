@@ -31,6 +31,9 @@ import java.util.concurrent.Future;  // javadoc
 /**
  * A channel that supports asynchronous I/O operations. Asynchronous I/O
  * operations will usually take one of two forms:
+ * <p>
+ *     支持异步 IO 的 Channel。
+ *     有两种方式，一种是使用 future，一种是使用 CompletionHandler。
  *
  * <ol>
  * <li><pre>{@link Future}&lt;V&gt; <em>operation</em>(<em>...</em>)</pre></li>
@@ -50,16 +53,22 @@ import java.util.concurrent.Future;  // javadoc
  * completion, and to retrieve the result. In the second form, a {@link
  * CompletionHandler} is invoked to consume the result of the I/O operation when
  * it completes or fails.
+ * <p>
+ *     第一种方式，通过调用 future 的 get 方法来检查执行的结果。
  *
  * <p> A channel that implements this interface is <em>asynchronously
  * closeable</em>: If an I/O operation is outstanding on the channel and the
  * channel's {@link #close close} method is invoked, then the I/O operation
  * fails with the exception {@link AsynchronousCloseException}.
+ * <p>
+ *     实现了该接口的 channel 是支持异步关闭的。
  *
  * <p> Asynchronous channels are safe for use by multiple concurrent threads.
  * Some channel implementations may support concurrent reading and writing, but
  * may not allow more than one read and one write operation to be outstanding at
  * any given time.
+ * <p>
+ *     多线程安全
  *
  * <h2>Cancellation</h2>
  *
@@ -79,6 +88,9 @@ import java.util.concurrent.Future;  // javadoc
  * implementation cannot guarantee that bytes have not been written to the
  * channel then subsequent attempts to initiate a {@code write} will fail with
  * an unspecified runtime exception.
+ * <p>
+ *     Future 接口定义了 cancel 方法。cancel 之后，等待在这个 IO 操作上的线程会抛出
+ *     CancellationException。
  *
  * <p> Where the {@link Future#cancel cancel} method is invoked with the {@code
  * mayInterruptIfRunning} parameter set to {@code true} then the I/O operation
@@ -105,6 +117,9 @@ public interface AsynchronousChannel
      * complete with the exception {@link AsynchronousCloseException}. After a
      * channel is closed, further attempts to initiate asynchronous I/O
      * operations complete immediately with cause {@link ClosedChannelException}.
+     * <p>
+     *     关闭的时候，所有没有完成的 channel 上的 asynchronous operations 会抛出
+     *     AsynchronousCloseException。关闭之后的任意操作都会抛出 ClosedChannelException
      *
      * <p>  This method otherwise behaves exactly as specified by the {@link
      * Channel} interface.

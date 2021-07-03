@@ -35,6 +35,8 @@ import java.nio.ByteBuffer;
 
 /**
  * An asynchronous channel for stream-oriented connecting sockets.
+ * <p>
+ *     面向 stream 连接 socket 的异步 channel
  *
  * <p> Asynchronous socket channels are created in one of two ways. A newly-created
  * {@code AsynchronousSocketChannel} is created by invoking one of the {@link
@@ -43,6 +45,9 @@ import java.nio.ByteBuffer;
  * when a connection is made to the socket of an {@link AsynchronousServerSocketChannel}.
  * It is not possible to create an asynchronous socket channel for an arbitrary,
  * pre-existing {@link java.net.Socket socket}.
+ * <p>
+ *     Asynchronous socket channels 有两种方式创建。
+ *     1. 调用该方法定义的 open 方法。
  *
  * <p> A newly-created channel is connected by invoking its {@link #connect connect}
  * method; once connected, a channel remains connected until it is closed.  Whether
@@ -50,6 +55,10 @@ import java.nio.ByteBuffer;
  * #getRemoteAddress getRemoteAddress} method. An attempt to invoke an I/O
  * operation upon an unconnected channel will cause a {@link NotYetConnectedException}
  * to be thrown.
+ * <p>
+ *     通过 connect 方法建立连接。一旦建立连接，那么，channel 将会保持 connected 状态直到 channel
+ *     被关闭。getRemoteAddress 可判断 socket channel 是否已经建立连接。在未连接的 channel
+ *     上调用 IO 操作会抛出 NotYetConnectedException。
  *
  * <p> Channels of this type are safe for use by multiple concurrent threads.
  * They support concurrent reading and writing, though at most one read operation
@@ -58,9 +67,13 @@ import java.nio.ByteBuffer;
  * completed then a {@link ReadPendingException} will be thrown. Similarly, an
  * attempt to initiate a write operation before a previous write has completed
  * will throw a {@link WritePendingException}.
+ * <p>
+ *     线程安全
  *
  * <p> Socket options are configured using the {@link #setOption(SocketOption,Object)
  * setOption} method. Asynchronous socket channels support the following options:
+ * <p>
+ *     socket 选项可以通过 setOption 方法设置。异步 socket channel 支持以下 option
  * <blockquote>
  * <table class="striped">
  * <caption style="display:none">Socket options</caption>
@@ -73,23 +86,23 @@ import java.nio.ByteBuffer;
  * <tbody>
  *   <tr>
  *     <th scope="row"> {@link java.net.StandardSocketOptions#SO_SNDBUF SO_SNDBUF} </th>
- *     <td> The size of the socket send buffer </td>
+ *     <td> The size of the socket send buffer | socket 发送 buffer 的大小</td>
  *   </tr>
  *   <tr>
  *     <th scope="row"> {@link java.net.StandardSocketOptions#SO_RCVBUF SO_RCVBUF} </th>
- *     <td> The size of the socket receive buffer </td>
+ *     <td> The size of the socket receive buffer | socket 接受 buffer 的大小</td>
  *   </tr>
  *   <tr>
  *     <th scope="row"> {@link java.net.StandardSocketOptions#SO_KEEPALIVE SO_KEEPALIVE} </th>
- *     <td> Keep connection alive </td>
+ *     <td> Keep connection alive | 是否开区 keepalive</td>
  *   </tr>
  *   <tr>
  *     <th scope="row"> {@link java.net.StandardSocketOptions#SO_REUSEADDR SO_REUSEADDR} </th>
- *     <td> Re-use address </td>
+ *     <td> Re-use address | 重用地址</td>
  *   </tr>
  *   <tr>
  *     <th scope="row"> {@link java.net.StandardSocketOptions#TCP_NODELAY TCP_NODELAY} </th>
- *     <td> Disable the Nagle algorithm </td>
+ *     <td> Disable the Nagle algorithm | 关闭 Nagle 算法</td>
  *   </tr>
  * </tbody>
  * </table>
@@ -117,6 +130,9 @@ import java.nio.ByteBuffer;
  * be taken to ensure that the buffers are not accessed while the channel remains
  * open. All methods that accept timeout parameters treat values less than or
  * equal to zero to mean that the I/O operation does not timeout.
+ * <p>
+ *     在该类中定义的 read/write 方法之处超时请求。在指定时间内操作还未完成，会抛出
+ *     InterruptedByTimeoutException 异常。
  *
  * @since 1.7
  */
@@ -128,9 +144,12 @@ public abstract class AsynchronousSocketChannel
 
     /**
      * Initializes a new instance of this class.
+     * <p>
+     *     protected，仅允许子类调用
      *
      * @param  provider
      *         The provider that created this channel
+     *         创建该 channel 的 provider
      */
     protected AsynchronousSocketChannel(AsynchronousChannelProvider provider) {
         this.provider = provider;
@@ -138,6 +157,8 @@ public abstract class AsynchronousSocketChannel
 
     /**
      * Returns the provider that created this channel.
+     * <p>
+     *     返回创建该 channel 的 provider
      *
      * @return  The provider that created this channel
      */
@@ -147,6 +168,8 @@ public abstract class AsynchronousSocketChannel
 
     /**
      * Opens an asynchronous socket channel.
+     * <p>
+     *     开启一个异步的 socket channel
      *
      * <p> The new channel is created by invoking the {@link
      * AsynchronousChannelProvider#openAsynchronousSocketChannel
@@ -154,6 +177,10 @@ public abstract class AsynchronousSocketChannel
      * AsynchronousChannelProvider} that created the group. If the group parameter
      * is {@code null} then the resulting channel is created by the system-wide
      * default provider, and bound to the <em>default group</em>.
+     * <p>
+     *     通过调用 openAsynchronousSocketChannel 方法创建一个新的 channel。
+     *     如果 group 参数为 null，那么创建的 channel 会被赋值为默认的 provider，
+     *     并且绑定到默认的 group 上。
      *
      * @param   group
      *          The group to which the newly constructed channel should be bound,
@@ -176,6 +203,8 @@ public abstract class AsynchronousSocketChannel
 
     /**
      * Opens an asynchronous socket channel.
+     * <p>
+     *     打开一个 asynchronous socket channel
      *
      * <p> This method returns an asynchronous socket channel that is bound to
      * the <em>default group</em>.This method is equivalent to evaluating the
@@ -183,6 +212,8 @@ public abstract class AsynchronousSocketChannel
      * <blockquote><pre>
      * open((AsynchronousChannelGroup)null);
      * </pre></blockquote>
+     * <p>
+     *     绑定到默认的 group
      *
      * @return  A new asynchronous socket channel
      *
@@ -199,6 +230,8 @@ public abstract class AsynchronousSocketChannel
     // -- socket options and related --
 
     /**
+     * 绑定到一个地址上
+     * <p>
      * @throws  ConnectionPendingException
      *          If a connection operation is already in progress on this channel
      * @throws  AlreadyBoundException               {@inheritDoc}
@@ -215,6 +248,8 @@ public abstract class AsynchronousSocketChannel
         throws IOException;
 
     /**
+     * 设置 socket option
+     * <p>
      * @throws  IllegalArgumentException                {@inheritDoc}
      * @throws  ClosedChannelException                  {@inheritDoc}
      * @throws  IOException                             {@inheritDoc}
@@ -225,6 +260,8 @@ public abstract class AsynchronousSocketChannel
 
     /**
      * Shutdown the connection for reading without closing the channel.
+     * <p>
+     *     关闭读连接，但是不关闭 channel
      *
      * <p> Once shutdown for reading then further reads on the channel will
      * return {@code -1}, the end-of-stream indication. If the input side of the
@@ -233,6 +270,9 @@ public abstract class AsynchronousSocketChannel
      * therefore not specified. The effect, if any, when there is data in the
      * socket receive buffer that has not been read, or data arrives subsequently,
      * is also system dependent.
+     * <p>
+     *     一旦关闭了读连接，那么之后的 read 操作都将返回 -1。如果已经没有输入了，那么调用该方法
+     *     没有影响。如果还有输入，那么造成的影响将由系统决定。
      *
      * @return  The channel
      *
@@ -247,12 +287,17 @@ public abstract class AsynchronousSocketChannel
 
     /**
      * Shutdown the connection for writing without closing the channel.
+     * <p>
+     *     关闭写连接，但是不关闭 channel
      *
      * <p> Once shutdown for writing then further attempts to write to the
      * channel will throw {@link ClosedChannelException}. If the output side of
      * the connection is already shutdown then invoking this method has no
      * effect. The effect on an outstanding write operation is system dependent
      * and therefore not specified.
+     * <p>
+     *     关闭写连接之后，再尝试写会抛出 ClosedChannelException 异常。如果写的输出端
+     *     已经关闭，那么调用该方法不会有任何影响。同样如果未关闭，那么影响将由系统决定。
      *
      * @return  The channel
      *
@@ -269,6 +314,8 @@ public abstract class AsynchronousSocketChannel
 
     /**
      * Returns the remote address to which this channel's socket is connected.
+     * <p>
+     *     返回 socket 连接的远程地址
      *
      * <p> Where the channel is bound and connected to an Internet Protocol
      * socket address then the return value from this method is of type {@link
@@ -288,12 +335,17 @@ public abstract class AsynchronousSocketChannel
 
     /**
      * Connects this channel.
+     * <p>
+     *     channel 进行连接
      *
      * <p> This method initiates an operation to connect this channel. The
      * {@code handler} parameter is a completion handler that is invoked when
      * the connection is successfully established or connection cannot be
      * established. If the connection cannot be established then the channel is
      * closed.
+     * <p>
+     *     该方法初始化一个操作，用于连接该 channel。CompletionHandler 用于定义当连接
+     *     建立成功或者建立失败之后的处理。
      *
      * <p> This method performs exactly the same security checks as the {@link
      * java.net.Socket} class.  That is, if a security manager has been
@@ -303,12 +355,16 @@ public abstract class AsynchronousSocketChannel
      *
      * @param   <A>
      *          The type of the attachment
+     *          attachment 的类型
      * @param   remote
      *          The remote address to which this channel is to be connected
+     *          要连接的远程地址
      * @param   attachment
      *          The object to attach to the I/O operation; can be {@code null}
+     *          关联该连接的 attachement
      * @param   handler
      *          The handler for consuming the result
+     *          连接成功或者失败的处理
      *
      * @throws  UnresolvedAddressException
      *          If the given remote address is not fully resolved
@@ -332,6 +388,8 @@ public abstract class AsynchronousSocketChannel
 
     /**
      * Connects this channel.
+     * <p>
+     *     对 channel 进行连接
      *
      * <p> This method initiates an operation to connect this channel. This
      * method behaves in exactly the same manner as the {@link
@@ -339,6 +397,8 @@ public abstract class AsynchronousSocketChannel
      * instead of specifying a completion handler, this method returns a {@code
      * Future} representing the pending result. The {@code Future}'s {@link
      * Future#get() get} method returns {@code null} on successful completion.
+     * <p>
+     *     连接成功后，future 的 get 方法会返回 null
      *
      * @param   remote
      *          The remote address to which this channel is to be connected
@@ -361,6 +421,8 @@ public abstract class AsynchronousSocketChannel
 
     /**
      * Reads a sequence of bytes from this channel into the given buffer.
+     * <p>
+     *     将 channel 中的数据读到 buffer 中去
      *
      * <p> This method initiates an asynchronous read operation to read a
      * sequence of bytes from this channel into the given buffer. The {@code
@@ -368,6 +430,10 @@ public abstract class AsynchronousSocketChannel
      * operation completes (or fails). The result passed to the completion
      * handler is the number of bytes read or {@code -1} if no bytes could be
      * read because the channel has reached end-of-stream.
+     * <p>
+     *     该方法会初始化一个异步的 read 操作，将 channel 中的数据读到 buffer 中去。
+     *     当读操作完成或者失败之后，会执行 CompletionHandler。传到 CompletionHandler
+     *     中的参数为读取到的 byte 的数量。没有读取到数据则返回 -1。
      *
      * <p> If a timeout is specified and the timeout elapses before the operation
      * completes then the operation completes with the exception {@link
@@ -376,6 +442,10 @@ public abstract class AsynchronousSocketChannel
      * be read from the channel into the given buffer, then further attempts to
      * read from the channel will cause an unspecific runtime exception to be
      * thrown.
+     * <p>
+     *     如果指定了超时时间，那么在指定时间内未未完成读取，那么将抛出 InterruptedByTimeoutException。
+     *     如果超时发生了，并不能保证还未读取的数据被读取到 buffer 中去。继续尝试读取会抛出
+     *     异常。
      *
      * <p> Otherwise this method works in the same manner as the {@link
      * AsynchronousByteChannel#read(ByteBuffer,Object,CompletionHandler)}
@@ -410,6 +480,8 @@ public abstract class AsynchronousSocketChannel
                                   CompletionHandler<Integer,? super A> handler);
 
     /**
+     * 不带超时时间的 read
+     * <p>
      * @throws  IllegalArgumentException        {@inheritDoc}
      * @throws  ReadPendingException            {@inheritDoc}
      * @throws  NotYetConnectedException
@@ -426,6 +498,8 @@ public abstract class AsynchronousSocketChannel
     }
 
     /**
+     * 返回一个 future
+     * <p>
      * @throws  IllegalArgumentException        {@inheritDoc}
      * @throws  ReadPendingException            {@inheritDoc}
      * @throws  NotYetConnectedException
@@ -435,6 +509,8 @@ public abstract class AsynchronousSocketChannel
     public abstract Future<Integer> read(ByteBuffer dst);
 
     /**
+     * 将数据读到 dsts 数组中。
+     * <p>
      * Reads a sequence of bytes from this channel into a subsequence of the
      * given buffers. This operation, sometimes called a <em>scattering read</em>,
      * is often useful when implementing network protocols that group data into
@@ -444,6 +520,8 @@ public abstract class AsynchronousSocketChannel
      * result passed to the completion handler is the number of bytes read or
      * {@code -1} if no bytes could be read because the channel has reached
      * end-of-stream.
+     * <p>
+     *     在 network 的场景下，常常是 scattering read。
      *
      * <p> This method initiates a read of up to <i>r</i> bytes from this channel,
      * where <i>r</i> is the total number of bytes remaining in the specified

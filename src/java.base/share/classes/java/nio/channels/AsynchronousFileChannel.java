@@ -38,6 +38,8 @@ import java.util.Collections;
 
 /**
  * An asynchronous channel for reading, writing, and manipulating a file.
+ * <p>
+ *     用于操作文件（读、写、操作）的异步 channel
  *
  * <p> An asynchronous file channel is created when a file is opened by invoking
  * one of the {@link #open open} methods defined by this class. The file contains
@@ -45,6 +47,10 @@ import java.util.Collections;
  * current size can be {@link #size() queried}. The size of the file increases
  * when bytes are written beyond its  current size; the size of the file decreases
  * when it is {@link #truncate truncated}.
+ * <p>
+ *     调用该类中的 open 方法，会返回一个 asynchronous file channel。调用 size 方法可以
+ *     获取当前文件的大小。文件的大小是可以变的。可以向文件写数据，也可以通过 truncate 截断
+ *     文件。
  *
  * <p> An asynchronous file channel does not have a <i>current position</i>
  * within the file. Instead, the file position is specified to each read and
@@ -54,9 +60,15 @@ import java.util.Collections;
  * asynchronous operations, returning a {@link Future} to represent the pending
  * result of the operation. The {@code Future} may be used to check if the
  * operation has completed, wait for its completion, and retrieve the result.
+ * <p>
+ *     asynchronous file channel 不包含 position 变量表示当前读取的位置。Future 可用于
+ *     判断对文件的操作是否完成。
  *
  * <p> In addition to read and write operations, this class defines the
- * following operations: </p>
+ * following operations:
+ * <p>
+ *     除了读写操作，还定义了以下操作
+ * </p>
  *
  * <ul>
  *
@@ -82,6 +94,10 @@ import java.util.Collections;
  * a system-dependent default thread pool that may be shared with other
  * channels. The default thread pool is configured by the system properties
  * defined by the {@link AsynchronousChannelGroup} class.
+ * <p>
+ *     AsynchronousFileChannel 会关联一个线程池。线程池中的线程用于处理 IO 操作以及执行
+ *     handlers。AsynchronousFileChannel 创建的时候若没有指定线程池，将会指定一个默认的
+ *     线程池。
  *
  * <p> Channels of this type are safe for use by multiple concurrent threads. The
  * {@link Channel#close close} method may be invoked at any time, as specified
@@ -96,6 +112,8 @@ import java.util.Collections;
  * safe for use by multiple concurrent I/O operations. Furthermore, after an I/O
  * operation is initiated then care should be taken to ensure that the buffer is
  * not accessed until after the operation has completed.
+ * <p>
+ *     线程安全
  *
  * <p> As with {@link FileChannel}, the view of a file provided by an instance of
  * this class is guaranteed to be consistent with other views of the same file
@@ -123,15 +141,22 @@ public abstract class AsynchronousFileChannel
     /**
      * Opens or creates a file for reading and/or writing, returning an
      * asynchronous file channel to access the file.
+     * <p>
+     *     创建一个 AsynchronousFileChannel
      *
      * <p> The {@code options} parameter determines how the file is opened.
      * The {@link StandardOpenOption#READ READ} and {@link StandardOpenOption#WRITE
      * WRITE} options determines if the file should be opened for reading and/or
      * writing. If neither option is contained in the array then an existing file
      * is opened for  reading.
+     * <p>
+     *     option 参数指定文件是如何打开的。StandardOpenOption#READ / StandardOpenOption#WRITE
+     *     分别指定文件可读写。如果什么都没有指定，那么该文件默认是读类型的。
      *
      * <p> In addition to {@code READ} and {@code WRITE}, the following options
      * may be present:
+     * <p>
+     *     还支持以下操作:
      *
      * <table class="striped">
      * <caption style="display:none">additional options</caption>
@@ -194,6 +219,8 @@ public abstract class AsynchronousFileChannel
      * </table>
      *
      * <p> An implementation may also support additional options.
+     * <p>
+     *     该类的具体实现可以支持额外的一些操作。
      *
      * <p> The {@code executor} parameter is the {@link ExecutorService} to
      * which tasks are submitted to handle I/O events and dispatch completion
@@ -204,9 +231,14 @@ public abstract class AsynchronousFileChannel
      * caller thread of the {@link ExecutorService#execute execute} method.
      * Shutting down the executor service while the channel is open results in
      * unspecified behavior.
+     * <p>
+     *     executor 用于指定线程池。线程池要使用无界队列，并且抛弃策略不能使用 caller run。
+     *     在 channel 还未关闭的情况下关闭线程池会造成不可预料的结果。
      *
      * <p> The {@code attrs} parameter is an optional array of file {@link
      * FileAttribute file-attributes} to set atomically when creating the file.
+     * <p>
+     *     attrs 参数是一个可选的 file 数组，用于在创建文件的时候自动设置。
      *
      * <p> The new channel is created by invoking the {@link
      * FileSystemProvider#newFileChannel newFileChannel} method on the
@@ -259,6 +291,8 @@ public abstract class AsynchronousFileChannel
     /**
      * Opens or creates a file for reading and/or writing, returning an
      * asynchronous file channel to access the file.
+     * <p>
+     *     打开或者创建一个文件用于读写，返回有个 asynchronous file channel 用于访问该文件。
      *
      * <p> An invocation of this method behaves in exactly the same way as the
      * invocation
@@ -306,6 +340,7 @@ public abstract class AsynchronousFileChannel
             set = Collections.emptySet();
         } else {
             set = new HashSet<>();
+            // 将 option 全都加到 set 中去
             Collections.addAll(set, options);
         }
         return open(file, set, null, NO_ATTRIBUTES);
@@ -313,6 +348,8 @@ public abstract class AsynchronousFileChannel
 
     /**
      * Returns the current size of this channel's file.
+     * <p>
+     *     放回当前文件的 size
      *
      * @return  The current size of this channel's file, measured in bytes
      *
@@ -325,11 +362,17 @@ public abstract class AsynchronousFileChannel
 
     /**
      * Truncates this channel's file to the given size.
+     * <p>
+     *     截断文件至指定的 size
      *
      * <p> If the given size is less than the file's current size then the file
      * is truncated, discarding any bytes beyond the new end of the file.  If
      * the given size is greater than or equal to the file's current size then
-     * the file is not modified. </p>
+     * the file is not modified.
+     * <p>
+     *     如果给定的 size 比 file 的 size 小，那么会截断。
+     *     如果给定的 size 比 file 的 size 大，那么对文件没有影响。
+     * </p>
      *
      * @param  size
      *         The new size, a non-negative byte count
@@ -353,6 +396,8 @@ public abstract class AsynchronousFileChannel
     /**
      * Forces any updates to this channel's file to be written to the storage
      * device that contains it.
+     * <p>
+     *     强制将所有对该 channel 关联的文件的操作都刷到磁盘上。
      *
      * <p> If this channel's file resides on a local storage device then when
      * this method returns it is guaranteed that all changes made to the file
@@ -371,12 +416,18 @@ public abstract class AsynchronousFileChannel
      * written, which generally requires at least one more I/O operation.
      * Whether this parameter actually has any effect is dependent upon the
      * underlying operating system and is therefore unspecified.
+     * <p>
+     *     metaData 如果是 false，说明只有对文件的内容更新才会刷到磁盘上。metaData 如果为
+     *     true，对文件内容的更新或者元数据的更新，都会刷到磁盘上。
      *
      * <p> Invoking this method may cause an I/O operation to occur even if the
      * channel was only opened for reading.  Some operating systems, for
      * example, maintain a last-access time as part of a file's metadata, and
      * this time is updated whenever the file is read.  Whether or not this is
      * actually done is system-dependent and is therefore unspecified.
+     * <p>
+     *     即使 channel 仅支持读操作，但是调用该方法也会有 IO 操作。比如对文件的最后访问时间
+     *     这个元数据信息。
      *
      * <p> This method is only guaranteed to force changes that were made to
      * this channel's file via the methods defined in this class.
@@ -397,12 +448,17 @@ public abstract class AsynchronousFileChannel
 
     /**
      * Acquires a lock on the given region of this channel's file.
+     * <p>
+     *     在 channel 关联的 file 的给定区域上获取一个 lock。
+     *     锁住 file 的一段区域。
      *
      * <p> This method initiates an operation to acquire a lock on the given
      * region of this channel's file. The {@code handler} parameter is a
      * completion handler that is invoked when the lock is acquired (or the
      * operation fails). The result passed to the completion handler is the
      * resulting {@code FileLock}.
+     * <p>
+     *     handler 将会在获取到 lock 之后调用。
      *
      * <p> The region specified by the {@code position} and {@code size}
      * parameters need not be contained within, or even overlap, the actual
@@ -417,6 +473,8 @@ public abstract class AsynchronousFileChannel
      * region is already held by this Java virtual machine, or this method has
      * been invoked to lock an overlapping region and that operation has not
      * completed, then this method throws {@link OverlappingFileLockException}.
+     * <p>
+     *     通过 position 和 size 来决定一个区域。
      *
      * <p> Some operating systems do not support a mechanism to acquire a file
      * lock in an asynchronous manner. Consequently an implementation may
@@ -472,6 +530,8 @@ public abstract class AsynchronousFileChannel
 
     /**
      * Acquires an exclusive lock on this channel's file.
+     * <p>
+     *     在 channel 关联的文件上获取一个互斥锁，调用上面的方法，shared 传 false。
      *
      * <p> This method initiates an operation to acquire a lock on the given
      * region of this channel's file. The {@code handler} parameter is a
@@ -653,12 +713,16 @@ public abstract class AsynchronousFileChannel
     /**
      * Reads a sequence of bytes from this channel into the given buffer,
      * starting at the given file position.
+     * <p>
+     *     从指定文件开始读取文件的中的数据到 buffer 中去。
      *
      * <p> This method initiates the reading of a sequence of bytes from this
      * channel into the given buffer, starting at the given file position. The
      * result of the read is the number of bytes read or {@code -1} if the given
      * position is greater than or equal to the file's size at the time that the
      * read is attempted.
+     * <p>
+     *     handler 中传入实际读取到的数据的长度。
      *
      * <p> This method works in the same manner as the {@link
      * AsynchronousByteChannel#read(ByteBuffer,Object,CompletionHandler)}

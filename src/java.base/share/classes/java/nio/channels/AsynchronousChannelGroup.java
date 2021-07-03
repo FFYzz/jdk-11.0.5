@@ -33,6 +33,8 @@ import java.util.concurrent.TimeUnit;
 
 /**
  * A grouping of asynchronous channels for the purpose of resource sharing.
+ * <p>
+ *     asynchronous channels group，主要为了资源共享。
  *
  * <p> An asynchronous channel group encapsulates the mechanics required to
  * handle the completion of I/O operations initiated by {@link AsynchronousChannel
@@ -140,6 +142,8 @@ public abstract class AsynchronousChannelGroup {
 
     /**
      * Initialize a new instance of this class.
+     * <p>
+     *     实例化一个 AsynchronousChannelGroup
      *
      * @param   provider
      *          The asynchronous channel provider for this group
@@ -150,6 +154,8 @@ public abstract class AsynchronousChannelGroup {
 
     /**
      * Returns the provider that created this channel group.
+     * <p>
+     *     返回创建该 channel group 的 provider
      *
      * @return  The provider that created this channel group
      */
@@ -159,6 +165,8 @@ public abstract class AsynchronousChannelGroup {
 
     /**
      * Creates an asynchronous channel group with a fixed thread pool.
+     * <p>
+     *     指定线程池创建一个 asynchronous channel group
      *
      * <p> The resulting asynchronous channel group reuses a fixed number of
      * threads. At any point, at most {@code nThreads} threads will be active

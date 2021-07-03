@@ -33,6 +33,8 @@ import java.io.IOException;
 
 /**
  * An asynchronous channel for stream-oriented listening sockets.
+ * <p>
+ *     类似于 AsynchronousSocketChannel。只不过是适用于 server 端的。
  *
  * <p> An asynchronous server-socket channel is created by invoking the
  * {@link #open open} method of this class.
@@ -43,14 +45,22 @@ import java.io.IOException;
  * is used to initiate the accepting of connections to the channel's socket.
  * An attempt to invoke the {@code accept} method on an unbound channel will
  * cause a {@link NotYetBoundException} to be thrown.
+ * <p>
+ *     AsynchronousServerSocketChannel 通过调用 open 方法创建。新创建的 AsynchronousServerSocketChannel
+ *     仅仅处于 open，还没有绑定。通过 bind 方法可以进行绑定。绑定之后可以调用
+ *     accept 来接收 socket 的连接。
  *
  * <p> Channels of this type are safe for use by multiple concurrent threads
  * though at most one accept operation can be outstanding at any time.
  * If a thread initiates an accept operation before a previous accept operation
  * has completed then an {@link AcceptPendingException} will be thrown.
+ * <p>
+ *     线程安全
  *
  * <p> Socket options are configured using the {@link #setOption(SocketOption,Object)
  * setOption} method. Channels of this type support the following options:
+ * <p>
+ *     可以设置 socket 选项
  * <blockquote>
  * <table class="striped">
  * <caption style="display:none">Socket options</caption>
@@ -113,6 +123,8 @@ public abstract class AsynchronousServerSocketChannel
 
     /**
      * Returns the provider that created this channel.
+     * <p>
+     *     返回创建该 channel 的 Provider
      *
      * @return  The provider that created this channel
      */
@@ -122,6 +134,9 @@ public abstract class AsynchronousServerSocketChannel
 
     /**
      * Opens an asynchronous server-socket channel.
+     * <p>
+     *     open 一个 server-socket channel，如果指定了 group，则会获取 group 的 provider，
+     *     根据 group 的 provider 来 open。
      *
      * <p> The new channel is created by invoking the {@link
      * java.nio.channels.spi.AsynchronousChannelProvider#openAsynchronousServerSocketChannel
@@ -152,6 +167,8 @@ public abstract class AsynchronousServerSocketChannel
 
     /**
      * Opens an asynchronous server-socket channel.
+     * <p>
+     *     使用系统默认的 provider 来 open
      *
      * <p> This method returns an asynchronous server socket channel that is
      * bound to the <em>default group</em>. This method is equivalent to evaluating
@@ -174,6 +191,8 @@ public abstract class AsynchronousServerSocketChannel
     /**
      * Binds the channel's socket to a local address and configures the socket to
      * listen for connections.
+     * <p>
+     *     将 channel 绑定到一个 SocketAddress 上
      *
      * <p> An invocation of this method is equivalent to the following:
      * <blockquote><pre>
@@ -237,6 +256,8 @@ public abstract class AsynchronousServerSocketChannel
         throws IOException;
 
     /**
+     * 设置 socket 选项
+     * <p>
      * @throws  IllegalArgumentException                {@inheritDoc}
      * @throws  ClosedChannelException                  {@inheritDoc}
      * @throws  IOException                             {@inheritDoc}
@@ -246,12 +267,16 @@ public abstract class AsynchronousServerSocketChannel
 
     /**
      * Accepts a connection.
+     * <p>
+     *     进入 accept。
      *
      * <p> This method initiates an asynchronous operation to accept a
      * connection made to this channel's socket. The {@code handler} parameter is
      * a completion handler that is invoked when a connection is accepted (or
      * the operation fails). The result passed to the completion handler is
      * the {@link AsynchronousSocketChannel} to the new connection.
+     * <p>
+     *     当一个 connection 连接(或者失败)的时候会调用 handler 方法。
      *
      * <p> When a new connection is accepted then the resulting {@code
      * AsynchronousSocketChannel} will be bound to the same {@link
@@ -300,6 +325,8 @@ public abstract class AsynchronousServerSocketChannel
      * returns a {@code Future} representing the pending result. The {@code
      * Future}'s {@link Future#get() get} method returns the {@link
      * AsynchronousSocketChannel} to the new connection on successful completion.
+     * <p>
+     *     接收到一个连接之后，调用 future 的 get 方法会返回一个 AsynchronousSocketChannel。
      *
      * @return  a {@code Future} object representing the pending result
      *
@@ -312,6 +339,8 @@ public abstract class AsynchronousServerSocketChannel
 
     /**
      * {@inheritDoc}
+     * <p>
+     *     返回绑定的 SocketAddress
      * <p>
      * If there is a security manager set, its {@code checkConnect} method is
      * called with the local address and {@code -1} as its arguments to see

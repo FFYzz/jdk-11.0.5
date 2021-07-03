@@ -30,6 +30,8 @@ import java.util.concurrent.Future;
 
 /**
  * An asynchronous channel that can read and write bytes.
+ * <p>
+ *     支持读写 byte 的异步 channel
  *
  * <p> Some channels may not allow more than one read or write to be outstanding
  * at any given time. If a thread invokes a read method before a previous read
@@ -38,6 +40,9 @@ import java.util.concurrent.Future;
  * then {@link WritePendingException} is thrown. Whether or not other kinds of
  * I/O operations may proceed concurrently with a read operation depends upon
  * the type of the channel.
+ * <p>
+ *     有一些 channel 不允许同时超过一个读/写操作。如果一个线程在前一个 read 操作完成之前
+ *     调用了 read/write，那么会抛出 ReadPendingException/WritePendingException。
  *
  * <p> Note that {@link java.nio.ByteBuffer ByteBuffers} are not safe for use by
  * multiple concurrent threads. When a read or write operation is initiated then
@@ -55,6 +60,8 @@ public interface AsynchronousByteChannel
 {
     /**
      * Reads a sequence of bytes from this channel into the given buffer.
+     * <p>
+     *     从 channel 中读取 byte 数据保存到 buffer 中
      *
      * <p> This method initiates an asynchronous read operation to read a
      * sequence of bytes from this channel into the given buffer. The {@code
@@ -62,12 +69,17 @@ public interface AsynchronousByteChannel
      * operation completes (or fails). The result passed to the completion
      * handler is the number of bytes read or {@code -1} if no bytes could be
      * read because the channel has reached end-of-stream.
+     * <p>
+     *     handler 当读操作完成之后会执行。传入实际读取到的 byte 数。
      *
      * <p> The read operation may read up to <i>r</i> bytes from the channel,
      * where <i>r</i> is the number of bytes remaining in the buffer, that is,
      * {@code dst.remaining()} at the time that the read is attempted. Where
      * <i>r</i> is 0, the read operation completes immediately with a result of
      * {@code 0} without initiating an I/O operation.
+     * <p>
+     *     最多读取 dst.remaining() 个 byte 数组到 buffer 中去。如果 buffer 已经满了，
+     *     那么该方法会直接返回 0.
      *
      * <p> Suppose that a byte sequence of length <i>n</i> is read, where
      * {@code 0}&nbsp;{@code <}&nbsp;<i>n</i>&nbsp;{@code <=}&nbsp;<i>r</i>.
@@ -81,6 +93,8 @@ public interface AsynchronousByteChannel
      * <p> Buffers are not safe for use by multiple concurrent threads so care
      * should be taken to not access the buffer until the operation has
      * completed.
+     * <p>
+     *     buffer 线程不安全
      *
      * <p> This method may be invoked at any time. Some channel types may not
      * allow more than one read to be outstanding at any given time. If a thread
@@ -121,6 +135,9 @@ public interface AsynchronousByteChannel
      * representing the pending result. The {@code Future}'s {@link Future#get()
      * get} method returns the number of bytes read or {@code -1} if no bytes
      * could be read because the channel has reached end-of-stream.
+     * <p>
+     *     异步的方式与上面的不太一样，该方式的实现是通过返回一个 future 来表示异步 read 是否
+     *     已经完成。
      *
      * @param   dst
      *          The buffer into which bytes are to be transferred
@@ -137,6 +154,8 @@ public interface AsynchronousByteChannel
 
     /**
      * Writes a sequence of bytes to this channel from the given buffer.
+     * <p>
+     *     将 buffer 中的数据写入到 channel 中去。
      *
      * <p> This method initiates an asynchronous write operation to write a
      * sequence of bytes to this channel from the given buffer. The {@code
