@@ -337,6 +337,7 @@ class ProxyGenerator {
         ProxyGenerator gen = new ProxyGenerator(name, interfaces, accessFlags);
         final byte[] classFile = gen.generateClassFile();
 
+        // 是否保存生成的 class 文件的标识符
         if (saveGeneratedFiles) {
             java.security.AccessController.doPrivileged(
             new java.security.PrivilegedAction<Void>() {
@@ -420,6 +421,8 @@ class ProxyGenerator {
     }
 
     /**
+     * 生成 class file
+     *
      * Generate a class file for the proxy class.  This method drives the
      * class file generation process.
      */
@@ -430,6 +433,7 @@ class ProxyGenerator {
          * generate proxy dispatching code for.
          */
 
+        // 添加 Object 类中的 hashcode equals toString 方法
         /*
          * Record that proxy methods are needed for the hashCode, equals,
          * and toString methods of java.lang.Object.  This is done before
@@ -446,14 +450,19 @@ class ProxyGenerator {
          * earlier interfaces precedence over later ones with duplicate
          * methods.
          */
+        // 遍历所有的接口
         for (Class<?> intf : interfaces) {
+            // 遍历接口中的所有方法
             for (Method m : intf.getMethods()) {
+                // 如果不是静态方法
                 if (!Modifier.isStatic(m.getModifiers())) {
+                    // 则添加进去
                     addProxyMethod(m, intf);
                 }
             }
         }
 
+        // 遍历所有添加了的方法
         /*
          * For each set of proxy methods with the same signature,
          * verify that the methods' return types are compatible.
@@ -467,6 +476,7 @@ class ProxyGenerator {
          * fields and methods in the class we are generating.
          */
         try {
+            // 添加构造方法
             methods.add(generateConstructor());
 
             for (List<ProxyMethod> sigmethods : proxyMethods.values()) {
@@ -482,15 +492,18 @@ class ProxyGenerator {
                 }
             }
 
+            // 用于处理静态代码块和静态变量
             methods.add(generateStaticInitializer());
 
         } catch (IOException e) {
             throw new InternalError("unexpected I/O Exception", e);
         }
 
+        // 方法的最大限制数量为 65535
         if (methods.size() > 65535) {
             throw new IllegalArgumentException("method limit exceeded");
         }
+        // 字段的最大限制数量为 65535
         if (fields.size() > 65535) {
             throw new IllegalArgumentException("field limit exceeded");
         }
@@ -503,6 +516,7 @@ class ProxyGenerator {
          * Make sure that constant pool indexes are reserved for the
          * following items before starting to write the final class file.
          */
+        // . 换成 /
         cp.getClass(dotToSlash(className));
         cp.getClass(superclassName);
         for (Class<?> intf: interfaces) {
@@ -518,6 +532,7 @@ class ProxyGenerator {
         ByteArrayOutputStream bout = new ByteArrayOutputStream();
         DataOutputStream dout = new DataOutputStream(bout);
 
+        // 开始写数据
         try {
             /*
              * Write all the items of the "ClassFile" structure.
@@ -550,6 +565,7 @@ class ProxyGenerator {
                                         // u2 fields_count;
             dout.writeShort(fields.size());
                                         // field_info fields[fields_count];
+            // 写字段
             for (FieldInfo f : fields) {
                 f.write(dout);
             }
@@ -557,6 +573,7 @@ class ProxyGenerator {
                                         // u2 methods_count;
             dout.writeShort(methods.size());
                                         // method_info methods[methods_count];
+            // 写方法
             for (MethodInfo m : methods) {
                 m.write(dout);
             }
@@ -568,6 +585,7 @@ class ProxyGenerator {
             throw new InternalError("unexpected I/O Exception", e);
         }
 
+        // 返回 byte 数组
         return bout.toByteArray();
     }
 
