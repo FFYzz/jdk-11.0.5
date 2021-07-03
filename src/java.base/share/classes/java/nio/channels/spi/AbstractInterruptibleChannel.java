@@ -160,8 +160,7 @@ public abstract class AbstractInterruptibleChannel
     protected abstract void implCloseChannel() throws IOException;
 
     /**
-     * 返回 channel 是否开着
-     * @return
+     * @return 返回 channel 是否开着
      */
     public final boolean isOpen() {
         return !closed;

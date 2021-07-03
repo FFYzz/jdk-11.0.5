@@ -33,7 +33,6 @@ import java.nio.ByteBuffer;
  * 继承自 ReadableByteChannel
  * <p>
  * A channel that can read bytes into a sequence of buffers.
- * <p>
  *
  * <p> A <i>scattering</i> read operation reads, in a single invocation, a
  * sequence of bytes into one or more of a given sequence of buffers.

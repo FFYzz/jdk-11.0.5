@@ -66,7 +66,7 @@ import java.util.concurrent.atomic.AtomicReferenceFieldUpdater;
  *       interest set:当下一个 selector 的任意 select 方法被调用的时候，可以确认哪个操作类别
  *       将会被同来测试可读性。???? TODO 这里看不大明白
  *   </p>
- *   </p></li>
+ *   </li>
  *
  *   <li><p> The <i>ready set</i> identifies the operation categories for which
  *   the key's channel has been detected to be ready by the key's selector.
@@ -77,7 +77,6 @@ import java.util.concurrent.atomic.AtomicReferenceFieldUpdater;
  *       ready set: 标识了当前 selector 下的 channel 已经 ready。 当 key 被创建的时候，
  *       ready set 为 0。 ready set 不能够直接更新，而是得等到 selector 执行 selection
  *       operation 的时候才会更新。
- *   </p>
  *   </p></li>
  *
  * </ul>

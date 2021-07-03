@@ -213,7 +213,6 @@ public interface MulticastChannel
      * channel joins the group and the resulting new membership key is returned.
      * The resulting membership key is {@link MembershipKey#sourceAddress
      * source-specific}.
-     * <p>
      *
      * <p> Membership is <em>cumulative</em> and this method may be invoked
      * again with the same group and interface to allow receiving datagrams sent

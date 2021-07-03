@@ -51,7 +51,6 @@ import java.util.Collections;
  * file may also have some associated <i>metadata</i> such as access
  * permissions, content type, and last-modification time; this class does not
  * define methods for metadata access.
- * <p>
  *
  * <p> In addition to the familiar read, write, and close operations of byte
  * channels, this class defines the following file-specific operations: </p>

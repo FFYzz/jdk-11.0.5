@@ -64,7 +64,6 @@ import java.util.Map;
  *       Overflow: 输出流满了，则会溢出。用 OVERFLOW 对象来表示。该对象的 isOverflow
  *       方法返回 true。
  *   </p>
- *   </p>
  *   </li>
  *
  *   <li><p> A <i>malformed-input error</i> is reported when a sequence of
@@ -76,7 +75,6 @@ import java.util.Map;
  *   <p>
  *       malformed-input error: 当输入数据格式没有按规则组织好的时候会出现这种编解码结果。
  *       isMalformed 方法返回 true。length 方法会返回当前不正确的数据的长度。
- *   </p>
  *   </p>
  *   </li>
  *
@@ -91,7 +89,6 @@ import java.util.Map;
  *       unmappable-character error: 一个输入单元无法正确映射到一个输出单元的时候，会报该错误。
  *   </p>
  *
- *   </p>
  *   </li>
  *
  * </ul>

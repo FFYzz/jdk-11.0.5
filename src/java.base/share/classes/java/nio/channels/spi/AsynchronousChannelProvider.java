@@ -174,7 +174,6 @@ public abstract class AsynchronousChannelProvider {
      *   <p>
      *       如果设置了系统属性，那么默认的 provider 将根据设置的属性加载。如果加载过程出错，
      *       抛出 error。
-     *   </p>
      *   </p></li>
      *
      *   <li><p> If a provider class has been installed in a jar file that is
@@ -187,7 +186,6 @@ public abstract class AsynchronousChannelProvider {
      *   thrown.
      *   <p>
      *       如果通过 SPI 方式加载，那么找到的第一个满足条件的实现类将会被设置为默认的 Provider
-     *   </p>
      *   </p></li>
      *
      *   <li><p> Finally, if no provider has been specified by any of the above

@@ -181,7 +181,6 @@ import sun.security.util.SecurityConstants;
  * AWTPermission,
  * ReflectPermission,
  * SerializablePermission
- * <p>
  * <p>Permissions fall into these categories: File, Socket, Net,
  * Security, Runtime, Property, AWT, Reflect, and Serializable.
  * The classes managing these various

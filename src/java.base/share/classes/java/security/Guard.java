@@ -27,7 +27,6 @@ package java.security;
 
 /**
  * 顶层接口，用于声明保护对象是否能够被访问。
- * <p>
  * <p> This interface represents a guard, which is an object that is used
  * to protect access to another object.
  *

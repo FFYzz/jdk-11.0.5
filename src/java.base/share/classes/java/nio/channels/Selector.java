@@ -65,8 +65,6 @@ import java.util.function.Consumer;
  *   {@link #keys() keys} method.
  *   <p>
  *       key set: 返回当前 selector 上注册的 SelectionKey
- *   </p>
- *
  *   </p></li>
  *
  *   <li><p> The <i>selected-key set</i> is the set of keys such that each
@@ -78,7 +76,6 @@ import java.util.function.Consumer;
  *   <p>
  *       selected-key set: 是 key set 的子集。这个集合中的 key 关联的 channel 的事件
  *       已经 ready，可以进行非阻塞操作。
- *   </p>
  *   </p></li>
  *
  *   <li><p> The <i>cancelled-key</i> set is the set of keys that have been
@@ -87,7 +84,6 @@ import java.util.function.Consumer;
  *   key set.
  *   <p>
  *       cancelled-key: key 已经取消，但是还没有反注册。该集合不能直接访问。
- *   </p>
  *   </p></li>
  *
  * </ul>
@@ -150,7 +146,6 @@ import java.util.function.Consumer;
  *   <p>
  *       select()/select(long)/selectNow() 方法: 将 key 添加到 selected-key set 中，
  *       或者更新 selected-key set 中的 key。
- *   </p>
  *   </p></li>
  *
  *   <li><p> The {@link #select(Consumer)}, {@link #select(Consumer, long)}, and
@@ -161,7 +156,6 @@ import java.util.function.Consumer;
  *       select(Consumer)/select(Consumer, long)/selectNow(Consumer) 方法: 当
  *       channel 已经 ready 之后，会去执行一个 action。以上方法不会将 key 添加到
  *       selected-key set 中。
- *   </p>
  *   </p></li>
  *
  * </ol>
@@ -187,7 +181,6 @@ import java.util.function.Consumer;
  *   <p>
  *       在 cancelled-key set 中的 key 将被移除，并且相关的 channel 会被反注册。
  *       该操作之后 cancelled-key set 中将不存在元素。
- *   </p>
  *   </p></li>
  *
  *   <li><p> The underlying operating system is queried for an update as to the
@@ -198,8 +191,6 @@ import java.util.function.Consumer;
  *   <p>
  *       底层操作系统会去查询是否有已经可以操作的 channel。
  *   </p>
- *   </p>
- *
  *   <ol>
  *
  *     <li><p> If the channel's key is not already in the selected-key set then
@@ -211,7 +202,6 @@ import java.util.function.Consumer;
  *         如果 channel 关联的 key 之前不在 selected-key set 中，那么会被加入到 selected-key
  *         set 中。ready-operation set 中会加入已经被确认为 ready 的 key。并且之前在 ready-operation set
  *         中的可读的 key 将会被丢弃。
- *     </p>
  *     </p></li>
  *
  *     <li><p> Otherwise the channel's key is already in the selected-key set,
@@ -317,13 +307,11 @@ import java.util.function.Consumer;
  *   <li><p> By invoking the selector's {@link #wakeup wakeup} method,
  *   <p>
  *       调用了 selector 的 wakeup 方法
- *   </p>
  *   </p></li>
  *
  *   <li><p> By invoking the selector's {@link #close close} method, or
  *   <p>
  *       调用了 selector 的 close 方法
- *   </p>
  *   </p></li>
  *
  *   <li><p> By invoking the blocked thread's {@link
@@ -333,7 +321,7 @@ import java.util.function.Consumer;
  *   <p>
  *       调用了阻塞线程的 interrupt 方法。当前线程的中断状态会被设置， selector 的 wakeup
  *       方法会被调用。
- *   </p></p></li>
+ *   </p></li>
  *
  * </ul>
  *
