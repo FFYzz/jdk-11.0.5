@@ -34,33 +34,53 @@ import java.util.Spliterator;
 
 /**
  * A container for data of a specific primitive type.
+ * <p>
+ *     指定数据类型的容器
  *
  * <p> A buffer is a linear, finite sequence of elements of a specific
  * primitive type.  Aside from its content, the essential properties of a
- * buffer are its capacity, limit, and position: </p>
+ * buffer are its capacity, limit, and position:
+ * <p>
+ *     一个 buffer 是一个线性的，优先的指定数据类型的元素序列。撇开 buffer 中的内容不谈，
+ *     buffer 的重要属性包括 它的容量，限制，以及位置。
+ * </p>
  *
  * <blockquote>
  *
  *   <p> A buffer's <i>capacity</i> is the number of elements it contains.  The
- *   capacity of a buffer is never negative and never changes.  </p>
+ *   capacity of a buffer is never negative and never changes.
+ *   <p>
+ *       buffer 的 capacity 是能够容纳元素的个数，capacity 不允许改变也不会为负数。
+ *   </p>
  *
  *   <p> A buffer's <i>limit</i> is the index of the first element that should
  *   not be read or written.  A buffer's limit is never negative and is never
- *   greater than its capacity.  </p>
+ *   greater than its capacity.
+ *   <p>
+ *       buffer 的 limit 是指 buffer 中不能够读/写的第一个元素的下标，不会为负数，也不会大于 capacity。
+ *   </p>
  *
  *   <p> A buffer's <i>position</i> is the index of the next element to be
  *   read or written.  A buffer's position is never negative and is never
- *   greater than its limit.  </p>
+ *   greater than its limit.
+ *   <p>
+ *       buffer 的 position 属性是指下一个将被读写的元素的下标。不会为负数，也不会大于 capacity。
+ *   </p>
  *
  * </blockquote>
  *
  * <p> There is one subclass of this class for each non-boolean primitive type.
+ * <p>
+ *     每个 primitive type 的类型都有一个子类，继承该类，除了 boolean 类型。
  *
  *
  * <h2> Transferring data </h2>
  *
  * <p> Each subclass of this class defines two categories of <i>get</i> and
- * <i>put</i> operations: </p>
+ * <i>put</i> operations:
+ * <p>
+ *     当前类的之类都定义了 get/put 操作
+ * </p>
  *
  * <blockquote>
  *
@@ -69,12 +89,19 @@ import java.util.Spliterator;
  *   elements transferred.  If the requested transfer exceeds the limit then a
  *   relative <i>get</i> operation throws a {@link BufferUnderflowException}
  *   and a relative <i>put</i> operation throws a {@link
- *   BufferOverflowException}; in either case, no data is transferred.  </p>
+ *   BufferOverflowException}; in either case, no data is transferred.
+ *   <p>
+ *       相对的操作。如果相对的 get 操作超出了限制，那么会抛出 BufferUnderflowException 异常。
+ *       put 操作则会抛出 BufferOverflowException 异常。
+ *   </p>
  *
  *   <p> <i>Absolute</i> operations take an explicit element index and do not
  *   affect the position.  Absolute <i>get</i> and <i>put</i> operations throw
  *   an {@link IndexOutOfBoundsException} if the index argument exceeds the
- *   limit.  </p>
+ *   limit.
+ *   <p>
+ *       绝对的操作。绝对操作中，get/put 方法越界会抛出 IndexOutOfBoundsException 异常。
+ *   </p>
  *
  * </blockquote>
  *
@@ -92,12 +119,16 @@ import java.util.Spliterator;
  * position or the limit is adjusted to a value smaller than the mark.  If the
  * mark is not defined then invoking the {@link #reset reset} method causes an
  * {@link InvalidMarkException} to be thrown.
- *
+ * <p>
+ *     buffer 的 mark 属性标记了一个位置，在调用 reset 方法的时候，会移动到该位置。
+ *     mark 未设置调用了 reset 方法，会抛出 InvalidMarkException 异常。
  *
  * <h2> Invariants </h2>
  *
  * <p> The following invariant holds for the mark, position, limit, and
  * capacity values:
+ * <p>
+ *     有下面不等式成立:
  *
  * <blockquote>
  *     {@code 0} {@code <=}
@@ -112,38 +143,60 @@ import java.util.Spliterator;
  * that depends upon the type of the buffer and the manner in which it is
  * constructed.  Each element of a newly-allocated buffer is initialized
  * to zero.
+ * <p>
+ *     新创建的 buffer 的 position 为 0，并且 mark 未初始化。初始化时的 limit 可能为 0，
+ *     也可能是其他值，取决于 buffer 的类型以及 buffer 创建的方式。buffer 中的数据初始化为
+ *     零值。
  *
- *
- * <h2> Additional operations </h2>
+ * <h2> Additional operations | 一些操作 </h2>
  *
  * <p> In addition to methods for accessing the position, limit, and capacity
  * values and for marking and resetting, this class also defines the following
  * operations upon buffers:
+ * <p>
+ *     为了访问 position、limit、capacity，以及 mark 和 reset，定义了如下操作:
  *
  * <ul>
  *
  *   <li><p> {@link #clear} makes a buffer ready for a new sequence of
  *   channel-read or relative <i>put</i> operations: It sets the limit to the
- *   capacity and the position to zero.  </p></li>
+ *   capacity and the position to zero.
+ *   <p>
+ *       clear 操作将 limit 的值设为 capacity，position 的值设为 0. buffer 可以保存
+ *       read 的数据。
+ *   </p></li>
  *
  *   <li><p> {@link #flip} makes a buffer ready for a new sequence of
  *   channel-write or relative <i>get</i> operations: It sets the limit to the
- *   current position and then sets the position to zero.  </p></li>
+ *   current position and then sets the position to zero.
+ *   <p>
+ *       flip 操作将 limit 的值设为 position 的位置，并将 position 设为 0。可以将 buffer
+ *       中的数据 write 到 channel 中去。
+ *   </p></li>
  *
  *   <li><p> {@link #rewind} makes a buffer ready for re-reading the data that
  *   it already contains: It leaves the limit unchanged and sets the position
- *   to zero.  </p></li>
+ *   to zero.
+ *   <p>
+ *       rewind 操作不改变 limit 的值，将 position 的值更新为 0。用于重新读取一段数据。
+ *   </p></li>
  *
  *   <li><p> {@link #slice} creates a subsequence of a buffer: It leaves the
- *   limit and the position unchanged. </p></li>
+ *   limit and the position unchanged.
+ *   <p>
+ *       slice 操作不改变 limit 和 position 的值。调用该方法将创建 buffer 的子序列。
+ *   </p></li>
  *
  *   <li><p> {@link #duplicate} creates a shallow copy of a buffer: It leaves
- *   the limit and the position unchanged. </p></li>
+ *   the limit and the position unchanged.
+ *   <p>
+ *       duplicate 不改变 limit 和 position 的值，而是将 buffer 进行浅拷贝。
+ *   </p></li>
  *
  * </ul>
  *
  *
- * <h2> Read-only buffers </h2>
+ * <h2> Read-only buffers | 只读 buffer </h2>
  *
  * <p> Every buffer is readable, but not every buffer is writable.  The
  * mutation methods of each buffer class are specified as <i>optional
@@ -152,20 +205,27 @@ import java.util.Spliterator;
  * content to be changed, but its mark, position, and limit values are mutable.
  * Whether or not a buffer is read-only may be determined by invoking its
  * {@link #isReadOnly isReadOnly} method.
+ * <p>
+ *     每个 buffer 都是可读的，但不是每个 buffer 都是可写的。对于不同的 buffer 实现类，
+ *     调用不支持的改变 buffer 的方法将抛出 ReadOnlyBufferException 异常。只读 buffer
+ *     不允许 buffer 中数据的改变。但是 buffer 的 mark、position、limit 的值是允许改变
+ *     的。可以通过调用 isReadOnly 方法来判断 buffer 是否是可读的。
  *
- *
- * <h2> Thread safety </h2>
+ * <h2> Thread safety | 线程安全</h2>
  *
  * <p> Buffers are not safe for use by multiple concurrent threads.  If a
  * buffer is to be used by more than one thread then access to the buffer
  * should be controlled by appropriate synchronization.
+ * <p>
+ *     buffer 不是线程安全的。需要自己添加同步控制。
  *
- *
- * <h2> Invocation chaining </h2>
+ * <h2> Invocation chaining | 调用链</h2>
  *
  * <p> Methods in this class that do not otherwise have a value to return are
  * specified to return the buffer upon which they are invoked.  This allows
  * method invocations to be chained; for example, the sequence of statements
+ * <p>
+ *     类似于 builder 模式，会返回 Buffer 实例。
  *
  * <blockquote><pre>
  * b.flip();
@@ -195,6 +255,7 @@ public abstract class Buffer {
         Spliterator.SIZED | Spliterator.SUBSIZED | Spliterator.ORDERED;
 
     // Invariants: mark <= position <= limit <= capacity
+    // 有以上不等式成立
     private int mark = -1;
     private int position = 0;
     private int limit;
@@ -210,18 +271,24 @@ public abstract class Buffer {
     // using JNI, see NewDirectByteBuffer(void*, long).
     // Should ideally be declared final
     // NOTE: hoisted here for speed in JNI GetDirectBufferAddress
+    // heap byte 使用或者通过 unsafe 访问 direct buffers 时会使用到的变量
     long address;
 
     // Creates a new buffer with the given mark, position, limit, and capacity,
     // after checking invariants.
-    //
     Buffer(int mark, int pos, int lim, int cap) {       // package-private
+        // cap 不能小于 0
         if (cap < 0)
             throw createCapacityException(cap);
+        // 首先设置 capacity
         this.capacity = cap;
+        // 设置 limit
         limit(lim);
+        // 设置 position
         position(pos);
+        // 如果 mark 需要设置
         if (mark >= 0) {
+            // mark 不能大于 position
             if (mark > pos)
                 throw new IllegalArgumentException("mark > position: ("
                                                    + mark + " > " + pos + ")");
@@ -234,6 +301,8 @@ public abstract class Buffer {
      * and target are the same {@code Buffer}.  Intended for use in
      * {@code put(src)} when the parameter is the {@code Buffer} on which the
      * method is being invoked.
+     * <p>
+     *     创建相同的 buffer 的时候抛出的异常。
      *
      * @return  IllegalArgumentException
      *          With a message indicating equal source and target buffers
@@ -244,6 +313,8 @@ public abstract class Buffer {
 
     /**
      * Verify that the capacity is nonnegative.
+     * <p>
+     *     检查 capacity 参数是否合法
      *
      * @param  capacity
      *         The new buffer's capacity, in $type$s
@@ -252,6 +323,7 @@ public abstract class Buffer {
      *          If the {@code capacity} is a negative integer
      */
     static IllegalArgumentException createCapacityException(int capacity) {
+        // capacity 不能小于 0
         assert capacity < 0 : "capacity expected to be negative";
         return new IllegalArgumentException("capacity < 0: ("
             + capacity + " < 0)");
@@ -259,6 +331,8 @@ public abstract class Buffer {
 
     /**
      * Returns this buffer's capacity.
+     * <p>
+     *     返回 buffer 的capacity
      *
      * @return  The capacity of this buffer
      */
@@ -268,6 +342,8 @@ public abstract class Buffer {
 
     /**
      * Returns this buffer's position.
+     * <p>
+     *     返回 buffer 的 position
      *
      * @return  The position of this buffer
      */
@@ -278,6 +354,9 @@ public abstract class Buffer {
     /**
      * Sets this buffer's position.  If the mark is defined and larger than the
      * new position then it is discarded.
+     * <p>
+     *     设置 buffer 的position，如果 mark 已经定义了，并且该值比传入的 position 大，
+     *     那么 mark 将被丢弃。
      *
      * @param  newPosition
      *         The new position value; must be non-negative
@@ -289,15 +368,20 @@ public abstract class Buffer {
      *          If the preconditions on {@code newPosition} do not hold
      */
     public Buffer position(int newPosition) {
+        // position 不能比 limit 大
         if (newPosition > limit | newPosition < 0)
             throw createPositionException(newPosition);
+        // 更新 position
         position = newPosition;
+        // 检查 mark
         if (mark > position) mark = -1;
         return this;
     }
 
     /**
      * Verify that {@code 0 < newPosition <= limit}
+     * <p>
+     *     检验 position 的值
      *
      * @param newPosition
      *        The new position value
@@ -308,9 +392,11 @@ public abstract class Buffer {
     private IllegalArgumentException createPositionException(int newPosition) {
         String msg = null;
 
+        // position 不能大于 limit
         if (newPosition > limit) {
             msg = "newPosition > limit: (" + newPosition + " > " + limit + ")";
         } else { // assume negative
+            // position 不能小于 0
             assert newPosition < 0 : "newPosition expected to be negative";
             msg = "newPosition < 0: (" + newPosition + " < 0)";
         }
@@ -320,6 +406,8 @@ public abstract class Buffer {
 
     /**
      * Returns this buffer's limit.
+     * <p>
+     *     返回 buffer 的 limit
      *
      * @return  The limit of this buffer
      */
@@ -331,6 +419,10 @@ public abstract class Buffer {
      * Sets this buffer's limit.  If the position is larger than the new limit
      * then it is set to the new limit.  If the mark is defined and larger than
      * the new limit then it is discarded.
+     * <p>
+     *     设置 buffer 的limit。如果 position 比传入的 limit 值要大，那么 position 的值
+     *     会被设置为新 limit 的值。如果 mark 的已经设置了，并且比传入的 limit 的值要打，
+     *     那么 mark 值将会被丢弃。
      *
      * @param  newLimit
      *         The new limit value; must be non-negative
@@ -342,16 +434,24 @@ public abstract class Buffer {
      *          If the preconditions on {@code newLimit} do not hold
      */
     public Buffer limit(int newLimit) {
+        // 检查
+        // limit 不能大于 capacity
         if (newLimit > capacity | newLimit < 0)
             throw createLimitException(newLimit);
+        // 更新 limit
         limit = newLimit;
+        // 检查 position，position 比传入 limit 的值要大，将 position 设为传入的 limit
+        // position 不能超过 limit
         if (position > newLimit) position = newLimit;
+        // 检查 mark
         if (mark > newLimit) mark = -1;
         return this;
     }
 
     /**
      * Verify that {@code 0 < newLimit <= capacity}
+     * <p>
+     *     检查 limit
      *
      * @param newLimit
      *        The new limit value
@@ -361,10 +461,11 @@ public abstract class Buffer {
      */
     private IllegalArgumentException createLimitException(int newLimit) {
         String msg = null;
-
+        // limit 不能大于 capacity
         if (newLimit > capacity) {
             msg = "newLimit > capacity: (" + newLimit + " > " + capacity + ")";
         } else { // assume negative
+            // limit 不能小于 0
             assert newLimit < 0 : "newLimit expected to be negative";
             msg = "newLimit < 0: (" + newLimit + " < 0)";
         }
@@ -374,6 +475,8 @@ public abstract class Buffer {
 
     /**
      * Sets this buffer's mark at its position.
+     * <p>
+     *
      *
      * @return  This buffer
      */
