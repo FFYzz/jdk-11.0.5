@@ -476,7 +476,7 @@ public abstract class Buffer {
     /**
      * Sets this buffer's mark at its position.
      * <p>
-     *
+     *     将 mark 的值设为当前的 position
      *
      * @return  This buffer
      */
@@ -487,9 +487,14 @@ public abstract class Buffer {
 
     /**
      * Resets this buffer's position to the previously-marked position.
+     * <p>
+     *     将 position 置为之前 mark 的位置，用在重新读取数据的场景
      *
      * <p> Invoking this method neither changes nor discards the mark's
-     * value. </p>
+     * value.
+     * <p>
+     *     调用该方法既不会改变 mark 的值，也不会丢弃 mark 的值
+     * </p>
      *
      * @return  This buffer
      *
@@ -497,9 +502,11 @@ public abstract class Buffer {
      *          If the mark has not been set
      */
     public Buffer reset() {
+        // 获取 mark 的值
         int m = mark;
         if (m < 0)
             throw new InvalidMarkException();
+        // position 设置为 mark 的值
         position = m;
         return this;
     }
@@ -507,6 +514,9 @@ public abstract class Buffer {
     /**
      * Clears this buffer.  The position is set to zero, the limit is set to
      * the capacity, and the mark is discarded.
+     * <p>
+     *     清空 buffer。position 设为 0，limit 设置为 capacity，并将之前 mark 的值丢弃。
+     *     仅仅是更新几个变量。
      *
      * <p> Invoke this method before using a sequence of channel-read or
      * <i>put</i> operations to fill this buffer.  For example:
@@ -517,7 +527,10 @@ public abstract class Buffer {
      *
      * <p> This method does not actually erase the data in the buffer, but it
      * is named as if it did because it will most often be used in situations
-     * in which that might as well be the case. </p>
+     * in which that might as well be the case.
+     * <p>
+     *     调用该方法并不是实际上将数据从 buffer 中清除。但是，离实际被清除不远了。
+     * </p>
      *
      * @return  This buffer
      */
@@ -532,6 +545,9 @@ public abstract class Buffer {
      * Flips this buffer.  The limit is set to the current position and then
      * the position is set to zero.  If the mark is defined then it is
      * discarded.
+     * <p>
+     *     翻转 buffer，主要指翻转 buffer 的读写模式。limit 设置为 position 的值。
+     *     position 设置为 0。mark 的值会被抛弃，将被设置为 -1。
      *
      * <p> After a sequence of channel-read or <i>put</i> operations, invoke
      * this method to prepare for a sequence of channel-write or relative
@@ -545,7 +561,10 @@ public abstract class Buffer {
      *
      * <p> This method is often used in conjunction with the {@link
      * java.nio.ByteBuffer#compact compact} method when transferring data from
-     * one place to another.  </p>
+     * one place to another.
+     * <p>
+     *     该方法在转移数据的时候通常与 compact 方法一起用。
+     * </p>
      *
      * @return  This buffer
      */
@@ -559,6 +578,8 @@ public abstract class Buffer {
     /**
      * Rewinds this buffer.  The position is set to zero and the mark is
      * discarded.
+     * <p>
+     *     position 将被设置成 0，mark 将被丢弃。
      *
      * <p> Invoke this method before a sequence of channel-write or <i>get</i>
      * operations, assuming that the limit has already been set
@@ -580,6 +601,8 @@ public abstract class Buffer {
     /**
      * Returns the number of elements between the current position and the
      * limit.
+     * <p>
+     *     返回 position 到 limit 之间的数据个数
      *
      * @return  The number of elements remaining in this buffer
      */
@@ -590,6 +613,8 @@ public abstract class Buffer {
     /**
      * Tells whether there are any elements between the current position and
      * the limit.
+     * <p>
+     *     返回 position 到 limit 之间是否有数据
      *
      * @return  {@code true} if, and only if, there is at least one element
      *          remaining in this buffer
@@ -600,6 +625,8 @@ public abstract class Buffer {
 
     /**
      * Tells whether or not this buffer is read-only.
+     * <p>
+     *     返回当前 buffer 是否可读，具体有子类实现。
      *
      * @return  {@code true} if, and only if, this buffer is read-only
      */
@@ -608,6 +635,8 @@ public abstract class Buffer {
     /**
      * Tells whether or not this buffer is backed by an accessible
      * array.
+     * <p>
+     *     返回当前 buffer 是否有数组进行备份
      *
      * <p> If this method returns {@code true} then the {@link #array() array}
      * and {@link #arrayOffset() arrayOffset} methods may safely be invoked.
@@ -623,17 +652,25 @@ public abstract class Buffer {
     /**
      * Returns the array that backs this
      * buffer&nbsp;&nbsp;<i>(optional operation)</i>.
+     * <p>
+     *     返回备份了 buffer 的array
      *
      * <p> This method is intended to allow array-backed buffers to be
      * passed to native code more efficiently. Concrete subclasses
      * provide more strongly-typed return values for this method.
+     * <p>
+     *     允许使用 native 内存进行备份，这样会更高效。具体有子类实现。
      *
      * <p> Modifications to this buffer's content will cause the returned
      * array's content to be modified, and vice versa.
+     * <p>
+     *     修改 buffer 会改变 array 的数据，修改 array 的数据，同时会修改 buffer 的值。
      *
      * <p> Invoke the {@link #hasArray hasArray} method before invoking this
      * method in order to ensure that this buffer has an accessible backing
      * array.  </p>
+     * <p>
+     *     调用该方法之前一般先调用 hasArray 方法来判断。
      *
      * @return  The array that backs this buffer
      *
@@ -650,13 +687,20 @@ public abstract class Buffer {
     /**
      * Returns the offset within this buffer's backing array of the first
      * element of the buffer&nbsp;&nbsp;<i>(optional operation)</i>.
+     * <p>
+     *     返回 array 中第一个数据的偏移量。(数据在 array 中的起始位置)
      *
      * <p> If this buffer is backed by an array then buffer position <i>p</i>
      * corresponds to array index <i>p</i>&nbsp;+&nbsp;{@code arrayOffset()}.
+     * <p>
+     *     buffer 中 p 位置的数据，在 array 中位于 p + arrayOffset() 为主
      *
      * <p> Invoke the {@link #hasArray hasArray} method before invoking this
      * method in order to ensure that this buffer has an accessible backing
-     * array.  </p>
+     * array.
+     * <p>
+     *     调用该方法之前调用 hasArray 方法检查一下是否有备份。
+     * </p>
      *
      * @return  The offset within this buffer's array
      *          of the first element of the buffer
@@ -674,6 +718,8 @@ public abstract class Buffer {
     /**
      * Tells whether or not this buffer is
      * <a href="ByteBuffer.html#direct"><i>direct</i></a>.
+     * <p>
+     *     返回当前 buffer 是否为直接内存
      *
      * @return  {@code true} if, and only if, this buffer is direct
      *
@@ -684,17 +730,27 @@ public abstract class Buffer {
     /**
      * Creates a new buffer whose content is a shared subsequence of
      * this buffer's content.
+     * <p>
+     *     创建一个新的 buffer，新的 buffer 的数据是当前 buffer 的一部分，两者共享一部分数据。
      *
      * <p> The content of the new buffer will start at this buffer's current
      * position.  Changes to this buffer's content will be visible in the new
      * buffer, and vice versa; the two buffers' position, limit, and mark
      * values will be independent.
+     * <p>
+     *     新的 buffer 的数据将从当前 buffer 的 position 位置开始。两个 buffer 共享数据，
+     *     任意修改某一 buffer 的数据都将影响另一个 buffer 中的数据。但是两个 buffer 的
+     *     position limit mark 的值是独立的。
      *
      * <p> The new buffer's position will be zero, its capacity and its limit
      * will be the number of elements remaining in this buffer, its mark will be
      * undefined. The new buffer will be direct if, and only if, this buffer is
      * direct, and it will be read-only if, and only if, this buffer is
-     * read-only.  </p>
+     * read-only.
+     * <p>
+     *     新 buffer 的 position 可能为 0。他的 capacity 和 limit 值为当前 buffer 的
+     *     remaing 方法返回的值。新 buffer 是否为 direct 或者 只读，与当前 buffer 相关。
+     * </p>
      *
      * @return  The new buffer
      *
@@ -704,16 +760,23 @@ public abstract class Buffer {
 
     /**
      * Creates a new buffer that shares this buffer's content.
+     * <p>
+     *     创建一个新的 buffer，与当前 buffer 的数据是一致的。
      *
      * <p> The content of the new buffer will be that of this buffer.  Changes
      * to this buffer's content will be visible in the new buffer, and vice
      * versa; the two buffers' position, limit, and mark values will be
      * independent.
+     * <p>
+     *     相当于共享了整块 buffer，但是 position limit mark 是独立的。
      *
      * <p> The new buffer's capacity, limit, position and mark values will be
      * identical to those of this buffer. The new buffer will be direct if, and
      * only if, this buffer is direct, and it will be read-only if, and only if,
-     * this buffer is read-only.  </p>
+     * this buffer is read-only.
+     * <p>
+     *     初始的时候，新 buffer 的capacity, limit, position, mark 与当前 buffer 是完全相同的。
+     * </p>
      *
      * @return  The new buffer
      *
@@ -725,7 +788,6 @@ public abstract class Buffer {
     // -- Package-private methods for bounds checking, etc. --
 
     /**
-     *
      * @return the base reference, paired with the address
      * field, which in combination can be used for unsafe access into a heap
      * buffer or direct byte buffer (and views of).
@@ -736,6 +798,8 @@ public abstract class Buffer {
      * Checks the current position against the limit, throwing a {@link
      * BufferUnderflowException} if it is not smaller than the limit, and then
      * increments the position.
+     * <p>
+     *     首先检查 position 的值是否合法，如果合法，position + 1，否则抛出异常。
      *
      * @return  The current position value, before it is incremented
      */
@@ -747,6 +811,9 @@ public abstract class Buffer {
         return p;
     }
 
+    /**
+     * 类似于上面的方法，可以指定 position 的递增数量
+     */
     final int nextGetIndex(int nb) {                    // package-private
         int p = position;
         if (limit - p < nb)
@@ -782,6 +849,8 @@ public abstract class Buffer {
      * Checks the given index against the limit, throwing an {@link
      * IndexOutOfBoundsException} if it is not smaller than the limit
      * or is smaller than zero.
+     * <p>
+     *     检查给定的 position 是否合法
      */
     @HotSpotIntrinsicCandidate
     final int checkIndex(int i) {                       // package-private
@@ -796,17 +865,30 @@ public abstract class Buffer {
         return i;
     }
 
+    /**
+     * 返回 mark 的值
+     */
     final int markValue() {                             // package-private
         return mark;
     }
 
+    /**
+     * 截断数据
+     */
     final void truncate() {                             // package-private
+        // 丢弃 mark
         mark = -1;
+        // position 置为 0
         position = 0;
+        // limit 置为 0
         limit = 0;
+        // capacity 置为 0
         capacity = 0;
     }
 
+    /**
+     * 丢弃 mark 的值
+     */
     final void discardMark() {                          // package-private
         mark = -1;
     }
