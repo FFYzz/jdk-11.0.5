@@ -55,7 +55,7 @@ import java.util.function.UnaryOperator;
 import jdk.internal.misc.SharedSecrets;
 
 /**
- * 线程安全版本的 ArrayList。所有的可变的操作(引起 ArrayList 变化的做操) 都会做一个 fresh copy
+ * 线程安全版本的 ArrayList。所有的可变的操作(引起 ArrayList 变化的操作) 都会做一个 fresh copy
  * <p>
  * A thread-safe variant of {@link java.util.ArrayList} in which all mutative
  * operations ({@code add}, {@code set}, and so on) are implemented by
